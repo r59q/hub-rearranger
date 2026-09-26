@@ -72,6 +72,12 @@ versioned public contract. Frontend calls to those services belong in typed
   should consume application-level data rather than raw API responses.
 - Make asynchronous states explicit: loading, empty, error, stale, and
   success states should each be understandable without developer tools.
+- Prefer optimistic UI responses for predictable, reversible user actions so
+  successful interactions feel immediate. Clearly represent pending state,
+  reconcile it with the authoritative response, and roll it back with useful
+  error feedback when the operation fails. Avoid optimistic updates for
+  destructive or high-risk actions where showing unconfirmed success could
+  mislead the user.
 - Build accessible keyboard-friendly interactions and use semantic HTML before
   adding custom controls.
 - Document non-obvious design decisions near the code or in project

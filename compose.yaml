@@ -5,6 +5,8 @@ services:
     build:
       context: ./services/repositories
     environment:
+      # Create a fine-grained GitHub token with read-only Metadata access at github.com/settings/personal-access-tokens/new.
+      # Store it as GITHUB_TOKEN in the root .env; it authenticates repository listing, so never commit or share it.
       GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
       REPOSITORIES_ADDR: :8080
       REPOSITORIES_DB_PATH: /app/data/repositories.db
@@ -41,4 +43,3 @@ services:
 
 volumes:
   repositories-data:
-
