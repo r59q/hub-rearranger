@@ -1,0 +1,8 @@
+node_modules/
+.svelte-kit/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+vite.config.*.timestamp-*
