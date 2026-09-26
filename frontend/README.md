@@ -63,3 +63,8 @@ for example `https://hub.example.com`. Do not put credentials in frontend enviro
 `src/lib/server/repositories-api.ts` is the typed infrastructure adapter for the repositories
 service. Route load functions and actions use this adapter on the server; browser components
 receive application-level repository data and never call the Go service directly.
+
+Mutations use SvelteKit form actions and `use:enhance` so they retain progressive enhancement and
+server-only service access. Shared optimistic-update lifecycle behavior lives in
+`src/lib/forms/optimistic-submit.ts`; keep optimistic state local to the affected view and reconcile
+it with the authoritative page data returned after the action.
