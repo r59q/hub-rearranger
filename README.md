@@ -1,0 +1,52 @@
+# Hub Rearranger
+
+Hub Rearranger reorganizes GitHub information and workflows into focused views for people and AI
+agents. GitHub remains the source of truth; Hub Rearranger stores only application-specific state.
+
+## Components
+
+- [`frontend`](frontend/README.md) — SvelteKit user interface.
+- [`services/repositories`](services/repositories/README.md) — repository discovery and selection
+  service.
+
+## Local development
+
+Docker Compose runs the complete application, including persistent SQLite storage. Copy the root
+environment example, provide a fine-grained GitHub token with repository read access, and start the
+stack:
+
+```sh
+cp .env.example .env
+# Edit .env and set GITHUB_TOKEN.
+docker compose up --build
+```
+
+Open `http://localhost:3000`. The repositories API is also available for local debugging at
+`http://localhost:8080`; both ports bind to loopback only. Repository selections persist in the
+`repositories-data` Docker volume. Use `docker compose down` to stop the application, or
+`docker compose down --volumes` to also remove the local selection database.
+
+To run the components directly instead, start the repository service with a GitHub token that can
+read the repositories you want to select:
+
+```sh
+cd services/repositories
+GITHUB_TOKEN=github_pat_... go run ./cmd/server
+```
+
+In another terminal, run the frontend:
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+The frontend defaults to `http://127.0.0.1:8080` for the repository service. Set the server-only
+`REPOSITORIES_API_URL` environment variable to use another address.
+
+## Repository-wide validation
+
+```sh
+make check
+```

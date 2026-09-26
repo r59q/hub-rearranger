@@ -1,0 +1,44 @@
+name: hub-rearranger
+
+services:
+  repositories:
+    build:
+      context: ./services/repositories
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
+      REPOSITORIES_ADDR: :8080
+      REPOSITORIES_DB_PATH: /app/data/repositories.db
+    init: true
+    ports:
+      - '127.0.0.1:${REPOSITORIES_PORT:-8080}:8080'
+    volumes:
+      - repositories-data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8080/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      repositories:
+        condition: service_healthy
+    environment:
+      ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      REPOSITORIES_API_URL: http://repositories:8080
+    init: true
+    ports:
+      - '127.0.0.1:${FRONTEND_PORT:-3000}:3000'
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:3000/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  repositories-data:
+

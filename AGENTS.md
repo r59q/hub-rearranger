@@ -18,6 +18,12 @@ services own GitHub authentication, authorization, integration, and
 domain-specific server-side business logic; SvelteKit owns the accessible,
 responsive user interface and its view-specific state.
 
+Go services live under `services/<domain>` as independent modules. Use
+`cmd/server` for composition, `internal/api`, `internal/domain`, and
+`internal/infrastructure` for the service layers, and `api/openapi.yaml` for the
+versioned public contract. Frontend calls to those services belong in typed
+`src/lib/server` adapters so service addresses and credentials stay server-side.
+
 ## Product principles
 
 - Build focused views around agent workflows: understanding repository state,
@@ -51,6 +57,16 @@ responsive user interface and its view-specific state.
 - Inspect the repository before making changes and preserve unrelated work.
 - Keep each change focused on the requested outcome; avoid speculative features
   and broad refactors.
+- Keep source files small, neatly decomposed, and easy to read. Split files into
+  focused modules or components when they become large or take on multiple
+  responsibilities. Refactoring oversized code encountered while working is
+  allowed and preferred even when that code is not directly related to the
+  requested change, provided behavior is preserved and unrelated user work is
+  not overwritten.
+- Maintain a Docker Compose file at the repository root that contains everything
+  needed to run the complete application locally for testing and debugging.
+  Update the Compose configuration whenever services, dependencies,
+  configuration, ports, volumes, or local-development requirements change.
 - Prefer clear, conventional names and small, composable modules.
 - Keep GitHub API access behind a narrow, typed integration layer. UI components
   should consume application-level data rather than raw API responses.
