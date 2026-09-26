@@ -4,6 +4,13 @@ The SvelteKit frontend provides the accessible, responsive workspace for Hub Rea
 presentation and view-specific state; GitHub authentication, authorization, and domain logic belong
 to backend services.
 
+## Design system
+
+The frontend uses [Pico CSS](https://picocss.com/) for lightweight, semantic component styling.
+The Jade theme is loaded globally from the installed npm package, with only small view-specific
+styles added in Svelte components. Pico follows the system `prefers-color-scheme` setting, so light
+and dark themes do not require client-side JavaScript.
+
 ## Local development
 
 Requirements: Node.js 24 and npm.

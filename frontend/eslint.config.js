@@ -13,6 +13,14 @@ export default tseslint.config(
 	...svelte.configs.recommended,
 	prettier,
 	{
+		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
+		languageOptions: {
+			parserOptions: {
+				parser: tseslint.parser
+			}
+		}
+	},
+	{
 		languageOptions: {
 			globals: {
 				...globals.browser,

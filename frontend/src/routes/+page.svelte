@@ -1,3 +1,7 @@
+<script lang="ts">
+	import { resolve } from '$app/paths';
+</script>
+
 <svelte:head>
 	<title>Hub Rearranger</title>
 	<meta
@@ -6,81 +10,184 @@
 	/>
 </svelte:head>
 
-<main>
-	<section aria-labelledby="page-title">
-		<p class="eyebrow">Hub Rearranger</p>
-		<h1 id="page-title">A clearer workspace for GitHub work.</h1>
-		<p class="intro">
-			Connect a repository to bring its active work, review state, and next actions into one focused
-			place.
-		</p>
-		<p class="status" role="status">Repository connections will be available here soon.</p>
-	</section>
-</main>
+<div class="site-shell">
+	<header class="container">
+		<nav aria-label="Primary navigation">
+			<ul>
+				<li>
+					<a class="brand" href={resolve('/')} aria-label="Hub Rearranger home">
+						<span class="brand-mark" aria-hidden="true">H</span>
+						<strong>Hub Rearranger</strong>
+					</a>
+				</li>
+			</ul>
+			<ul class="product-context">
+				<li><small>Agent-ready GitHub workspace</small></li>
+			</ul>
+		</nav>
+	</header>
+
+	<main class="container">
+		<section class="hero" aria-labelledby="page-title">
+			<div class="hero-copy">
+				<p class="eyebrow">GitHub, arranged around the work</p>
+				<h1 id="page-title">A clearer workspace for GitHub workflows.</h1>
+				<p class="intro">
+					Bring active work, review state, ownership, and next actions together in one focused place
+					for people and their agents.
+				</p>
+			</div>
+
+			<article class="workspace-status" aria-labelledby="workspace-status-title">
+				<header>
+					<div>
+						<small>Workspace status</small>
+						<h2 id="workspace-status-title">Ready to connect</h2>
+					</div>
+					<span class="status-dot" aria-hidden="true"></span>
+				</header>
+				<p>Repository connections will appear here as the GitHub integration becomes available.</p>
+				<footer>
+					<small><strong>Next:</strong> connect a repository and choose work to focus on.</small>
+				</footer>
+			</article>
+		</section>
+	</main>
+
+	<footer class="container site-footer">
+		<small>GitHub remains the source of truth.</small>
+	</footer>
+</div>
 
 <style>
-	:global(*) {
-		box-sizing: border-box;
+	.site-shell {
+		display: grid;
+		min-height: 100vh;
+		grid-template-rows: auto 1fr auto;
+		background:
+			radial-gradient(
+				circle at 85% 15%,
+				color-mix(in srgb, var(--pico-primary) 12%, transparent),
+				transparent 28rem
+			),
+			var(--pico-background-color);
 	}
 
-	:global(body) {
-		margin: 0;
-		background: #f6f8fa;
-		color: #1f2328;
-		font-family:
-			Inter,
-			ui-sans-serif,
-			system-ui,
-			-apple-system,
-			BlinkMacSystemFont,
-			'Segoe UI',
-			sans-serif;
+	nav {
+		padding-block: 1rem;
+	}
+
+	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.7rem;
+		color: var(--pico-color);
+		text-decoration: none;
+	}
+
+	.brand-mark {
+		display: grid;
+		width: 2rem;
+		height: 2rem;
+		place-items: center;
+		border-radius: 0.6rem;
+		background: var(--pico-primary-background);
+		color: var(--pico-primary-inverse);
+		font-weight: 800;
+		box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--pico-primary) 22%, transparent);
 	}
 
 	main {
 		display: grid;
-		min-height: 100vh;
-		place-items: center;
-		padding: 2rem;
+		align-items: center;
+		padding-block: clamp(3rem, 10vw, 8rem);
 	}
 
-	section {
-		width: min(100%, 42rem);
-		border: 1px solid #d0d7de;
-		border-radius: 0.75rem;
-		background: #ffffff;
-		padding: clamp(2rem, 7vw, 4.5rem);
-		box-shadow: 0 1px 3px rgb(31 35 40 / 12%);
+	.hero {
+		display: grid;
+		align-items: center;
+		gap: clamp(2.5rem, 8vw, 7rem);
+		grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
 	}
 
 	.eyebrow {
-		margin: 0 0 1rem;
-		color: #0969da;
+		margin-bottom: 1rem;
+		color: var(--pico-primary);
 		font-size: 0.875rem;
 		font-weight: 700;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.1em;
 		text-transform: uppercase;
 	}
 
 	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 6vw, 3.5rem);
-		line-height: 1.05;
+		max-width: 14ch;
+		margin-bottom: 1.5rem;
+		font-size: clamp(2.5rem, 7vw, 5rem);
+		letter-spacing: -0.045em;
+		line-height: 1;
 	}
 
 	.intro {
-		margin: 1.5rem 0 0;
-		color: #57606a;
-		font-size: 1.125rem;
+		max-width: 56ch;
+		margin: 0;
+		color: var(--pico-muted-color);
+		font-size: clamp(1.05rem, 2vw, 1.25rem);
 		line-height: 1.6;
 	}
 
-	.status {
-		margin: 2rem 0 0;
-		border-left: 3px solid #1f883d;
-		padding-left: 0.75rem;
-		color: #1a7f37;
-		font-size: 0.9375rem;
-		font-weight: 600;
+	.workspace-status {
+		margin: 0;
+		border: 1px solid var(--pico-muted-border-color);
+		box-shadow: 0 1.5rem 4rem color-mix(in srgb, var(--pico-color) 9%, transparent);
+	}
+
+	.workspace-status header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.workspace-status h2 {
+		margin: 0.25rem 0 0;
+		font-size: 1.35rem;
+	}
+
+	.workspace-status p {
+		color: var(--pico-muted-color);
+	}
+
+	.status-dot {
+		width: 0.75rem;
+		height: 0.75rem;
+		margin-top: 0.45rem;
+		flex: 0 0 auto;
+		border-radius: 50%;
+		background: var(--pico-primary);
+		box-shadow: 0 0 0 0.3rem color-mix(in srgb, var(--pico-primary) 18%, transparent);
+	}
+
+	.site-footer {
+		padding-block: 1.5rem;
+		color: var(--pico-muted-color);
+	}
+
+	@media (max-width: 700px) {
+		.product-context {
+			display: none;
+		}
+
+		main {
+			padding-block: 3rem;
+		}
+
+		.hero {
+			gap: 2.5rem;
+			grid-template-columns: 1fr;
+		}
+
+		h1 {
+			font-size: clamp(2.5rem, 14vw, 4rem);
+		}
 	}
 </style>

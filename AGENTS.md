@@ -206,6 +206,12 @@ responsive user interface and its view-specific state.
   duplicating authorization, validation, or GitHub integration in the browser.
 - Type data crossing route, component, and API boundaries. Keep display-specific
   transformations close to the components that use them.
+- Support the user's system color-scheme preference. The frontend must provide
+  a dark theme when `prefers-color-scheme: dark` is active, while preserving
+  accessible contrast and clearly visible interaction states in both themes.
+- Treat mobile users as a target demographic. Design and test frontend views
+  for small screens, touch input, readable content, and responsive layouts as
+  first-class use cases rather than desktop-only adaptations.
 - Test user-visible workflows and component behavior with the project's chosen
   test tools once they are established.
 - Run the repository-standard frontend formatter and linter before handoff.
