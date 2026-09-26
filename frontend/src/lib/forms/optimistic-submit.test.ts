@@ -2,10 +2,20 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
 import { createOptimisticSubmit } from './optimistic-submit';
 
-async function runSubmit(submit: SubmitFunction, result: ActionResult, update = vi.fn()) {
-	const complete = submit({} as Parameters<SubmitFunction>[0]);
-	if (!complete) throw new Error('Expected a submit completion callback.');
-	await complete({ result, update } as Parameters<typeof complete>[0]);
+async function runSubmit(
+	submit: SubmitFunction,
+	result: ActionResult,
+	update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void> = async () => {}
+) {
+	const complete = await submit({} as Parameters<SubmitFunction>[0]);
+	if (typeof complete !== 'function') throw new Error('Expected a submit completion callback.');
+	await complete({
+		result,
+		update,
+		formData: new FormData(),
+		formElement: {} as HTMLFormElement,
+		action: new URL('http://localhost/?/test')
+	});
 }
 
 describe('createOptimisticSubmit', () => {
@@ -59,7 +69,9 @@ describe('createOptimisticSubmit', () => {
 		});
 
 		await expect(
-			runSubmit(submit, result, vi.fn().mockRejectedValue(new Error('failed')))
+			runSubmit(submit, result, async () => {
+				throw new Error('failed');
+			})
 		).rejects.toThrow('failed');
 		expect(onSettled).toHaveBeenCalledWith(7, result);
 	});
