@@ -7,41 +7,38 @@
 	let {
 		issuePage,
 		issueError,
-		initiallyExpanded,
-		selectedRepositoryCount
+		selectedRepositoryCount,
+		variant = 'dashboard'
 	}: {
 		issuePage: IssuePage;
 		issueError: string | null;
-		initiallyExpanded: boolean;
 		selectedRepositoryCount: number;
+		variant?: 'dashboard' | 'workdesk';
 	} = $props();
 
-	let expanded = $state(false);
-	$effect(() => {
-		if (initiallyExpanded) {
-			expanded = true;
-		}
-	});
+	let fullPage = $derived(variant === 'workdesk');
 </script>
 
-<section class="issues-section" aria-labelledby="issues-title">
+<section class:full-page={fullPage} class="issues-section" aria-labelledby="issues-title">
 	<div class="section-heading">
 		<div>
-			<p class="eyebrow">Recent activity</p>
-			<h2 id="issues-title">Issues</h2>
-			<p>Open work across your selected repositories, newest activity first.</p>
+			<p class="eyebrow">{fullPage ? 'Work page' : 'Recent activity'}</p>
+			{#if fullPage}
+				<h1 id="issues-title">Issues</h1>
+			{:else}
+				<h2 id="issues-title">Issues</h2>
+			{/if}
+			<p>
+				{fullPage
+					? 'Review open work across your selected repositories, newest activity first.'
+					: 'Open work across your selected repositories, newest activity first.'}
+			</p>
 		</div>
-		{#if !issueError && selectedRepositoryCount > 0 && issuePage.issues.length > 0}
-			<button
-				type="button"
-				class="accordion-trigger secondary outline"
-				aria-expanded={expanded}
-				aria-controls="issues-view"
-				onclick={() => (expanded = !expanded)}
-			>
-				{expanded ? 'Collapse issues' : 'Browse all issues'}
-				<svg class:expanded viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
-			</button>
+		{#if !fullPage && !issueError && selectedRepositoryCount > 0 && issuePage.issues.length > 0}
+			<a class="browse-link secondary outline" href={resolve('/issues')}>
+				Browse all issues
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+			</a>
 		{/if}
 	</div>
 
@@ -74,7 +71,7 @@
 			</div>
 		</div>
 	{:else}
-		<div id="issues-view" class:paginated={expanded} class="issues-view">
+		<div class:full-list={fullPage} class="issues-view">
 			{#if issuePage.unavailable_repositories.length > 0}
 				<p class="partial-notice" role="status">
 					Some issues could not be loaded from {issuePage.unavailable_repositories.join(', ')}.
@@ -89,31 +86,32 @@
 
 			<div class="issue-grid">
 				{#each issuePage.issues as issue (issue.id)}
-					<IssueCard {issue} {expanded} />
+					<IssueCard {issue} expanded={fullPage} />
 				{/each}
 			</div>
 
-			{#if expanded}
+			{#if fullPage}
 				<nav class="pagination" aria-label="Issue pages">
+					<!-- Pagination adds a query string to the base-path-aware resolved issues route. -->
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
 					{#if issuePage.page > 1}
-						<!-- Query strings are appended to the base-path-aware resolved home route. -->
-						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-						<a class="secondary outline" href={resolve('/') + issuePageHref(issuePage.page - 1)}
-							>← Previous</a
+						<a
+							class="secondary outline"
+							href={resolve('/issues') + issuePageHref(issuePage.page - 1)}>← Previous</a
 						>
 					{:else}
 						<span></span>
 					{/if}
 					<span>Page <strong>{issuePage.page}</strong></span>
 					{#if issuePage.has_next}
-						<!-- Query strings are appended to the base-path-aware resolved home route. -->
-						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-						<a class="secondary outline" href={resolve('/') + issuePageHref(issuePage.page + 1)}
-							>Next →</a
+						<a
+							class="secondary outline"
+							href={resolve('/issues') + issuePageHref(issuePage.page + 1)}>Next →</a
 						>
 					{:else}
 						<span></span>
 					{/if}
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				</nav>
 			{/if}
 		</div>
@@ -123,6 +121,10 @@
 <style>
 	.issues-section {
 		margin-top: clamp(3rem, 7vw, 5rem);
+	}
+
+	.issues-section.full-page {
+		margin-top: 0;
 	}
 
 	.section-heading {
@@ -142,10 +144,20 @@
 		text-transform: uppercase;
 	}
 
+	h1,
 	h2 {
 		margin: 0;
-		font-size: 1.55rem;
 		letter-spacing: -0.025em;
+	}
+
+	h1 {
+		font-size: clamp(2.35rem, 5vw, 3.75rem);
+		letter-spacing: -0.045em;
+		line-height: 1.05;
+	}
+
+	h2 {
+		font-size: 1.55rem;
 	}
 
 	.section-heading p:last-child {
@@ -154,7 +166,7 @@
 		font-size: 0.84rem;
 	}
 
-	.accordion-trigger {
+	.browse-link {
 		display: inline-flex;
 		width: auto;
 		flex: 0 0 auto;
@@ -163,20 +175,16 @@
 		margin: 0;
 		padding: 0.55rem 0.8rem;
 		font-size: 0.78rem;
+		text-decoration: none;
 	}
 
-	.accordion-trigger svg {
+	.browse-link svg {
 		width: 1rem;
 		fill: none;
 		stroke: currentColor;
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		stroke-width: 2;
-		transition: transform 160ms ease;
-	}
-
-	.accordion-trigger svg.expanded {
-		transform: rotate(180deg);
 	}
 
 	.issue-grid {
@@ -185,7 +193,7 @@
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
-	.paginated .issue-grid {
+	.full-list .issue-grid {
 		grid-template-columns: 1fr;
 	}
 
@@ -260,12 +268,6 @@
 	.pagination > span {
 		color: var(--pico-muted-color);
 		font-size: 0.76rem;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.accordion-trigger svg {
-			transition: none;
-		}
 	}
 
 	@media (max-width: 700px) {

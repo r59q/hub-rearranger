@@ -20,15 +20,7 @@ function issuesClient(fetch: typeof globalThis.fetch): IssuesApiClient {
 	return new IssuesApiClient(issuesServiceUrl, fetch);
 }
 
-function issuePageNumber(value: string | null): number {
-	const page = Number(value);
-	return Number.isSafeInteger(page) && page > 0 && page <= 1000 ? page : 1;
-}
-
-export const load: PageServerLoad = async ({ fetch, url }) => {
-	const requestedIssuePage = issuePageNumber(url.searchParams.get('issuePage'));
-	const issueViewExpanded = url.searchParams.get('issues') === 'open' || requestedIssuePage > 1;
-
+export const load: PageServerLoad = async ({ fetch }) => {
 	try {
 		const availableRepositories = await repositoriesClient(fetch).listAvailable();
 		const repositories = availableRepositories.filter((repository) => repository.selected);
@@ -37,24 +29,22 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 				repositories,
 				availableRepositories,
 				serviceError: null,
-				issuePage: emptyIssuePage(requestedIssuePage),
-				issueError: null,
-				issueViewExpanded
+				issuePage: emptyIssuePage(),
+				issueError: null
 			};
 		}
 
 		try {
 			const issuePage = await issuesClient(fetch).listRecent(
 				repositories.map((repository) => repository.full_name),
-				requestedIssuePage
+				1
 			);
 			return {
 				repositories,
 				availableRepositories,
 				serviceError: null,
 				issuePage,
-				issueError: null,
-				issueViewExpanded
+				issueError: null
 			};
 		} catch (error) {
 			const issueError =
@@ -65,9 +55,8 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 				repositories,
 				availableRepositories,
 				serviceError: null,
-				issuePage: emptyIssuePage(requestedIssuePage),
-				issueError,
-				issueViewExpanded
+				issuePage: emptyIssuePage(),
+				issueError
 			};
 		}
 	} catch (error) {
@@ -79,9 +68,8 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 			repositories: [],
 			availableRepositories: [],
 			serviceError: message,
-			issuePage: emptyIssuePage(requestedIssuePage),
-			issueError: null,
-			issueViewExpanded
+			issuePage: emptyIssuePage(),
+			issueError: null
 		};
 	}
 };

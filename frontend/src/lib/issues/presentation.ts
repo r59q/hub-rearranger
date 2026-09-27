@@ -12,6 +12,6 @@ export function formatIssueActivity(value: string): string {
 }
 
 export function issuePageHref(page: number): string {
-	const parameters = new URLSearchParams({ issues: 'open', issuePage: String(page) });
+	const parameters = new URLSearchParams({ issuePage: String(page) });
 	return `?${parameters.toString()}`;
 }

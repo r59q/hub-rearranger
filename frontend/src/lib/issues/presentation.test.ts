@@ -6,7 +6,7 @@ describe('issue presentation', () => {
 		expect(formatIssueActivity('2026-09-27T23:30:00-04:00')).toBe('Updated 28 Sept 2026');
 	});
 
-	it('builds an expanded issue page link', () => {
-		expect(issuePageHref(3)).toBe('?issues=open&issuePage=3');
+	it('builds an issue page link', () => {
+		expect(issuePageHref(3)).toBe('?issuePage=3');
 	});
 });

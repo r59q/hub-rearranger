@@ -7,16 +7,6 @@
 		<a class="brand" href={resolve('/')} aria-label="Hub Rearranger home">
 			<span class="brand-mark" aria-hidden="true">H</span><span>Hub Rearranger</span>
 		</a>
-		<nav aria-label="Primary navigation">
-			<a href={resolve('/')} aria-current="page">
-				<svg viewBox="0 0 24 24" aria-hidden="true">
-					<path
-						d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5v-13ZM8 8h8m-8 4h8m-8 4h5"
-					/>
-				</svg>
-				Workspace
-			</a>
-		</nav>
 		<div class="account-mark" aria-label="GitHub account configured">
 			<svg viewBox="0 0 24 24" aria-hidden="true">
 				<path
@@ -38,7 +28,7 @@
 		display: grid;
 		min-height: 4.5rem;
 		align-items: center;
-		grid-template-columns: 1fr auto 1fr;
+		grid-template-columns: 1fr auto;
 	}
 
 	.brand {
@@ -64,29 +54,6 @@
 		box-shadow: 0 0.4rem 1rem color-mix(in srgb, var(--pico-primary) 20%, transparent);
 	}
 
-	nav a {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		padding: 0.55rem 0.85rem;
-		border-radius: 0.55rem;
-		background: color-mix(in srgb, var(--pico-primary) 11%, transparent);
-		color: var(--pico-primary);
-		font-size: 0.9rem;
-		font-weight: 650;
-		text-decoration: none;
-	}
-
-	nav svg {
-		width: 1.1rem;
-		height: 1.1rem;
-		fill: none;
-		stroke: currentColor;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		stroke-width: 1.8;
-	}
-
 	.account-mark {
 		display: grid;
 		width: 2.2rem;
@@ -101,15 +68,5 @@
 	.account-mark svg {
 		width: 1.25rem;
 		fill: var(--pico-color);
-	}
-
-	@media (max-width: 700px) {
-		.header-inner {
-			grid-template-columns: 1fr auto;
-		}
-
-		nav {
-			display: none;
-		}
 	}
 </style>

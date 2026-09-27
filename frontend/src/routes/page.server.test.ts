@@ -16,7 +16,7 @@ const selectedRepository = {
 const availableRepository = { ...selectedRepository, id: 2, name: 'other', selected: false };
 
 describe('home page load', () => {
-	it('loads the requested issue page for selected repositories', async () => {
+	it('loads the first issue page for the dashboard', async () => {
 		const request = vi.fn<typeof fetch>().mockImplementation(async (input) => {
 			const url = new URL(input instanceof Request ? input.url : input.toString());
 			if (url.pathname === '/v1/repositories/available') {
@@ -24,10 +24,10 @@ describe('home page load', () => {
 			}
 			if (url.pathname === '/v1/issues') {
 				expect(url.searchParams.getAll('repository')).toEqual(['octo/demo']);
-				expect(url.searchParams.get('page')).toBe('2');
+				expect(url.searchParams.get('page')).toBe('1');
 				return Response.json({
 					issues: [],
-					page: 2,
+					page: 1,
 					per_page: 6,
 					has_next: false,
 					unavailable_repositories: [],
@@ -39,15 +39,14 @@ describe('home page load', () => {
 
 		const result = await load({
 			fetch: request,
-			url: new URL('http://localhost/?issues=open&issuePage=2')
+			url: new URL('http://localhost/')
 		} as never);
 
 		expect(result).toEqual(
 			expect.objectContaining({
 				repositories: [selectedRepository],
-				issueViewExpanded: true,
 				issueError: null,
-				issuePage: expect.objectContaining({ page: 2 })
+				issuePage: expect.objectContaining({ page: 1 })
 			})
 		);
 	});

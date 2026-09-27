@@ -13,7 +13,7 @@
 	<header>
 		<div class="identity">
 			<span class="state-dot" aria-hidden="true"></span>
-			<span>{issue.repository} <strong>#{issue.number}</strong></span>
+			<span><strong class="repository-name">{issue.repository}</strong> <span class="issue-number">#{issue.number}</span></span>
 		</div>
 		<time datetime={issue.updated_at}>{formatIssueActivity(issue.updated_at)}</time>
 	</header>
@@ -141,8 +141,14 @@
 		white-space: nowrap;
 	}
 
-	.identity strong {
+	.identity .repository-name {
 		color: var(--pico-color);
+		font-weight: 700;
+	}
+
+	.identity .issue-number {
+		color: var(--pico-muted-color);
+		font-weight: 400;
 	}
 
 	.state-dot,

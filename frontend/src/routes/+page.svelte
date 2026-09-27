@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import AppFooter from '$lib/components/AppFooter.svelte';
-	import AppHeader from '$lib/components/AppHeader.svelte';
 	import IssuesPanel from '$lib/components/IssuesPanel.svelte';
 	import RepositoryCard from '$lib/components/RepositoryCard.svelte';
 	import RepositoryPicker from '$lib/components/RepositoryPicker.svelte';
@@ -43,89 +41,82 @@
 </script>
 
 <svelte:head>
-	<title>Workspace · Hub Rearranger</title>
+	<title>Dashboard · Hub Rearranger</title>
 	<meta
 		name="description"
-		content="Follow selected GitHub repositories and their most recently active issues."
+		content="See selected GitHub repositories and recent work from the Hub Rearranger dashboard."
 	/>
 </svelte:head>
 
-<div class="site-shell">
-	<AppHeader />
+<main class="container">
+	<section class="page-heading" aria-labelledby="page-title">
+		<p class="eyebrow">Workdesk</p>
+		<h1 id="page-title">Dashboard</h1>
+		<p>Keep important repositories and their active work close at hand.</p>
+	</section>
 
-	<main class="container">
-		<section class="page-heading" aria-labelledby="page-title">
-			<p class="eyebrow">Workspace</p>
-			<h1 id="page-title">Your work, in focus</h1>
-			<p>Keep important repositories and their active issues close at hand.</p>
+	{#if data.serviceError}
+		<section class="state-card error-state" aria-labelledby="service-error-title">
+			<span class="state-icon" aria-hidden="true">!</span>
+			<div>
+				<h2 id="service-error-title">Repositories are unavailable</h2>
+				<p>{data.serviceError}</p>
+				<a href={resolve('/')}>Try again</a>
+			</div>
+		</section>
+	{:else}
+		<IssuesPanel
+			issuePage={data.issuePage}
+			issueError={data.issueError}
+			selectedRepositoryCount={visibleRepositories.length}
+		/>
+
+		<section aria-labelledby="workspace-title">
+			<div class="repository-summary">
+				<div>
+					<h2 id="workspace-title">Your workspace</h2>
+					<p>
+						<strong>{visibleRepositories.length}</strong>
+						{visibleRepositories.length === 1 ? 'repository' : 'repositories'} selected
+					</p>
+				</div>
+				<small>Repository details stay in sync with GitHub.</small>
+			</div>
+
+			{#if visibleRepositories.length === 0}
+				<div class="empty-state">
+					<div class="empty-illustration" aria-hidden="true">
+						<svg viewBox="0 0 96 96">
+							<path
+								d="M20 29.5A9.5 9.5 0 0 1 29.5 20h37A9.5 9.5 0 0 1 76 29.5V76H29.5a9.5 9.5 0 0 1-9.5-9.5v-37Z"
+							/>
+							<path d="M20 65.5a9.5 9.5 0 0 1 9.5-9.5H76M32 33h27M32 44h18" />
+						</svg>
+					</div>
+					<div>
+						<h3>Build your workspace</h3>
+						<p>Add a repository from your GitHub account below.</p>
+					</div>
+				</div>
+			{:else}
+				<div class="repository-grid">
+					{#each visibleRepositories as repository (repository.id)}
+						<RepositoryCard
+							{repository}
+							pending={optimisticRepositories.some(({ id }) => id === repository.id)}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</section>
 
-		{#if data.serviceError}
-			<section class="state-card error-state" aria-labelledby="service-error-title">
-				<span class="state-icon" aria-hidden="true">!</span>
-				<div>
-					<h2 id="service-error-title">Repositories are unavailable</h2>
-					<p>{data.serviceError}</p>
-					<a href={resolve('/')}>Try again</a>
-				</div>
-			</section>
-		{:else}
-			<IssuesPanel
-				issuePage={data.issuePage}
-				issueError={data.issueError}
-				initiallyExpanded={data.issueViewExpanded}
-				selectedRepositoryCount={visibleRepositories.length}
-			/>
-
-			<section aria-labelledby="workspace-title">
-				<div class="repository-summary">
-					<div>
-						<h2 id="workspace-title">Your workspace</h2>
-						<p>
-							<strong>{visibleRepositories.length}</strong>
-							{visibleRepositories.length === 1 ? 'repository' : 'repositories'} selected
-						</p>
-					</div>
-					<small>Repository details stay in sync with GitHub.</small>
-				</div>
-
-				{#if visibleRepositories.length === 0}
-					<div class="empty-state">
-						<div class="empty-illustration" aria-hidden="true">
-							<svg viewBox="0 0 96 96">
-								<path
-									d="M20 29.5A9.5 9.5 0 0 1 29.5 20h37A9.5 9.5 0 0 1 76 29.5V76H29.5a9.5 9.5 0 0 1-9.5-9.5v-37Z"
-								/>
-								<path d="M20 65.5a9.5 9.5 0 0 1 9.5-9.5H76M32 33h27M32 44h18" />
-							</svg>
-						</div>
-						<div>
-							<h3>Build your workspace</h3>
-							<p>Add a repository from your GitHub account below.</p>
-						</div>
-					</div>
-				{:else}
-					<div class="repository-grid">
-						{#each visibleRepositories as repository (repository.id)}
-							<RepositoryCard
-								{repository}
-								pending={optimisticRepositories.some(({ id }) => id === repository.id)}
-							/>
-						{/each}
-					</div>
-				{/if}
-			</section>
-
-			<RepositoryPicker
-				repositories={unselectedRepositories}
-				onOptimisticAdd={addOptimistically}
-				onOptimisticSettled={settleOptimisticRepository}
-			/>
-		{/if}
-	</main>
-
-	<AppFooter />
-</div>
+		<RepositoryPicker
+			repositories={unselectedRepositories}
+			onOptimisticAdd={addOptimistically}
+			onOptimisticSettled={settleOptimisticRepository}
+		/>
+	{/if}
+</main>
 
 {#if form?.message}
 	<div
@@ -139,19 +130,6 @@
 {/if}
 
 <style>
-	.site-shell {
-		display: grid;
-		min-height: 100vh;
-		grid-template-rows: auto 1fr auto;
-		background:
-			radial-gradient(
-				circle at 82% 0%,
-				color-mix(in srgb, var(--pico-primary) 7%, transparent),
-				transparent 24rem
-			),
-			var(--pico-background-color);
-	}
-
 	main {
 		width: 100%;
 		padding-block: clamp(2.25rem, 5vw, 4.5rem) 5rem;

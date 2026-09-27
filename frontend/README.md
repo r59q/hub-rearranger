@@ -28,6 +28,9 @@ server-only `REPOSITORIES_API_URL` and `ISSUES_API_URL` settings, which default 
 service addresses are needed. GitHub credentials belong to the Go services and must never be
 placed in the frontend environment.
 
+The workdesk uses route-backed tabs. `/` is the dashboard for repository selection and recent
+activity, while `/issues` is the focused, paginated issues view.
+
 ## Commands
 
 ```sh
