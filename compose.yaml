@@ -5,8 +5,8 @@ services:
     build:
       context: ./services/repositories
     environment:
-      # Create a fine-grained GitHub token with read-only Metadata access at github.com/settings/personal-access-tokens/new.
-      # Store it as GITHUB_TOKEN in the root .env; it authenticates repository listing, so never commit or share it.
+      # Create a fine-grained GitHub token with read-only Metadata and Issues access.
+      # Store it as GITHUB_TOKEN in the root .env; never commit or share it.
       GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
       REPOSITORIES_ADDR: :8080
       REPOSITORIES_DB_PATH: /app/data/repositories.db
@@ -22,15 +22,35 @@ services:
       retries: 10
       start_period: 5s
 
+  issues:
+    build:
+      context: ./services/issues
+    environment:
+      # Read-only Metadata and Issues permissions are sufficient for issue cards and relationships.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
+      ISSUES_ADDR: :8081
+    init: true
+    ports:
+      - '127.0.0.1:${ISSUES_PORT:-8081}:8081'
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8081/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
   frontend:
     build:
       context: ./frontend
     depends_on:
       repositories:
         condition: service_healthy
+      issues:
+        condition: service_healthy
     environment:
       ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
       REPOSITORIES_API_URL: http://repositories:8080
+      ISSUES_API_URL: http://issues:8081
     init: true
     ports:
       - '127.0.0.1:${FRONTEND_PORT:-3000}:3000'

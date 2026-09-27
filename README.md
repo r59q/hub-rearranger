@@ -8,6 +8,8 @@ agents. GitHub remains the source of truth; Hub Rearranger stores only applicati
 - [`frontend`](frontend/README.md) — SvelteKit user interface.
 - [`services/repositories`](services/repositories/README.md) — repository discovery and selection
   service.
+- [`services/issues`](services/issues/README.md) — recently active GitHub issues and relationship
+  discovery service.
 
 ## Local development
 
@@ -21,9 +23,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open `http://localhost:3000`. The repositories API is also available for local debugging at
-`http://localhost:8080`; both ports bind to loopback only. Repository selections persist in the
-`repositories-data` Docker volume. Use `docker compose down` to stop the application, or
+Open `http://localhost:3000`. The repositories and issues APIs are also available for local
+debugging at `http://localhost:8080` and `http://localhost:8081`; all ports bind to loopback only.
+Repository selections persist in the `repositories-data` Docker volume. Use `docker compose down` to stop the application, or
 `docker compose down --volumes` to also remove the local selection database.
 
 To run the components directly instead, start the repository service with a GitHub token that can
@@ -34,7 +36,14 @@ cd services/repositories
 GITHUB_TOKEN=github_pat_... go run ./cmd/server
 ```
 
-In another terminal, run the frontend:
+Start the issues service in another terminal with the same token:
+
+```sh
+cd services/issues
+GITHUB_TOKEN=github_pat_... go run ./cmd/server
+```
+
+Then run the frontend:
 
 ```sh
 cd frontend
@@ -42,8 +51,9 @@ npm ci
 npm run dev
 ```
 
-The frontend defaults to `http://127.0.0.1:8080` for the repository service. Set the server-only
-`REPOSITORIES_API_URL` environment variable to use another address.
+The frontend defaults to `http://127.0.0.1:8080` for repositories and `http://127.0.0.1:8081` for
+issues. Set the server-only `REPOSITORIES_API_URL` and `ISSUES_API_URL` variables to use other
+addresses.
 
 ## Repository-wide validation
 

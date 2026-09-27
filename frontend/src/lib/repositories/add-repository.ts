@@ -18,8 +18,12 @@ export async function addRepositoryToSelection(
 ): Promise<void> {
 	const repositories = await gateway.listAvailable();
 	const repository = repositories.find(({ id }) => id === repositoryId);
-	if (!repository) throw new RepositoryNotAvailableError();
-	if (repository.selected) return;
+	if (!repository) {
+		throw new RepositoryNotAvailableError();
+	}
+	if (repository.selected) {
+		return;
+	}
 
 	const selectedIds = repositories.filter(({ selected }) => selected).map(({ id }) => id);
 	await gateway.replaceSelection([...selectedIds, repositoryId]);

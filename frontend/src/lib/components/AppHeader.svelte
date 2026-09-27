@@ -14,7 +14,7 @@
 						d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5v-13ZM8 8h8m-8 4h8m-8 4h5"
 					/>
 				</svg>
-				Repositories
+				Workspace
 			</a>
 		</nav>
 		<div class="account-mark" aria-label="GitHub account configured">

@@ -20,8 +20,11 @@ export function createOptimisticSubmit<Value>({
 		return async ({ result, update }) => {
 			try {
 				await update();
-				if (result.type === 'success') onSuccess?.(value, result);
-				else onError?.(value, result);
+				if (result.type === 'success') {
+					onSuccess?.(value, result);
+				} else {
+					onError?.(value, result);
+				}
 			} finally {
 				onSettled(value, result);
 			}

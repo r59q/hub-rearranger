@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import IssuesPanel from '$lib/components/IssuesPanel.svelte';
 	import RepositoryCard from '$lib/components/RepositoryCard.svelte';
 	import RepositoryPicker from '$lib/components/RepositoryPicker.svelte';
 	import { mergeOptimisticRepositories } from '$lib/repositories/optimistic-repositories';
@@ -21,18 +22,32 @@
 	);
 
 	function addOptimistically(repository: Repository) {
-		if (optimisticRepositories.some(({ id }) => id === repository.id)) return;
+		if (optimisticRepositories.some(({ id }) => id === repository.id)) {
+			return;
+		}
 		optimisticRepositories = [...optimisticRepositories, repository];
 	}
 
 	function settleOptimisticRepository(repositoryId: number) {
 		optimisticRepositories = optimisticRepositories.filter(({ id }) => id !== repositoryId);
 	}
+
+	$effect(() => {
+		if (!form?.success) {
+			return;
+		}
+
+		const dismissal = window.setTimeout(() => (form = null), 5000);
+		return () => window.clearTimeout(dismissal);
+	});
 </script>
 
 <svelte:head>
-	<title>Repositories · Hub Rearranger</title>
-	<meta name="description" content="Choose the GitHub repositories in your focused workspace." />
+	<title>Workspace · Hub Rearranger</title>
+	<meta
+		name="description"
+		content="Follow selected GitHub repositories and their most recently active issues."
+	/>
 </svelte:head>
 
 <div class="site-shell">
@@ -41,16 +56,9 @@
 	<main class="container">
 		<section class="page-heading" aria-labelledby="page-title">
 			<p class="eyebrow">Workspace</p>
-			<h1 id="page-title">Repositories</h1>
-			<p>Keep the repositories that matter close at hand.</p>
+			<h1 id="page-title">Your work, in focus</h1>
+			<p>Keep important repositories and their active issues close at hand.</p>
 		</section>
-
-		{#if form?.message}
-			<div class:success={form.success} class="notice" role={form.success ? 'status' : 'alert'}>
-				<span>{form.message}</span>
-				<button type="button" aria-label="Dismiss message" onclick={() => (form = null)}>×</button>
-			</div>
-		{/if}
 
 		{#if data.serviceError}
 			<section class="state-card error-state" aria-labelledby="service-error-title">
@@ -62,6 +70,13 @@
 				</div>
 			</section>
 		{:else}
+			<IssuesPanel
+				issuePage={data.issuePage}
+				issueError={data.issueError}
+				initiallyExpanded={data.issueViewExpanded}
+				selectedRepositoryCount={visibleRepositories.length}
+			/>
+
 			<section aria-labelledby="workspace-title">
 				<div class="repository-summary">
 					<div>
@@ -112,6 +127,17 @@
 	<AppFooter />
 </div>
 
+{#if form?.message}
+	<div
+		class:success={form.success}
+		class="snackbar"
+		role={form.success ? 'status' : 'alert'}
+		aria-atomic="true"
+	>
+		{form.message}
+	</div>
+{/if}
+
 <style>
 	.site-shell {
 		display: grid;
@@ -156,31 +182,43 @@
 		color: var(--pico-muted-color);
 	}
 
-	.notice {
+	.snackbar {
+		position: fixed;
+		z-index: 10;
+		right: max(1rem, env(safe-area-inset-right));
+		bottom: max(1rem, env(safe-area-inset-bottom));
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 1.5rem;
-		padding: 0.8rem 1rem;
+		max-width: min(26rem, calc(100vw - 2rem));
+		padding: 0.85rem 1rem;
 		border: 1px solid color-mix(in srgb, var(--pico-del-color) 45%, transparent);
 		border-radius: var(--pico-border-radius);
-		background: color-mix(in srgb, var(--pico-del-color) 9%, transparent);
+		background: var(--pico-card-background-color);
+		box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--pico-color) 18%, transparent);
+		animation: snackbar-enter 180ms ease-out;
 	}
 
-	.notice.success {
+	.snackbar.success {
 		border-color: color-mix(in srgb, var(--pico-primary) 40%, transparent);
-		background: color-mix(in srgb, var(--pico-primary) 8%, transparent);
+		background: color-mix(in srgb, var(--pico-primary) 10%, var(--pico-card-background-color));
 	}
 
-	.notice button {
-		width: auto;
-		margin: 0;
-		padding: 0.15rem 0.45rem;
-		border: 0;
-		background: transparent;
-		color: var(--pico-muted-color);
-		font-size: 1.4rem;
+	@keyframes snackbar-enter {
+		from {
+			opacity: 0;
+			transform: translateY(0.5rem);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.snackbar {
+			animation: none;
+		}
 	}
 
 	.repository-summary {

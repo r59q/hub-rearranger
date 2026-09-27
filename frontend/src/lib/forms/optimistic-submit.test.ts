@@ -8,7 +8,9 @@ async function runSubmit(
 	update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void> = async () => {}
 ) {
 	const complete = await submit({} as Parameters<SubmitFunction>[0]);
-	if (typeof complete !== 'function') throw new Error('Expected a submit completion callback.');
+	if (typeof complete !== 'function') {
+		throw new Error('Expected a submit completion callback.');
+	}
 	await complete({
 		result,
 		update,

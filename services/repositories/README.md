@@ -21,7 +21,9 @@ be available for selection.
 
 ```sh
 cp .env.example .env
-# Export the values from .env with your preferred environment loader.
+set -a
+source .env
+set +a
 go run ./cmd/server
 ```
 

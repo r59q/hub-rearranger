@@ -47,7 +47,9 @@ export class RepositoriesApiClient {
 			let message = 'The repository service could not complete the request.';
 			try {
 				const body = (await response.json()) as { message?: unknown };
-				if (typeof body.message === 'string') message = body.message;
+				if (typeof body.message === 'string') {
+					message = body.message;
+				}
 			} catch {
 				// Keep a stable user-facing message for malformed upstream responses.
 			}

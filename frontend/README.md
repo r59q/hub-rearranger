@@ -22,10 +22,11 @@ npm run dev
 
 The development server runs on `http://localhost:5173` by default.
 
-The repository workspace is rendered with data from the Go repositories service. It uses the
-server-only `REPOSITORIES_API_URL` setting, which defaults to `http://127.0.0.1:8080`. Copy
-`.env.example` to `.env` when a different service address is needed. GitHub credentials belong to
-the Go service and must never be placed in the frontend environment.
+The workspace is rendered with data from the Go repositories and issues services. It uses the
+server-only `REPOSITORIES_API_URL` and `ISSUES_API_URL` settings, which default to
+`http://127.0.0.1:8080` and `http://127.0.0.1:8081`. Copy `.env.example` to `.env` when different
+service addresses are needed. GitHub credentials belong to the Go services and must never be
+placed in the frontend environment.
 
 ## Commands
 
@@ -61,8 +62,9 @@ for example `https://hub.example.com`. Do not put credentials in frontend enviro
 ## Backend integration
 
 `src/lib/server/repositories-api.ts` is the typed infrastructure adapter for the repositories
-service. Route load functions and actions use this adapter on the server; browser components
-receive application-level repository data and never call the Go service directly.
+service. `src/lib/server/issues-api.ts` provides the equivalent issues boundary. Route load
+functions and actions use these adapters on the server; browser components receive
+application-level data and never call the Go services directly.
 
 Mutations use SvelteKit form actions and `use:enhance` so they retain progressive enhancement and
 server-only service access. Shared optimistic-update lifecycle behavior lives in

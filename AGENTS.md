@@ -68,6 +68,8 @@ versioned public contract. Frontend calls to those services belong in typed
   Update the Compose configuration whenever services, dependencies,
   configuration, ports, volumes, or local-development requirements change.
 - Prefer clear, conventional names and small, composable modules.
+- Keep methods and functions small and focused. Extract helper methods or
+  functions when doing so makes the code easier to read or reuse.
 - Keep GitHub API access behind a narrow, typed integration layer. UI components
   should consume application-level data rather than raw API responses.
 - Make asynchronous states explicit: loading, empty, error, stale, and
@@ -219,6 +221,8 @@ versioned public contract. Frontend calls to those services belong in typed
 
 ## SvelteKit frontend
 
+- Always use curly braces for `if` statements. Put the `if` body on its own
+  line; do not place code on the same line as the `if` statement.
 - Prefer Svelte components, stores, and SvelteKit load/actions according to
   their intended responsibilities; do not add client-side state libraries
   without a clear need.
