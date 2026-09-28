@@ -304,14 +304,13 @@ Only a successful live request establishes runtime verification. Raw CLI output
 is suppressed; local tests use fake processes on GitHub-hosted runners.
 
 The [runner guide](ops/private-runner/README.md) defines installation, rotation,
-revocation, recovery, and the evidence required to close AW-001. Live validation
-is pending: on 2026-09-28 GitHub reported this repository as public. The
-operator approved this public target if the triggering user is verified as a
-maintainer. SSH access
-to `addons` confirmed an active repository-scoped runner, Codex 0.158.0, and
-cached ChatGPT login. A trusted SSH probe also completed a live subscription
-request. This establishes host readiness, but a GitHub Actions run is
-still required to close AW-001.
+revocation, and recovery. The operator approved the public repository target
+provided the triggering user is verified as a maintainer. SSH access to `addons`
+confirmed an active repository-scoped runner, Codex 0.158.0, and cached ChatGPT
+login. A trusted SSH probe completed a live subscription request. The
+[GitHub Actions diagnostic](https://github.com/r59q/hub-rearranger/actions/runs/36456987109)
+subsequently passed authorization and the live probe on `addons` at commit
+`e7711ffcff53d6ab88e0592c60d2291cf23b9e82`. AW-001 is complete.
 
 The operator explicitly relaxed isolation for this spike on 2026-09-28. The
 existing `r59q` service account may be shared with the other runner temporarily.

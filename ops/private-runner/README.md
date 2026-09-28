@@ -4,8 +4,8 @@ This external runtime spike belongs to repository operations. It verifies a
 subscription-backed Codex CLI on the `addons` GitHub Actions runner.
 It is not a Hub service and has no API, checkout, GitHub writes, or Compose entry.
 
-**SSH verification passed; GitHub Actions verification is pending.** This
-repository is public. On 2026-09-28, the operator allowed this public test
+**GitHub Actions verification passed.** This repository is public. On
+2026-09-28, the operator allowed this public test
 provided the workflow verifies that the triggering GitHub user is a current
 repository maintainer. The operator also relaxed host/account isolation for
 this spike; the existing shared account is permitted temporarily.
@@ -32,9 +32,12 @@ SSH inspection on 2026-09-28 confirmed:
   cached ChatGPT login, and live subscription request. The seven offline tests,
   Ruff formatting/lint, and actionlint also pass after the installation change.
 
-Remaining setup needs the workflow on this repository's default branch and a
-successful Actions run. SSH success alone does not verify GitHub scheduling or
-the live permission check. The unrelated runner remains unchanged.
+The workflow was installed on the default branch at commit
+`e7711ffcff53d6ab88e0592c60d2291cf23b9e82`. The
+[diagnostic run](https://github.com/r59q/hub-rearranger/actions/runs/36456987109)
+passed its GitHub-hosted permission job and its `addons` probe job. The
+[offline checks](https://github.com/r59q/hub-rearranger/actions/runs/36456987068)
+also passed. The unrelated runner was unchanged.
 
 ## Runner security contract
 
@@ -146,9 +149,11 @@ Record these credential-free facts in the task's completion note after review:
 - runner name, labels, and reported Codex version;
 - successful live result and review of this setup/recovery procedure.
 
-Until these facts are available, leave AW-001 unchecked. The separate **Agent
-runtime checks** workflow runs offline tests on GitHub-hosted runners; it
-requires no Codex installation or login.
+The 2026-09-28 run above provides the evidence for AW-001. This guide was
+reviewed against the installed runner and completed workflow for setup,
+rotation, revocation, and failure recovery. The separate **Agent runtime
+checks** workflow runs offline tests on GitHub-hosted runners; it requires no
+Codex installation or login.
 
 ## Rotation, revocation, and recovery
 

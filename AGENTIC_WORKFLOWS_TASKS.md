@@ -36,7 +36,7 @@ The same workflow remains operable after Hub is removed.
 
 ## Phase 0 — Prove the runtime assumptions
 
-- [ ] **AW-001 — Self-hosted runner and subscription-authentication spike**
+- [x] **AW-001 — Self-hosted runner and subscription-authentication spike**
 
   **Domain:** external runtime / GitHub Actions  
   **Depends on:** none
@@ -56,20 +56,20 @@ The same workflow remains operable after Hub is removed.
   - The documented setup, rotation, revocation, and failure-recovery procedure
     is reviewed.
 
-  **Progress (2026-09-28):** Prepared the maintainer-gated diagnostic,
-  checksum-pinned host probe, offline tests, and
-  [operating guide](ops/private-runner/README.md) for runner `addons`. Remains
-  unchecked pending a successful live Actions run and operator review of the
-  procedure. The operator approved using this public repository after a live
-  GitHub role check for both original and rerun actors.
-  SSH inspection confirmed the Hub runner is active, Codex 0.158.0 is on its
-  service PATH, and cached ChatGPT login is present. A trusted SSH invocation
-  successfully completed the fixed live subscription request. The operator
-  explicitly relaxed isolation for this spike: the shared `r59q` account is a
-  temporary exception, not a blocker. The trusted-actor and no-fork
-  restrictions remain. The probe is installed under the runner account and
-  passed again from its installed path; all seven offline tests and workflow
-  lint pass. See the operating guide for evidence and installation.
+  **Completed (2026-09-28):** The approved public repository
+  `r59q/hub-rearranger` ran the
+  [diagnostic](https://github.com/r59q/hub-rearranger/actions/runs/36456987109)
+  at commit `e7711ffcff53d6ab88e0592c60d2291cf23b9e82`. Its GitHub-hosted
+  authorization job verified the original/rerun actor's current maintainer role,
+  then the repository-scoped `addons` runner passed the pinned probe, Codex
+  0.158.0, cached ChatGPT login, and fixed live subscription request. The
+  [offline checks](https://github.com/r59q/hub-rearranger/actions/runs/36456987068)
+  also passed. The [operating guide](ops/private-runner/README.md) was reviewed
+  against this run for setup, rotation, revocation, and failure recovery.
+  The operator explicitly relaxed the dedicated host/account and private
+  repository requirements for this spike. The shared `r59q` service account
+  remains a temporary exception; authorization, default-branch, and no-fork
+  guards are required for any later credentialed workflow.
 
 - [ ] **AW-002 — Lock the GitHub-native assignment convention**
 
