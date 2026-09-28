@@ -2,15 +2,15 @@
 
 > Implementation backlog for the first GitHub-native agent workflow. The
 > initial target is `codex-thorough` running through an authenticated,
-> subscription-backed Codex CLI on a dedicated private GitHub Actions
-> self-hosted runner. Hub Rearranger remains optional throughout.
+> subscription-backed Codex CLI on an approved GitHub Actions self-hosted
+> runner. Hub Rearranger remains optional throughout.
 
 ## Milestone
 
-**GitHub-native `codex-thorough` on a private runner**
+**GitHub-native `codex-thorough` on an approved runner**
 
-Definition of done: a trusted user can assign one private-repository issue from
-either Hub or GitHub; GitHub Actions runs Codex on the private runner, produces
+Definition of done: a trusted user can assign one repository issue from
+either Hub or GitHub; GitHub Actions runs Codex on the approved runner, produces
 a dedicated branch and draft PR, and processes one follow-up PR review comment.
 The same workflow remains operable after Hub is removed.
 
@@ -36,25 +36,40 @@ The same workflow remains operable after Hub is removed.
 
 ## Phase 0 — Prove the runtime assumptions
 
-- [ ] **AW-001 — Private runner and subscription-authentication spike**
+- [ ] **AW-001 — Self-hosted runner and subscription-authentication spike**
 
   **Domain:** external runtime / GitHub Actions  
   **Depends on:** none
 
-  Set up a dedicated private self-hosted GitHub Actions runner outside the Hub
+  Set up a self-hosted GitHub Actions runner outside the Hub
   Docker Compose stack. Install Codex and establish the selected
   subscription-backed authentication path on that runner. Run a harmless,
-  trusted-only diagnostic job against a private test repository.
+  trusted-only diagnostic job against an approved repository.
 
   **Acceptance criteria:**
 
   - The runner is restricted to an approved repository or runner group.
   - A GitHub Actions job can confirm runner availability, Codex installation,
     and authentication readiness without printing credentials.
-  - The job runs only for trusted repository actors and never for forked/public
-    contributions.
+  - The job runs only for current repository maintainers or admins, including
+    on a public repository; forked and pull-request contributions cannot run it.
   - The documented setup, rotation, revocation, and failure-recovery procedure
     is reviewed.
+
+  **Progress (2026-09-28):** Prepared the maintainer-gated diagnostic,
+  checksum-pinned host probe, offline tests, and
+  [operating guide](ops/private-runner/README.md) for runner `addons`. Remains
+  unchecked pending a successful live Actions run and operator review of the
+  procedure. The operator approved using this public repository after a live
+  GitHub role check for both original and rerun actors.
+  SSH inspection confirmed the Hub runner is active, Codex 0.158.0 is on its
+  service PATH, and cached ChatGPT login is present. A trusted SSH invocation
+  successfully completed the fixed live subscription request. The operator
+  explicitly relaxed isolation for this spike: the shared `r59q` account is a
+  temporary exception, not a blocker. The trusted-actor and no-fork
+  restrictions remain. The probe is installed under the runner account and
+  passed again from its installed path; all seven offline tests and workflow
+  lint pass. See the operating guide for evidence and installation.
 
 - [ ] **AW-002 — Lock the GitHub-native assignment convention**
 
@@ -220,12 +235,12 @@ The same workflow remains operable after Hub is removed.
     clear GitHub check/comment.
   - The workflow uses the profile revision recorded in the assignment.
 
-- [ ] **AW-012 — Implement the private-runner Codex patch job**
+- [ ] **AW-012 — Implement the self-hosted Codex patch job**
 
   **Domain:** repository workflow / runtime adapter  
   **Depends on:** AW-011
 
-  Run Codex in an isolated checkout on the private runner and emit a patch plus
+  Run Codex in an isolated checkout on the approved runner and emit a patch plus
   structured summary/evidence.
 
   **Acceptance criteria:**
@@ -301,12 +316,12 @@ The same workflow remains operable after Hub is removed.
 
 ## Phase 5 — Verification and handoff
 
-- [ ] **AW-017 — Private-repository end-to-end integration test plan**
+- [ ] **AW-017 — Repository end-to-end integration test plan**
 
   **Domain:** testing / documentation  
   **Depends on:** AW-016
 
-  Define and execute a controlled private-repository test: bootstrap,
+  Define and execute a controlled repository test: bootstrap,
   diagnostics, issue assignment from both surfaces, draft PR, and review
   follow-up.
 

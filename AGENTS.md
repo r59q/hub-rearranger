@@ -24,6 +24,12 @@ Go services live under `services/<domain>` as independent modules. Use
 versioned public contract. Frontend calls to those services belong in typed
 `src/lib/server` adapters so service addresses and credentials stay server-side.
 
+External agent-runner diagnostics live under `ops/private-runner`, outside
+Docker Compose. Run `make runtime-check` for their Python and workflow checks;
+this is included in `make check`. Follow the component README for pinned tool
+setup. Keep credentialed diagnostics private-repository-only, and run offline
+tests on GitHub-hosted runners without Codex authentication.
+
 ## Product principles
 
 - Build focused views around agent workflows: understanding repository state,

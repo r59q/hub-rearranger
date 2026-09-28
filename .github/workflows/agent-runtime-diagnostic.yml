@@ -1,0 +1,83 @@
+name: Agent runtime diagnostic
+
+# Only a default-branch push or manual dispatch; no PR or arbitrary prompt inputs.
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/agent-runtime-diagnostic.yml'
+      - 'ops/private-runner/authorize.mjs'
+      - 'ops/private-runner/diagnose.py'
+
+permissions: {}
+
+concurrency:
+  group: agent-runtime-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    if: >-
+      github.event.repository.fork == false &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Verify original and rerun actors are current maintainers
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          ORIGINAL_ACTOR: ${{ github.actor }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        with:
+          script: |
+            const { authorizeMaintainers } = await import(
+              `file://${process.env.GITHUB_WORKSPACE}/ops/private-runner/authorize.mjs`
+            );
+            await authorizeMaintainers(
+              github,
+              context.repo.owner,
+              context.repo.repo,
+              [process.env.ORIGINAL_ACTOR, process.env.TRIGGERING_ACTOR]
+            );
+            core.info('Current repository maintainer permission verified.');
+  diagnostic:
+    needs: authorize
+    if: >-
+      needs.authorize.result == 'success' &&
+      github.event.repository.fork == false &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    # The Hub repository has one registered self-hosted runner, named addons.
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 5
+    steps:
+      - name: Verify operator-installed diagnostic
+        shell: bash
+        run: |
+          if [[ "$RUNNER_NAME" != addons ]]; then
+            echo 'Unexpected runner. Review the private-runner labels.'
+            exit 1
+          fi
+          # Pin the reviewed probe; do not fetch or execute repository contents.
+          cd "$HOME/.local/lib/hub-agent-runtime"
+          echo '9a8de963014d3b2926f6c7cd2b7f557cbc7c7bc210393c5e9969dcc7673ed52c  diagnose.py' | sha256sum --check --status
+      - name: Check Codex and subscription readiness
+        id: probe
+        shell: bash
+        run: python3 -I "$HOME/.local/lib/hub-agent-runtime/diagnose.py"
+      - name: Publish safe readiness result
+        if: always()
+        shell: bash
+        env:
+          PROBE_OUTCOME: ${{ steps.probe.outcome }}
+        run: |
+          if [[ "$PROBE_OUTCOME" == success ]]; then
+            echo 'Runtime verified: runner available, Codex installed, live ChatGPT request succeeded.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Runtime not verified. Inspect the safe step result and follow the private-runner recovery guide.' >> "$GITHUB_STEP_SUMMARY"
+          fi

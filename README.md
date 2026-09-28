@@ -57,6 +57,9 @@ addresses.
 
 ## Repository-wide validation
 
+Install the [private-runner diagnostic development tools](ops/private-runner/README.md#development-and-tests)
+once before running all checks. The runtime itself lives outside Docker Compose.
+
 ```sh
 make check
 ```

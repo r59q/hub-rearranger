@@ -282,7 +282,42 @@ or issue/PR content.
 - Which GitHub-native assignment surface should be the primary convention:
   App action, label, or comment command?
 - What is the smallest, secure profile schema and adapter interface?
-- What is the safest supported way to provision, rotate, and health-check the
-  subscription-backed Codex authentication on the private runner?
 - How are profile-triggered pipeline remediation and image access approved?
-- How should a GitHub-native diagnostic safely verify authentication readiness?
+
+## AW-001 runtime spike decisions
+
+The prepared diagnostic uses advanced persisted ChatGPT account authentication
+under the runner service account. Credentials remain on its protected
+disk and are never transported through Hub or GitHub. The selected runner is
+`addons`; the workflow schedules with its default `self-hosted` and `linux`
+labels, then checks `RUNNER_NAME=addons` before invoking Codex. Labels do not
+restrict repository access: registration or a restricted runner group does that.
+
+The diagnostic permits only the approved repository's default branch and
+current `maintain` or `admin` actors. A separate GitHub-hosted job checks the
+GitHub role of both the original and rerun actor before any job reaches the
+credentialed runner. It uses only metadata/read access and fails closed when
+GitHub cannot verify the role. The Codex job requests no GitHub permissions and
+performs no checkout. An operator-installed, checksum-pinned probe checks the
+CLI, cached ChatGPT login, and one live fixed-response request.
+Only a successful live request establishes runtime verification. Raw CLI output
+is suppressed; local tests use fake processes on GitHub-hosted runners.
+
+The [runner guide](ops/private-runner/README.md) defines installation, rotation,
+revocation, recovery, and the evidence required to close AW-001. Live validation
+is pending: on 2026-09-28 GitHub reported this repository as public. The
+operator approved this public target if the triggering user is verified as a
+maintainer. SSH access
+to `addons` confirmed an active repository-scoped runner, Codex 0.158.0, and
+cached ChatGPT login. A trusted SSH probe also completed a live subscription
+request. This establishes host readiness, but a GitHub Actions run is
+still required to close AW-001.
+
+The operator explicitly relaxed isolation for this spike on 2026-09-28. The
+existing `r59q` service account may be shared with the other runner temporarily.
+The probe and native Codex symlink live in `~/.local/lib/hub-agent-runtime`,
+outside Actions checkouts, and need no sudo. This makes other jobs under that
+account part of the trust boundary; the checksum does not protect against a
+compromised shared account. Dedicated-host/account isolation remains the target
+before expanding execution beyond the diagnostic. The default-branch and
+trusted-actor guards remain in force.
