@@ -10,6 +10,8 @@ agents. GitHub remains the source of truth; Hub Rearranger stores only applicati
   service.
 - [`services/issues`](services/issues/README.md) — recently active GitHub issues and relationship
   discovery service.
+- [`services/agents`](services/agents/README.md) — agent convention read API and foundation for
+  repository profiles/readiness.
 
 The planned GitHub-native agent workflow, its [assignment comment
 convention](AGENTIC_WORKFLOWS_ANALYSIS.md#aw-002-assignment-convention-v1), and the
@@ -29,8 +31,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open `http://localhost:3000`. The repositories and issues APIs are also available for local
-debugging at `http://localhost:8080` and `http://localhost:8081`; all ports bind to loopback only.
+Open `http://localhost:3000`. The repositories, issues, and agents APIs are also available for local
+debugging at `http://localhost:8080`, `http://localhost:8081`, and `http://localhost:8082`; all ports bind to loopback only.
 Repository selections persist in the `repositories-data` Docker volume. Use `docker compose down` to stop the application, or
 `docker compose down --volumes` to also remove the local selection database.
 
@@ -49,6 +51,13 @@ cd services/issues
 GITHUB_TOKEN=github_pat_... go run ./cmd/server
 ```
 
+Start the Agents scaffold in another terminal; it needs no credentials:
+
+```sh
+cd services/agents
+go run ./cmd/server
+```
+
 Then run the frontend:
 
 ```sh
@@ -57,9 +66,10 @@ npm ci
 npm run dev
 ```
 
-The frontend defaults to `http://127.0.0.1:8080` for repositories and `http://127.0.0.1:8081` for
-issues. Set the server-only `REPOSITORIES_API_URL` and `ISSUES_API_URL` variables to use other
-addresses.
+The frontend defaults to `http://127.0.0.1:8080` for repositories, `http://127.0.0.1:8081` for
+issues, and `http://127.0.0.1:8082` for agents. Set the server-only `REPOSITORIES_API_URL`,
+`ISSUES_API_URL`, and `AGENTS_API_URL` variables to use other addresses. The Agents adapter is
+available for future profile/readiness views; existing views do not depend on it.
 
 ## Repository-wide validation
 
@@ -69,3 +79,7 @@ once before running all checks. The runtime and offline contract tooling live ou
 ```sh
 make check
 ```
+
+`make check` also verifies the generated Agents Go/frontend contract code without changing files.
+After editing `services/agents/api/openapi.yaml`, run `make generate-agents-contract`.
+The GitHub-hosted Application checks workflow runs the same full suite without runner authentication.

@@ -1,0 +1,5 @@
+.git
+.env
+.env.*
+issues-service
+coverage.out

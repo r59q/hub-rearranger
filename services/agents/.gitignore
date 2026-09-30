@@ -1,0 +1,5 @@
+/agents-service
+.env
+.env.*
+!.env.example
+/coverage.out

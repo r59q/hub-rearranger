@@ -16,7 +16,8 @@ services:
     volumes:
       - repositories-data:/app/data
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8080/health']
+      test:
+        ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8080/health']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -33,7 +34,25 @@ services:
     ports:
       - '127.0.0.1:${ISSUES_PORT:-8081}:8081'
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8081/health']
+      test:
+        ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8081/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  agents:
+    build:
+      context: ./services/agents
+    environment:
+      # AW-004 serves public convention metadata; no GitHub or Codex credentials.
+      AGENTS_ADDR: :8082
+    init: true
+    ports:
+      - '127.0.0.1:${AGENTS_PORT:-8082}:8082'
+    healthcheck:
+      test:
+        ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8082/health']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -51,11 +70,13 @@ services:
       ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
       REPOSITORIES_API_URL: http://repositories:8080
       ISSUES_API_URL: http://issues:8081
+      AGENTS_API_URL: http://agents:8082
     init: true
     ports:
       - '127.0.0.1:${FRONTEND_PORT:-3000}:3000'
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:3000/health']
+      test:
+        ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:3000/health']
       interval: 5s
       timeout: 3s
       retries: 10

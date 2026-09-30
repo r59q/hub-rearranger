@@ -199,6 +199,11 @@ must use the same schema; never add credentials or arbitrary command fields.
   internal models.
 - Give each service a clear external API. Do not expose internal implementation
   endpoints as cross-service dependencies.
+- The Agents API generates required transport code with pinned `oapi-codegen`
+  and `openapi-typescript`; this contract code is checked in and mapped at the
+  domain boundary. Run `make generate-agents-contract` after API changes.
+  `make agents-contract-check` verifies it without editing files and is included
+  in `make check`. Other domains may adopt this pattern when their APIs change.
 
 ## Testing
 

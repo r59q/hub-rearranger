@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Hub Rearranger Agents API
+  version: 1.0.0
+  description: >-
+    Read-only repository agent conventions. AW-004 exposes protocol metadata,
+    not repository profiles, runtime readiness, or assignment execution.
+servers:
+  - url: http://localhost:8082
+# No caller authentication in the local/private service network. No GitHub
+# credentials or private repository data are used by these scaffold endpoints.
+security: []
+paths:
+  /health:
+    head:
+      operationId: headHealth
+      summary: Check liveness without a response body
+      responses:
+        '200':
+          description: Service process is running.
+    get:
+      operationId: getHealth
+      summary: Check process liveness
+      description: Liveness does not verify GitHub access, configuration, or a runner.
+      responses:
+        '200':
+          description: Service process is running.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+  /v1/assignment-convention:
+    head:
+      operationId: headAssignmentConvention
+      summary: Check convention availability without a response body
+      responses:
+        '200':
+          description: Supported convention is available.
+        '500':
+          description: The convention request could not be completed; retry the service.
+    get:
+      operationId: getAssignmentConvention
+      summary: Read the supported GitHub assignment convention
+      description: >-
+        Static protocol metadata for AW-002/AW-003, independent of repository
+        state. This response does not authorize an actor or submit an assignment.
+      responses:
+        '200':
+          description: Supported convention and profile catalog version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentConvention'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  responses:
+    MethodNotAllowed:
+      description: This endpoint accepts only GET and HEAD.
+      headers:
+        Allow:
+          schema:
+            type: string
+            enum: ['GET, HEAD']
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: The convention request could not be completed; retry the service.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    AssignmentConvention:
+      type: object
+      additionalProperties: false
+      required: [version, profile_catalog_path, profile_schema_version, assignment]
+      properties:
+        version:
+          type: integer
+          enum: [1]
+        profile_catalog_path:
+          type: string
+          enum: [.github/agent-profiles.yml]
+        profile_schema_version:
+          type: integer
+          enum: [1]
+        assignment:
+          $ref: '#/components/schemas/AssignmentPolicy'
+    AssignmentPolicy:
+      type: object
+      additionalProperties: false
+      required: [event, source_kind, command_template, authority, required_roles, profile_revision]
+      properties:
+        event:
+          type: string
+          enum: [issue_comment.created]
+        source_kind:
+          type: string
+          enum: [issue]
+        command_template:
+          type: string
+          enum: ['/agent assign {profile_id}@{profile_revision} authority=branch-draft-pr']
+        authority:
+          type: string
+          enum: [branch-draft-pr]
+        required_roles:
+          type: array
+          minItems: 2
+          maxItems: 2
+          uniqueItems: true
+          items:
+            type: string
+            enum: [maintain, admin]
+        profile_revision:
+          $ref: '#/components/schemas/ProfileRevisionPolicy'
+    ProfileRevisionPolicy:
+      type: object
+      additionalProperties: false
+      required: [format, default_branch_ancestor]
+      properties:
+        format:
+          type: string
+          enum: [full-40-character-sha]
+        default_branch_ancestor:
+          type: boolean
+          enum: [true]
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [internal_error, method_not_allowed, not_found]
+        message:
+          type: string
+          minLength: 1

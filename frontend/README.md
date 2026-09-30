@@ -25,7 +25,9 @@ The development server runs on `http://localhost:5173` by default.
 The workspace is rendered with data from the Go repositories and issues services. It uses the
 server-only `REPOSITORIES_API_URL` and `ISSUES_API_URL` settings, which default to
 `http://127.0.0.1:8080` and `http://127.0.0.1:8081`. Copy `.env.example` to `.env` when different
-service addresses are needed. GitHub credentials belong to the Go services and must never be
+service addresses are needed. The server-only `AGENTS_API_URL` defaults to
+`http://127.0.0.1:8082` and configures the new Agents adapter; existing views do not call it yet.
+GitHub credentials belong to the Go services and must never be
 placed in the frontend environment.
 
 The workdesk uses route-backed tabs. `/` is the dashboard for repository selection and recent
@@ -68,6 +70,14 @@ for example `https://hub.example.com`. Do not put credentials in frontend enviro
 service. `src/lib/server/issues-api.ts` provides the equivalent issues boundary. Route load
 functions and actions use these adapters on the server; browser components receive
 application-level data and never call the Go services directly.
+
+`src/lib/server/agents-api.ts` reads the Agents assignment convention, using `openapi-fetch`
+and generated OpenAPI types/enum values in `agents-contract.gen.ts`. It validates successful
+response shapes and exposes safe service/transport errors. Create a client with `agentsClient(fetch)`
+inside server load functions when agent views are introduced. No service address or credentials
+belong in browser code. From the repository root, run `make generate-agents-contract` after
+editing the Agents OpenAPI specification; `make agents-contract-check` verifies generated code
+without modifying it.
 
 Mutations use SvelteKit form actions and `use:enhance` so they retain progressive enhancement and
 server-only service access. Shared optimistic-update lifecycle behavior lives in

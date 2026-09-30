@@ -1,0 +1,5 @@
+.git
+.env
+.env.*
+agents-service
+coverage.out

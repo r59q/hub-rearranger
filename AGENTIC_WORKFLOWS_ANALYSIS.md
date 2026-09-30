@@ -202,6 +202,28 @@ Malformed profiles produce sorted, safe diagnostics without echoing source
 values, profile IDs, arbitrary keys, or parser exceptions. Bounded YAML parsing
 rejects duplicate keys, tags, anchors, aliases, and merge keys.
 
+## AW-004 Agents service boundary
+
+[`services/agents`](services/agents/README.md) is an independent Go service
+with API, domain, and infrastructure layers. Its v1
+[OpenAPI contract](services/agents/api/openapi.yaml) initially exposes process
+liveness and read-only assignment-convention metadata. It does not read
+repository profiles until AW-005 or derive readiness until AW-006; catalog
+validation and liveness must never be presented as runtime verification.
+
+The API generates Go transport DTOs/routes with pinned `oapi-codegen` and
+frontend types/enum values with `openapi-typescript`. The server-only SvelteKit
+adapter wraps `openapi-fetch`, validates responses, and uses `AGENTS_API_URL`
+(loopback port 8082 by default). Domain models remain independent of generated
+transport types. Contract checks compare regeneration without editing files.
+
+Compose runs the Agents service without GitHub/provider credentials or storage.
+Its convention endpoint states the current actor-role and revision requirements
+but does not authorize or submit assignments. The frontend has no startup
+dependency on Agents, preserving existing views during an Agents outage.
+Repository-wide checks include its module, adapter tests, and contract drift
+checks; the same suite runs on GitHub-hosted runners without Codex login.
+
 ## Runtime adapters
 
 A runtime adapter is repository-owned GitHub Actions or provider-App wiring
@@ -311,7 +333,7 @@ Hub-only configuration.
 
 ## Domain map
 
-The existing backend domains are **repositories** and **issues**. They should
+The existing backend domains are **repositories**, **issues**, and **agents**. They should
 remain focused:
 
 | Domain | Status | Responsibility |
@@ -319,7 +341,7 @@ remain focused:
 | Repositories | Exists | Repository discovery, selection, identity, and basic metadata. It does not own agent profile semantics. |
 | Issues | Exists | Issue views, relationships, and issue-specific UI context. It asks for available profiles; it does not execute them. |
 | Pull requests | Needed | PRs, review threads, agent provenance on PRs, branches, and related checks. This deserves its own domain once PR workflows are introduced. |
-| Agents | Needed | Agent profiles, static readiness, bootstrap-PR planning, GitHub assignment requests, and deriving an assignment view from GitHub artifacts. It owns no queue, runner, transcript, or provider credential. |
+| Agents | Scaffolded (AW-004) | Convention read API; profile reads, readiness, bootstrap-PR planning, and GitHub assignment requests follow in later tasks. It owns no queue, runner, transcript, or provider credential. |
 | Pipelines | Later, if needed | Cross-PR/repository workflow runs, artifacts, and analysis. Initially, related checks can remain part of the pull-request view. |
 
 The **Agents** domain is intentionally not an orchestration domain. Its job is

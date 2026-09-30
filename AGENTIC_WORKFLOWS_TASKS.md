@@ -123,7 +123,7 @@ The same workflow remains operable after Hub is removed.
 
 ## Phase 1 — Add the Agents domain read path
 
-- [ ] **AW-004 — Scaffold the Agents service and public contract**
+- [x] **AW-004 — Scaffold the Agents service and public contract**
 
   **Domain:** agents  
   **Depends on:** AW-003
@@ -138,6 +138,16 @@ The same workflow remains operable after Hub is removed.
   - It does not implement a queue, runtime, provider credential store, or
     agent transcript store.
   - Repository-wide checks and Compose continue to run.
+
+  **Completed (2026-09-30):** Added the layered
+  [Agents service](services/agents/README.md), versioned OpenAPI contract,
+  generated Go handlers and frontend types, and typed server-only frontend
+  adapter. The service exposes health and the v1 assignment convention without
+  credentials, persistence, or an execution runtime. Added contract-drift checks,
+  repository-wide CI, and Compose wiring. Full `make check` passed; all four
+  services built and became healthy in an isolated Compose smoke test, and
+  stopping Agents left the other services healthy. Profile reads and readiness
+  remain AW-005 and AW-006.
 
 - [ ] **AW-005 — Read and validate repository-local profiles**
 
