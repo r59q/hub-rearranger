@@ -1,0 +1,3 @@
+# Reuse the pinned repository Python formatting and YAML tooling.
+-r ../private-runner/requirements-dev.txt
+jsonschema==4.26.0

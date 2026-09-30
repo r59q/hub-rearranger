@@ -11,6 +11,12 @@ agents. GitHub remains the source of truth; Hub Rearranger stores only applicati
 - [`services/issues`](services/issues/README.md) — recently active GitHub issues and relationship
   discovery service.
 
+The planned GitHub-native agent workflow, its [assignment comment
+convention](AGENTIC_WORKFLOWS_ANALYSIS.md#aw-002-assignment-convention-v1), and the
+[v1 profile/adapter contract](ops/agent-profiles/README.md) are documented separately.
+The repository declares `codex-thorough` in `.github/agent-profiles.yml`;
+assignment execution is not installed yet.
+
 ## Local development
 
 Docker Compose runs the complete application, including persistent SQLite storage. Copy the root
@@ -57,8 +63,8 @@ addresses.
 
 ## Repository-wide validation
 
-Install the [private-runner diagnostic development tools](ops/private-runner/README.md#development-and-tests)
-once before running all checks. The runtime itself lives outside Docker Compose.
+Install the combined [profile and runtime development tools](ops/agent-profiles/README.md#offline-validation-and-development)
+once before running all checks. The runtime and offline contract tooling live outside Docker Compose.
 
 ```sh
 make check

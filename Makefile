@@ -1,8 +1,16 @@
-.PHONY: check test lint format-check runtime-check
+.PHONY: check test lint format-check runtime-check profiles-check
 
 RUNTIME_PYTHON ?= ops/private-runner/.venv/bin/python
+PROFILE_PYTHON ?= $(RUNTIME_PYTHON)
 
-check: format-check lint test runtime-check
+check: format-check lint test runtime-check profiles-check
+
+profiles-check:
+	$(PROFILE_PYTHON) -m ruff format --check --config ops/private-runner/pyproject.toml ops/agent-profiles
+	$(PROFILE_PYTHON) -m ruff check --config ops/private-runner/pyproject.toml ops/agent-profiles
+	$(PROFILE_PYTHON) -m unittest discover -s ops/agent-profiles -v
+	$(PROFILE_PYTHON) ops/agent-profiles/validate.py
+	cd frontend && npm exec prettier -- --check ../ops/agent-profiles/schema.v1.json ../.github/agent-profiles.yml
 
 runtime-check:
 	$(RUNTIME_PYTHON) -m ruff format --check ops/private-runner

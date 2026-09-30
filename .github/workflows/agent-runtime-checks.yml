@@ -5,11 +5,19 @@ on:
     paths:
       - '.github/**'
       - 'ops/private-runner/**'
+      - 'ops/agent-profiles/**'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/.prettierrc'
       - 'Makefile'
   pull_request:
     paths:
       - '.github/**'
       - 'ops/private-runner/**'
+      - 'ops/agent-profiles/**'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/.prettierrc'
       - 'Makefile'
 
 permissions:
@@ -24,9 +32,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - name: Install pinned diagnostic development tools
+      - name: Install pinned runtime and profile development tools
         run: |
           python3 -m venv ops/private-runner/.venv
-          ops/private-runner/.venv/bin/python -m pip install -r ops/private-runner/requirements-dev.txt
-      - name: Validate diagnostic and workflow
-        run: make runtime-check
+          ops/private-runner/.venv/bin/python -m pip install -r ops/agent-profiles/requirements-dev.txt
+      - name: Install pinned frontend formatting tools
+        working-directory: frontend
+        run: npm ci
+      - name: Validate diagnostic, profiles, and workflows
+        run: make runtime-check profiles-check

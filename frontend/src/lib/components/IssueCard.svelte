@@ -13,7 +13,10 @@
 	<header>
 		<div class="identity">
 			<span class="state-dot" aria-hidden="true"></span>
-			<span><strong class="repository-name">{issue.repository}</strong> <span class="issue-number">#{issue.number}</span></span>
+			<span
+				><strong class="repository-name">{issue.repository}</strong>
+				<span class="issue-number">#{issue.number}</span></span
+			>
 		</div>
 		<time datetime={issue.updated_at}>{formatIssueActivity(issue.updated_at)}</time>
 	</header>

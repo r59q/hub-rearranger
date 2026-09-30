@@ -180,11 +180,13 @@ Install pinned development tools once (Go is also needed for actionlint):
 
 ```sh
 python3 -m venv ops/private-runner/.venv
-ops/private-runner/.venv/bin/python -m pip install -r ops/private-runner/requirements-dev.txt
+ops/private-runner/.venv/bin/python -m pip install -r ops/agent-profiles/requirements-dev.txt
 make runtime-check
 ```
 
-`make check` includes these checks. To format a probe change, run
+The combined requirements also install the
+[profile validator](../agent-profiles/README.md); `make check` includes both
+components' checks. To format a probe change, run
 `ops/private-runner/.venv/bin/python -m ruff format ops/private-runner`, then
 update its workflow SHA-256. `RUNTIME_PYTHON` can point to another environment
 containing the pinned tools. No test contacts GitHub or OpenAI. The tests cover

@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../ops/agent-profiles/schema.v1.json
+# Configuration only: intake and patch execution are not installed yet.
+schema_version: 1
+profiles:
+  codex-thorough:
+    enabled: true
+    name: Codex Thorough
+    description: Implement a repository issue and address trusted review feedback.
+    role: implementation
+    adapter:
+      id: codex-chatgpt-private-runner
+      contract_version: 1
+      runner_label: hub-agent-codex
+    model:
+      id: gpt-6.1-sol
+      reasoning_effort: high
+      fallback: none
+    triggers:
+      assignment: issue_comment.created
+    context:
+      sources:
+        [
+          issue,
+          issue_comments,
+          repository,
+          instructions,
+          pull_request,
+          review_thread,
+          checks,
+        ]
+      images: false
+    authority:
+      mode: branch-draft-pr
+      sandbox: workspace-write
+      network: false
+    validation:
+      checks: [repository-check]
+      on_failure: draft-with-evidence
+    continuation:
+      review_comments: true
+      pipeline: disabled

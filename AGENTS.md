@@ -30,6 +30,13 @@ this is included in `make check`. Follow the component README for pinned tool
 setup. Keep credentialed diagnostics private-repository-only, and run offline
 tests on GitHub-hosted runners without Codex authentication.
 
+Repository agent profiles use `.github/agent-profiles.yml`; the versioned schema,
+offline validator, and adapter contract live under `ops/agent-profiles`, outside
+Compose. Run `make profiles-check` (also included in `make check`) and follow
+that component's README for the combined pinned development tools. Profile
+validation proves configuration shape, not runtime readiness. New consumers
+must use the same schema; never add credentials or arbitrary command fields.
+
 ## Product principles
 
 - Build focused views around agent workflows: understanding repository state,

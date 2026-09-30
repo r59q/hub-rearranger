@@ -40,12 +40,96 @@ Assignments can start from either place:
 
 - **Hub:** the user selects a profile; Hub writes the repository's normal
   GitHub assignment request.
-- **GitHub:** the user uses the repository's documented App action, label, or
-  profile-named comment convention.
+- **GitHub:** the user posts the documented profile assignment comment on an
+  issue or, when the profile permits it, a pull request.
 
 Both produce the same GitHub event and execution path. The request records the
 source object, selected profile ID, profile revision, requester, and declared
 authority. It never includes credentials.
+
+## AW-002 assignment convention (v1)
+
+The initial trigger is a newly created, top-level GitHub issue comment. It is
+usable from GitHub without installing a separate assignment App. Labels cannot
+carry a pinned profile revision or an explicit authority request. GitHub's
+[`issue_comment.created` event](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#issue_comment)
+also covers PR conversation comments; the intake must distinguish the parent
+object. Edited comments do not create or change an assignment. Review-thread
+follow-up is a separate event and policy (AW-016).
+
+Post this **single line** on the source issue:
+
+```text
+/agent assign codex-thorough@0123456789abcdef0123456789abcdef01234567 authority=branch-draft-pr
+```
+
+Replace the example SHA with a full 40-character Git commit SHA from the
+default-branch history of `.github/agent-profiles.yml`. A maintainer can open
+that file in GitHub, choose **History**, and copy the commit SHA for the
+profile revision they reviewed. The ID is the exact profile ID in that file.
+The first version accepts one profile ID and one authority value; it rejects
+extra text, duplicate fields, abbreviations, and ambiguous revisions. No
+credential, prompt, or free-form command belongs in the assignment comment.
+
+| Field | Canonical source and meaning |
+| --- | --- |
+| Source | GitHub repository and issue/PR containing the comment, read from GitHub's API; never a user-supplied URL. |
+| Request | Immutable GitHub comment ID and URL; a new comment is a new request. |
+| Profile ID | `codex-thorough` in the command; match the pinned catalog entry exactly. |
+| Profile revision | Full default-branch commit SHA in the command. The workflow reads the catalog at that SHA, not at the moving branch tip. |
+| Requester | GitHub comment author's account ID and login, fetched at intake; never a claimed name in the body. |
+| Authority | `branch-draft-pr` in the command: read the source, propose changes on a dedicated agent branch, open a draft PR, and publish checks/summary comments. It grants no merge, release, secret, permission, or workflow-configuration authority. |
+
+For v1, `codex-thorough` accepts an **issue** as the source. A command on a PR
+is parsed as the same convention but rejected unless that profile explicitly
+allows a fresh PR assignment. A normal review comment on an agent PR is not a
+new assignment; AW-016 will route it through the PR's existing provenance.
+
+The intake workflow runs its authorization step on a GitHub-hosted runner. It
+fetches the current comment and parent object and checks that the comment is
+still present, unedited, on an open object in the approved repository. It checks
+the comment author and any rerun actor for current `maintain` or `admin` access,
+as in AW-001. It verifies that the SHA is a default-branch ancestor containing
+the profile, and that both the pinned profile and current default-branch policy
+permit the requested authority. A changed or revoked policy fails closed; an
+old revision does not restore removed authority or an obsolete adapter/model
+policy. The write job must reject changes to workflows, profiles, secrets, or
+other protected configuration under `branch-draft-pr`. The comment body, issue
+contents, and PR contents are untrusted input and must not become shell code.
+Only accepted requests reach the credentialed runner. Repeated delivery or
+rerun of the same comment ID must not create another assignment or branch.
+
+The workflow posts a GitHub-visible acceptance or rejection on the source
+object, linking the exact request comment. An acceptance names the source,
+profile ID and revision, requester, authority, and workflow run. Rejections
+give a safe reason and a next action. The acceptance is a receipt, while the
+request comment and GitHub identity are the provenance; a reply cannot grant
+authority by itself.
+
+Hub must create the *same* comment on behalf of the signed-in user with a
+GitHub App [user-to-server token](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-with-a-github-app-on-behalf-of-a-user).
+GitHub attributes such comments to that user, so the workflow can use the same
+current-role check as for GitHub-authored comments. A bot-authored
+installation-token comment is not a user assignment.
+Hub's existing read-only discovery token cannot submit assignments. This
+user-scoped write capability belongs to AW-014, not this convention task.
+
+The resulting draft PR body contains a visible **Agent assignment** section
+with links and these same fields, plus this machine-readable block generated
+from verified GitHub data (example values only):
+
+```text
+<!-- agent-assignment:v1
+{"source":"https://github.com/OWNER/REPO/issues/123","request_comment_id":456,"request":"https://github.com/OWNER/REPO/issues/123#issuecomment-456","profile_id":"codex-thorough","profile_revision":"0123456789abcdef0123456789abcdef01234567","requester_id":789,"requester":"LOGIN","authority":"branch-draft-pr","run":"https://github.com/OWNER/REPO/actions/runs/321"}
+-->
+```
+
+The PR's dedicated branch and check link back to the same request ID. Future
+follow-up reads this provenance to identify the owning profile, then verifies
+the linked request, run, branch, and current GitHub authorization. An editable
+PR body alone is never proof of ownership or authority. Material changes to
+adapter, model policy, or authority require a new assignment rather than
+changing the meaning of this PR.
 
 GitHub is not a universal agent scheduler. The repository supplies the
 provider-specific wiring through GitHub Actions workflows or an installed
@@ -80,6 +164,43 @@ The assignment snapshots the profile revision. Changing a profile later cannot
 change the meaning of an existing PR. Material changes in provider, authority,
 or model policy create a successor assignment rather than silently mutating
 history.
+
+## AW-003 profile schema and adapter contract (v1)
+
+The repository now declares `codex-thorough` in
+[`.github/agent-profiles.yml`](.github/agent-profiles.yml). Its closed
+[JSON Schema](ops/agent-profiles/schema.v1.json) and
+[adapter contract](ops/agent-profiles/README.md#adapter-contract-v1) are the
+normative v1 definitions. Offline validation uses pinned PyYAML and
+`jsonschema`; future consumers use the same schema rather than maintaining
+independent field definitions. Catalog validation does not establish runtime
+readiness or install assignment execution.
+
+V1 permits only `codex-chatgpt-private-runner`, issue-comment assignment,
+`branch-draft-pr` authority, a `workspace-write` sandbox with workload network
+disabled, named validation checks, and optional trusted PR review continuation.
+Credentials, command strings, arbitrary CLI/provider/workflow overrides,
+automatic fallback, images, and pipeline remediation are excluded. The first
+profile requests `gpt-6.1-sol` with `high` reasoning; that exact policy still
+needs verification on the runner. The dedicated `hub-agent-codex` label does
+not extend the shared-runner diagnostic exception.
+
+`schema_version` and `adapter.contract_version` independently version these
+contracts. Profile revisions remain full default-branch Git SHAs from AW-002,
+never a mutable catalog field. Pinned and current entries must both validate,
+exist, and be enabled. Every execution-policy field must match current policy
+(context/check lists compare as sets); only display text may change without a
+new assignment. Recheck before continuation and patch application so a pinned
+revision cannot restore removed authority or obsolete model/adapter policy.
+
+The adapter boundary specifies verified GitHub identity/source/revision/head
+metadata, current permitted context, and a patch plus structured outcome and
+validation evidence. The credentialed patch job cannot write to GitHub. A
+separate write job independently verifies policy, provenance, artifact identity,
+protected paths, and head state before publishing a dedicated branch/draft PR.
+Malformed profiles produce sorted, safe diagnostics without echoing source
+values, profile IDs, arbitrary keys, or parser exceptions. Bounded YAML parsing
+rejects duplicate keys, tags, anchors, aliases, and merge keys.
 
 ## Runtime adapters
 
@@ -279,9 +400,6 @@ or issue/PR content.
 
 ## Open decisions
 
-- Which GitHub-native assignment surface should be the primary convention:
-  App action, label, or comment command?
-- What is the smallest, secure profile schema and adapter interface?
 - How are profile-triggered pipeline remediation and image access approved?
 
 ## AW-001 runtime spike decisions

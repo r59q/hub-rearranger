@@ -71,7 +71,7 @@ The same workflow remains operable after Hub is removed.
   remains a temporary exception; authorization, default-branch, and no-fork
   guards are required for any later credentialed workflow.
 
-- [ ] **AW-002 — Lock the GitHub-native assignment convention**
+- [x] **AW-002 — Lock the GitHub-native assignment convention**
 
   **Domain:** agents / GitHub workflow convention  
   **Depends on:** AW-001
@@ -88,7 +88,14 @@ The same workflow remains operable after Hub is removed.
   - The convention identifies the profile owning a resulting PR.
   - The decision is recorded in the analysis document and issue.
 
-- [ ] **AW-003 — Define the minimal profile schema and adapter contract**
+  **Completed (2026-09-29):** Chose a new issue comment with an explicit
+  profile ID, full default-branch profile commit SHA, and `branch-draft-pr`
+  authority. GitHub supplies source and requester identity. Defined the
+  acceptance receipt, versioned draft-PR provenance, and live authorization
+  checks in the [analysis](AGENTIC_WORKFLOWS_ANALYSIS.md#aw-002-assignment-convention-v1)
+  and [issue #3](https://github.com/r59q/hub-rearranger/issues/3).
+
+- [x] **AW-003 — Define the minimal profile schema and adapter contract**
 
   **Domain:** agents  
   **Depends on:** AW-002
@@ -103,6 +110,16 @@ The same workflow remains operable after Hub is removed.
   - The schema excludes credentials and arbitrary unsandboxed command fields.
   - A profile revision can be pinned in an assignment.
   - Invalid profiles have deterministic, user-safe validation errors.
+
+  **Completed (2026-09-30):** Added the repository-local `codex-thorough`
+  [catalog](.github/agent-profiles.yml), closed v1
+  [JSON Schema](ops/agent-profiles/schema.v1.json), and
+  [adapter contract/offline validator](ops/agent-profiles/README.md). Defined
+  revision pinning, current-policy revocation, named validation checks,
+  patch/write boundaries, and safe deterministic errors. All 23 profile tests
+  and the full `make check` passed; checks run without runner authentication.
+  Execution workflows, dedicated-runner setup, and verification of the requested
+  `gpt-6.1-sol`/`high` policy remain later work.
 
 ## Phase 1 — Add the Agents domain read path
 
