@@ -45,7 +45,8 @@ services:
     build:
       context: ./services/agents
     environment:
-      # AW-004 serves public convention metadata; no GitHub or Codex credentials.
+      # Read-only Metadata and Contents access is sufficient for profile catalogs.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
       AGENTS_ADDR: :8082
     init: true
     ports:

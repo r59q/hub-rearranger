@@ -24,11 +24,11 @@ type ProfileRevisionPolicy struct {
 }
 
 // Service owns repository agent semantics, not execution or durable run state.
-// Profile reads and readiness use cases will be added in AW-005/AW-006.
-type Service struct{}
+// Profile validation is independent of runtime readiness.
+type Service struct{ profiles *ProfileService }
 
-func NewService() *Service {
-	return &Service{}
+func NewService(profiles *ProfileService) *Service {
+	return &Service{profiles: profiles}
 }
 
 func (s *Service) AssignmentConvention(ctx context.Context) (Convention, error) {
@@ -46,4 +46,11 @@ func (s *Service) AssignmentConvention(ctx context.Context) (Convention, error) 
 			},
 		},
 	}, nil
+}
+
+func (s *Service) RepositoryProfiles(ctx context.Context, repository Repository) (ProfileCatalog, error) {
+	if s.profiles == nil {
+		return ProfileCatalog{}, ErrGitHubUnavailable
+	}
+	return s.profiles.RepositoryProfiles(ctx, repository)
 }

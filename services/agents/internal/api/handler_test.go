@@ -23,7 +23,7 @@ func TestReadEndpointsHonorOpenAPIWithoutAuthentication(t *testing.T) {
 		for _, method := range []string{http.MethodGet, http.MethodHead} {
 			t.Run(method+path, func(t *testing.T) {
 				// Arrange. No token or repository access is involved.
-				handler := NewHandler(domain.NewService(), slog.New(slog.NewTextHandler(io.Discard, nil)))
+				handler := NewHandler(domain.NewService(nil), slog.New(slog.NewTextHandler(io.Discard, nil)))
 				request := httptest.NewRequest(method, path, nil)
 				response := httptest.NewRecorder()
 
@@ -101,7 +101,7 @@ func TestWriteMethodsAreRejectedWithoutCallingTheDomain(t *testing.T) {
 
 func TestUnknownEndpointsAreStructuredAndDoNotEchoRequestData(t *testing.T) {
 	// Arrange.
-	handler := NewHandler(domain.NewService(), slog.New(slog.NewTextHandler(io.Discard, nil)))
+	handler := NewHandler(domain.NewService(nil), slog.New(slog.NewTextHandler(io.Discard, nil)))
 	request := httptest.NewRequest(http.MethodGet, "/private-sentinel", nil)
 	response := httptest.NewRecorder()
 
@@ -146,4 +146,9 @@ func assertContractResponse(t *testing.T, request *http.Request, response *httpt
 	if err := openapi3filter.ValidateResponse(request.Context(), output); err != nil {
 		t.Fatalf("response violates OpenAPI: %v", err)
 	}
+}
+
+func (s *failingService) RepositoryProfiles(ctx context.Context, _ domain.Repository) (domain.ProfileCatalog, error) {
+	s.ctx = ctx
+	return domain.ProfileCatalog{}, errors.New("private upstream detail")
 }

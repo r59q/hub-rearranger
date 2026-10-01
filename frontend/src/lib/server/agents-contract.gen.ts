@@ -46,6 +46,30 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/profiles': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		/**
+		 * Read profiles at the current default-branch commit
+		 * @description Reads GitHub on every request. Missing, malformed, and unsupported catalogs return explicit validation states with no partial profiles. revision is a full Git commit SHA, not the file blob SHA. This service has no durable catalog storage. Caller access is restricted to the private local application network; the configured server-side token determines repository visibility.
+		 */
+		get: operations['getRepositoryProfiles'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		/** Check profile read availability without a response body */
+		head: operations['headRepositoryProfiles'];
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -83,8 +107,109 @@ export interface components {
 		};
 		Error: {
 			/** @enum {string} */
-			code: 'internal_error' | 'method_not_allowed' | 'not_found';
+			code:
+				| 'internal_error'
+				| 'method_not_allowed'
+				| 'not_found'
+				| 'invalid_request'
+				| 'access_denied'
+				| 'repository_unavailable'
+				| 'rate_limited'
+				| 'github_unavailable';
 			message: string;
+		};
+		RepositoryProfiles: {
+			repository: string;
+			/** @enum {string} */
+			catalog_path: '.github/agent-profiles.yml';
+			default_branch: string;
+			revision: string;
+			/** @enum {string} */
+			state: 'valid' | 'missing' | 'invalid' | 'unsupported';
+			profiles: components['schemas']['RepositoryProfile'][];
+			diagnostics: components['schemas']['ProfileDiagnostic'][];
+		};
+		RepositoryProfile: {
+			id: string;
+			revision: string;
+			configuration: components['schemas']['CatalogProfile'];
+		};
+		ProfileDiagnostic: {
+			/** @enum {string} */
+			code:
+				| 'MISSING_FILE'
+				| 'INVALID_FILE'
+				| 'INVALID_YAML'
+				| 'DUPLICATE_KEY'
+				| 'UNSUPPORTED_VERSION'
+				| 'MISSING_FIELD'
+				| 'UNSUPPORTED_FIELD'
+				| 'UNSUPPORTED_VALUE'
+				| 'INVALID_TYPE'
+				| 'INVALID_FORMAT'
+				| 'DUPLICATE_VALUE'
+				| 'MISSING_CONTEXT'
+				| 'LIMIT_EXCEEDED';
+			path: string;
+			message: string;
+		};
+		CatalogProfile: {
+			enabled: boolean;
+			name: string;
+			description: string;
+			/** @enum {string} */
+			role: 'implementation';
+			adapter: components['schemas']['CatalogAdapter'];
+			model: components['schemas']['CatalogModel'];
+			triggers: {
+				/** @enum {string} */
+				assignment: 'issue_comment.created';
+			};
+			context: {
+				sources: (
+					| 'issue'
+					| 'issue_comments'
+					| 'repository'
+					| 'instructions'
+					| 'pull_request'
+					| 'review_thread'
+					| 'checks'
+				)[];
+				/** @enum {boolean} */
+				images: false;
+			};
+			authority: {
+				/** @enum {string} */
+				mode: 'branch-draft-pr';
+				/** @enum {string} */
+				sandbox: 'workspace-write';
+				/** @enum {boolean} */
+				network: false;
+			};
+			validation: {
+				checks: 'repository-check'[];
+				/** @enum {string} */
+				on_failure: 'draft-with-evidence';
+			};
+			continuation: {
+				review_comments: boolean;
+				/** @enum {string} */
+				pipeline: 'disabled';
+			};
+		};
+		CatalogAdapter: {
+			/** @enum {string} */
+			id: 'codex-chatgpt-private-runner';
+			/** @enum {integer} */
+			contract_version: 1;
+			runner_label: string;
+		};
+		CatalogModel: {
+			id: string;
+			/** @enum {string} */
+			reasoning_effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+			/** @enum {string} */
+			fallback: 'none';
 		};
 	};
 	responses: {
@@ -201,6 +326,154 @@ export interface operations {
 			};
 		};
 	};
+	getRepositoryProfiles: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Fresh repository catalog projection and validation results. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['RepositoryProfiles'];
+				};
+			};
+			/** @description Invalid owner or repository name. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Read credentials lack repository Contents permission. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Repository is unavailable or not visible to the read credentials. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			405: components['responses']['MethodNotAllowed'];
+			/** @description GitHub rate limit reached; retry later. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Service failed; retry. */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description GitHub failed or returned an invalid response; retry. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+		};
+	};
+	headRepositoryProfiles: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Fresh repository catalog projection and validation results. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Invalid owner or repository name. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Read credentials lack repository Contents permission. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Repository is unavailable or not visible to the read credentials. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description This endpoint accepts GET and HEAD. */
+			405: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description GitHub rate limit reached; retry later. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Service failed; retry. */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description GitHub failed or returned an invalid response; retry. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
 }
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
 	? Readonly<Exclude<T, undefined>>
@@ -236,8 +509,79 @@ export const profileRevisionPolicyFormatValues: ReadonlyArray<
 export const errorCodeValues: ReadonlyArray<components['schemas']['Error']['code']> = [
 	'internal_error',
 	'method_not_allowed',
-	'not_found'
+	'not_found',
+	'invalid_request',
+	'access_denied',
+	'repository_unavailable',
+	'rate_limited',
+	'github_unavailable'
 ];
+export const repositoryProfilesCatalog_pathValues: ReadonlyArray<
+	components['schemas']['RepositoryProfiles']['catalog_path']
+> = ['.github/agent-profiles.yml'];
+export const repositoryProfilesStateValues: ReadonlyArray<
+	components['schemas']['RepositoryProfiles']['state']
+> = ['valid', 'missing', 'invalid', 'unsupported'];
+export const profileDiagnosticCodeValues: ReadonlyArray<
+	components['schemas']['ProfileDiagnostic']['code']
+> = [
+	'MISSING_FILE',
+	'INVALID_FILE',
+	'INVALID_YAML',
+	'DUPLICATE_KEY',
+	'UNSUPPORTED_VERSION',
+	'MISSING_FIELD',
+	'UNSUPPORTED_FIELD',
+	'UNSUPPORTED_VALUE',
+	'INVALID_TYPE',
+	'INVALID_FORMAT',
+	'DUPLICATE_VALUE',
+	'MISSING_CONTEXT',
+	'LIMIT_EXCEEDED'
+];
+export const catalogProfileRoleValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['role']
+> = ['implementation'];
+export const catalogProfileTriggersAssignmentValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['triggers']['assignment']
+> = ['issue_comment.created'];
+export const catalogProfileContextSourcesValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['context']['sources']
+> = [
+	'issue',
+	'issue_comments',
+	'repository',
+	'instructions',
+	'pull_request',
+	'review_thread',
+	'checks'
+];
+export const catalogProfileAuthorityModeValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['authority']['mode']
+> = ['branch-draft-pr'];
+export const catalogProfileAuthoritySandboxValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['authority']['sandbox']
+> = ['workspace-write'];
+export const catalogProfileValidationChecksValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['validation']['checks']
+> = ['repository-check'];
+export const catalogProfileValidationOn_failureValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['validation']['on_failure']
+> = ['draft-with-evidence'];
+export const catalogProfileContinuationPipelineValues: ReadonlyArray<
+	components['schemas']['CatalogProfile']['continuation']['pipeline']
+> = ['disabled'];
+export const catalogAdapterIdValues: ReadonlyArray<components['schemas']['CatalogAdapter']['id']> =
+	['codex-chatgpt-private-runner'];
+export const catalogAdapterContract_versionValues: ReadonlyArray<
+	components['schemas']['CatalogAdapter']['contract_version']
+> = [1];
+export const catalogModelReasoning_effortValues: ReadonlyArray<
+	components['schemas']['CatalogModel']['reasoning_effort']
+> = ['low', 'medium', 'high', 'xhigh', 'max'];
+export const catalogModelFallbackValues: ReadonlyArray<
+	components['schemas']['CatalogModel']['fallback']
+> = ['none'];
 export const componentsResponsesMethodNotAllowedHeadersAllowValues: ReadonlyArray<
 	components['responses']['MethodNotAllowed']['headers']['Allow']
 > = ['GET, HEAD'];

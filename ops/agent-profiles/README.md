@@ -4,8 +4,9 @@ This component defines the Agents domain's repository-local profile format and
 the v1 boundary between a profile and a GitHub Actions adapter. It provides an
 offline validator, not a service or execution runtime. It reads no GitHub data,
 invokes no Codex process, and stores no profile or authentication state.
-The future Agents service will consume the same schema at its API boundary;
-its domain models remain independent of these transport fields.
+The Agents service consumes this schema through a generated embedded snapshot;
+its domain models remain independent of transport fields. The server-only frontend
+adapter validates profiles with the same schema.
 
 ## Catalog and versioning
 
@@ -216,3 +217,17 @@ catalog/schema, meaningful rejection behavior, safe CLI output, and Python,
 JSON, and YAML formatting. No test uses GitHub, OpenAI, runner authentication,
 or a self-hosted runner. These tools live outside Compose because they are
 repository-contract tooling, not application services.
+
+## Service contract exports (AW-005)
+
+`export_contract.py` is the build-time bridge to the Agents read API. It copies
+this normative schema into checked-in Go/frontend snapshots and derives the
+`Catalog*` OpenAPI transport field shapes. OpenAPI 3.0 lacks the original
+conditional/contains semantics; the transport projection omits these and regex
+patterns, while Go and the server-only frontend validate with the full original
+Draft 2020-12 schema. No consumer has a separately maintained field policy.
+
+Run `make generate-agents-contract` after schema/API changes; do not edit the
+generated snapshots or `Catalog*` definitions. `make agents-contract-check`
+verifies these exports and generated Go/TypeScript DTOs without editing files.
+The service needs no Python runtime, and generation needs no GitHub credentials.

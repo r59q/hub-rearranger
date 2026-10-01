@@ -202,6 +202,9 @@ must use the same schema; never add credentials or arbitrary command fields.
 - The Agents API generates required transport code with pinned `oapi-codegen`
   and `openapi-typescript`; this contract code is checked in and mapped at the
   domain boundary. Run `make generate-agents-contract` after API changes.
+  The profile contract exporter also derives `Catalog*` OpenAPI field shapes and
+  embedded Go/server-only frontend schema snapshots from the canonical AW-003
+  schema; do not maintain separate field policies or edit generated snapshots.
   `make agents-contract-check` verifies it without editing files and is included
   in `make check`. Other domains may adopt this pattern when their APIs change.
 

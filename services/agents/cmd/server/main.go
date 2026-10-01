@@ -10,9 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	gh "github.com/google/go-github/v74/github"
+
 	"github.com/r59q/hub-rearranger/services/agents/internal/api"
 	"github.com/r59q/hub-rearranger/services/agents/internal/domain"
 	"github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/config"
+	githubinfra "github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/github"
+	"github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/profiles"
 )
 
 func main() {
@@ -24,8 +28,17 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
+	validator, err := profiles.NewValidator()
+	if err != nil {
+		return errors.New("profile schema could not be initialized")
+	}
+	client := gh.NewClient(&http.Client{Timeout: 8 * time.Second})
+	if token := config.GitHubToken(); token != "" {
+		client = client.WithAuthToken(token)
+	}
+	service := domain.NewService(domain.NewProfileService(githubinfra.NewProfileReader(client), validator))
 	server := &http.Server{
-		Addr: config.Address(), Handler: api.NewHandler(domain.NewService(), logger),
+		Addr: config.Address(), Handler: api.NewHandler(service, logger),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
 		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second,
 	}

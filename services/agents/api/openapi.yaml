@@ -1,14 +1,12 @@
 openapi: 3.0.3
 info:
   title: Hub Rearranger Agents API
-  version: 1.0.0
-  description: >-
-    Read-only repository agent conventions. AW-004 exposes protocol metadata,
-    not repository profiles, runtime readiness, or assignment execution.
+  version: 1.1.0
+  description:
+    Read-only GitHub repository profiles, validation results, and assignment conventions. Catalog
+    validation does not verify runtime readiness or authorize execution.
 servers:
   - url: http://localhost:8082
-# No caller authentication in the local/private service network. No GitHub
-# credentials or private repository data are used by these scaffold endpoints.
 security: []
 paths:
   /health:
@@ -43,9 +41,9 @@ paths:
     get:
       operationId: getAssignmentConvention
       summary: Read the supported GitHub assignment convention
-      description: >-
-        Static protocol metadata for AW-002/AW-003, independent of repository
-        state. This response does not authorize an actor or submit an assignment.
+      description:
+        Static protocol metadata for AW-002/AW-003, independent of repository state. This response
+        does not authorize an actor or submit an assignment.
       responses:
         '200':
           description: Supported convention and profile catalog version.
@@ -57,6 +55,95 @@ paths:
           $ref: '#/components/responses/MethodNotAllowed'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/repositories/{owner}/{repo}/profiles:
+    parameters:
+      - name: owner
+        in: path
+        required: true
+        schema:
+          type: string
+          maxLength: 39
+          pattern: ^[A-Za-z0-9][A-Za-z0-9-]*$
+      - name: repo
+        in: path
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+          pattern: ^[A-Za-z0-9_.-]+$
+    get:
+      operationId: getRepositoryProfiles
+      summary: Read profiles at the current default-branch commit
+      description:
+        Reads GitHub on every request. Missing, malformed, and unsupported catalogs return
+        explicit validation states with no partial profiles. revision is a full Git commit SHA, not the
+        file blob SHA. This service has no durable catalog storage. Caller access is restricted to the
+        private local application network; the configured server-side token determines repository visibility.
+      responses:
+        '200':
+          description: Fresh repository catalog projection and validation results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepositoryProfiles'
+        '400':
+          description: Invalid owner or repository name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Read credentials lack repository Contents permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Repository is unavailable or not visible to the read credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: GitHub rate limit reached; retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: GitHub failed or returned an invalid response; retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Service failed; retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+    head:
+      operationId: headRepositoryProfiles
+      summary: Check profile read availability without a response body
+      responses:
+        '200':
+          description: Fresh repository catalog projection and validation results.
+        '400':
+          description: Invalid owner or repository name.
+        '403':
+          description: Read credentials lack repository Contents permission.
+        '404':
+          description: Repository is unavailable or not visible to the read credentials.
+        '429':
+          description: GitHub rate limit reached; retry later.
+        '502':
+          description: GitHub failed or returned an invalid response; retry.
+        '500':
+          description: Service failed; retry.
+        '405':
+          description: This endpoint accepts GET and HEAD.
 components:
   responses:
     MethodNotAllowed:
@@ -65,7 +152,8 @@ components:
         Allow:
           schema:
             type: string
-            enum: ['GET, HEAD']
+            enum:
+              - GET, HEAD
       content:
         application/json:
           schema:
@@ -80,44 +168,63 @@ components:
     Health:
       type: object
       additionalProperties: false
-      required: [status]
+      required:
+        - status
       properties:
         status:
           type: string
-          enum: [ok]
+          enum:
+            - ok
     AssignmentConvention:
       type: object
       additionalProperties: false
-      required: [version, profile_catalog_path, profile_schema_version, assignment]
+      required:
+        - version
+        - profile_catalog_path
+        - profile_schema_version
+        - assignment
       properties:
         version:
           type: integer
-          enum: [1]
+          enum:
+            - 1
         profile_catalog_path:
           type: string
-          enum: [.github/agent-profiles.yml]
+          enum:
+            - .github/agent-profiles.yml
         profile_schema_version:
           type: integer
-          enum: [1]
+          enum:
+            - 1
         assignment:
           $ref: '#/components/schemas/AssignmentPolicy'
     AssignmentPolicy:
       type: object
       additionalProperties: false
-      required: [event, source_kind, command_template, authority, required_roles, profile_revision]
+      required:
+        - event
+        - source_kind
+        - command_template
+        - authority
+        - required_roles
+        - profile_revision
       properties:
         event:
           type: string
-          enum: [issue_comment.created]
+          enum:
+            - issue_comment.created
         source_kind:
           type: string
-          enum: [issue]
+          enum:
+            - issue
         command_template:
           type: string
-          enum: ['/agent assign {profile_id}@{profile_revision} authority=branch-draft-pr']
+          enum:
+            - /agent assign {profile_id}@{profile_revision} authority=branch-draft-pr
         authority:
           type: string
-          enum: [branch-draft-pr]
+          enum:
+            - branch-draft-pr
         required_roles:
           type: array
           minItems: 2
@@ -125,28 +232,292 @@ components:
           uniqueItems: true
           items:
             type: string
-            enum: [maintain, admin]
+            enum:
+              - maintain
+              - admin
         profile_revision:
           $ref: '#/components/schemas/ProfileRevisionPolicy'
     ProfileRevisionPolicy:
       type: object
       additionalProperties: false
-      required: [format, default_branch_ancestor]
+      required:
+        - format
+        - default_branch_ancestor
       properties:
         format:
           type: string
-          enum: [full-40-character-sha]
+          enum:
+            - full-40-character-sha
         default_branch_ancestor:
           type: boolean
-          enum: [true]
+          enum:
+            - true
     Error:
       type: object
       additionalProperties: false
-      required: [code, message]
+      required:
+        - code
+        - message
       properties:
         code:
           type: string
-          enum: [internal_error, method_not_allowed, not_found]
+          enum:
+            - internal_error
+            - method_not_allowed
+            - not_found
+            - invalid_request
+            - access_denied
+            - repository_unavailable
+            - rate_limited
+            - github_unavailable
         message:
           type: string
           minLength: 1
+    RepositoryProfiles:
+      type: object
+      additionalProperties: false
+      required:
+        - repository
+        - catalog_path
+        - default_branch
+        - revision
+        - state
+        - profiles
+        - diagnostics
+      properties:
+        repository:
+          type: string
+        catalog_path:
+          type: string
+          enum:
+            - .github/agent-profiles.yml
+        default_branch:
+          type: string
+          minLength: 1
+        revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        state:
+          type: string
+          enum:
+            - valid
+            - missing
+            - invalid
+            - unsupported
+        profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepositoryProfile'
+        diagnostics:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileDiagnostic'
+    RepositoryProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision
+        - configuration
+      properties:
+        id:
+          type: string
+        revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        configuration:
+          $ref: '#/components/schemas/CatalogProfile'
+    ProfileDiagnostic:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - path
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - MISSING_FILE
+            - INVALID_FILE
+            - INVALID_YAML
+            - DUPLICATE_KEY
+            - UNSUPPORTED_VERSION
+            - MISSING_FIELD
+            - UNSUPPORTED_FIELD
+            - UNSUPPORTED_VALUE
+            - INVALID_TYPE
+            - INVALID_FORMAT
+            - DUPLICATE_VALUE
+            - MISSING_CONTEXT
+            - LIMIT_EXCEEDED
+        path:
+          type: string
+        message:
+          type: string
+          minLength: 1
+    CatalogProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - enabled
+        - name
+        - description
+        - role
+        - adapter
+        - model
+        - triggers
+        - context
+        - authority
+        - validation
+        - continuation
+      properties:
+        enabled:
+          type: boolean
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+        role:
+          type: string
+          enum:
+            - implementation
+        adapter:
+          $ref: '#/components/schemas/CatalogAdapter'
+        model:
+          $ref: '#/components/schemas/CatalogModel'
+        triggers:
+          type: object
+          additionalProperties: false
+          required:
+            - assignment
+          properties:
+            assignment:
+              type: string
+              enum:
+                - issue_comment.created
+        context:
+          type: object
+          additionalProperties: false
+          required:
+            - sources
+            - images
+          properties:
+            sources:
+              type: array
+              minItems: 1
+              maxItems: 7
+              uniqueItems: true
+              items:
+                type: string
+                enum:
+                  - issue
+                  - issue_comments
+                  - repository
+                  - instructions
+                  - pull_request
+                  - review_thread
+                  - checks
+            images:
+              type: boolean
+              enum:
+                - false
+        authority:
+          type: object
+          additionalProperties: false
+          required:
+            - mode
+            - sandbox
+            - network
+          properties:
+            mode:
+              type: string
+              enum:
+                - branch-draft-pr
+            sandbox:
+              type: string
+              enum:
+                - workspace-write
+            network:
+              type: boolean
+              enum:
+                - false
+        validation:
+          type: object
+          additionalProperties: false
+          required:
+            - checks
+            - on_failure
+          properties:
+            checks:
+              type: array
+              minItems: 1
+              maxItems: 1
+              uniqueItems: true
+              items:
+                type: string
+                enum:
+                  - repository-check
+            on_failure:
+              type: string
+              enum:
+                - draft-with-evidence
+        continuation:
+          type: object
+          additionalProperties: false
+          required:
+            - review_comments
+            - pipeline
+          properties:
+            review_comments:
+              type: boolean
+            pipeline:
+              type: string
+              enum:
+                - disabled
+    CatalogAdapter:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - contract_version
+        - runner_label
+      properties:
+        id:
+          type: string
+          enum:
+            - codex-chatgpt-private-runner
+        contract_version:
+          type: integer
+          enum:
+            - 1
+        runner_label:
+          type: string
+          minLength: 1
+          maxLength: 64
+    CatalogModel:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - reasoning_effort
+        - fallback
+      properties:
+        id:
+          type: string
+        reasoning_effort:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - xhigh
+            - max
+        fallback:
+          type: string
+          enum:
+            - none

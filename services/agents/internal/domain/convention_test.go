@@ -9,7 +9,7 @@ import (
 
 func TestConventionRestrictsAssignmentAuthorityAndPinsRepositoryCatalog(t *testing.T) {
 	// Arrange.
-	service := NewService()
+	service := NewService(nil)
 
 	// Act.
 	convention, err := service.AssignmentConvention(context.Background())
@@ -36,7 +36,7 @@ func TestConventionHonorsCancellation(t *testing.T) {
 	// Arrange.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	service := NewService()
+	service := NewService(nil)
 
 	// Act.
 	_, err := service.AssignmentConvention(ctx)
@@ -49,7 +49,7 @@ func TestConventionHonorsCancellation(t *testing.T) {
 
 func TestConventionHasNoMutableStateBetweenRequests(t *testing.T) {
 	// Arrange.
-	service := NewService()
+	service := NewService(nil)
 	previous, err := service.AssignmentConvention(context.Background())
 	if err != nil {
 		t.Fatal(err)

@@ -28,3 +28,16 @@ func TestAddressSupportsTheComposeListenAddress(t *testing.T) {
 		t.Fatalf("address = %s", address)
 	}
 }
+
+func TestGitHubTokenIsOptionalAndReadFromServerEnvironment(t *testing.T) {
+	// Arrange.
+	t.Setenv("GITHUB_TOKEN", "")
+	// Act and assert.
+	if GitHubToken() != "" {
+		t.Fatal("public reads should allow no token")
+	}
+	t.Setenv("GITHUB_TOKEN", "synthetic-test-token")
+	if GitHubToken() != "synthetic-test-token" {
+		t.Fatal("server token was not loaded")
+	}
+}

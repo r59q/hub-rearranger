@@ -12,6 +12,7 @@ import (
 
 type conventionUseCases interface {
 	AssignmentConvention(context.Context) (domain.Convention, error)
+	RepositoryProfiles(context.Context, domain.Repository) (domain.ProfileCatalog, error)
 }
 
 type Handler struct {
@@ -24,9 +25,22 @@ var _ contract.ServerInterface = (*Handler)(nil)
 func NewHandler(service conventionUseCases, logger *slog.Logger) http.Handler {
 	handler := &Handler{service: service, logger: logger}
 	mux := http.NewServeMux()
-	contract.HandlerFromMux(handler, mux)
+	contract.HandlerWithOptions(handler, contract.StdHTTPServerOptions{
+		BaseRouter: mux,
+		ErrorHandlerFunc: func(response http.ResponseWriter, request *http.Request, _ error) {
+			if request.Method == http.MethodHead {
+				response.Header().Set("Cache-Control", "no-store")
+				response.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			writeJSON(response, http.StatusBadRequest, contract.Error{
+				Code: contract.ErrorCodeInvalidRequest, Message: "Use a valid GitHub owner and repository name.",
+			})
+		},
+	})
 	mux.HandleFunc("/health", methodNotAllowed)
 	mux.HandleFunc("/v1/assignment-convention", methodNotAllowed)
+	mux.HandleFunc("/v1/repositories/{owner}/{repo}/profiles", methodNotAllowed)
 	mux.HandleFunc("/", func(response http.ResponseWriter, _ *http.Request) {
 		writeJSON(response, http.StatusNotFound, contract.Error{
 			Code: contract.ErrorCodeNotFound, Message: "The Agents endpoint was not found.",

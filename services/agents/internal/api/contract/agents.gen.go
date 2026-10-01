@@ -8,17 +8,19 @@ package contract
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for AssignmentConventionProfileCatalogPath.
 const (
-	DotGithubagentProfilesYml AssignmentConventionProfileCatalogPath = ".github/agent-profiles.yml"
+	AssignmentConventionProfileCatalogPathDotGithubagentProfilesYml AssignmentConventionProfileCatalogPath = ".github/agent-profiles.yml"
 )
 
 // Valid indicates whether the value is a known member of the AssignmentConventionProfileCatalogPath enum.
 func (e AssignmentConventionProfileCatalogPath) Valid() bool {
 	switch e {
-	case DotGithubagentProfilesYml:
+	case AssignmentConventionProfileCatalogPathDotGithubagentProfilesYml:
 		return true
 	default:
 		return false
@@ -57,13 +59,13 @@ func (e AssignmentConventionVersion) Valid() bool {
 
 // Defines values for AssignmentPolicyAuthority.
 const (
-	BranchDraftPr AssignmentPolicyAuthority = "branch-draft-pr"
+	AssignmentPolicyAuthorityBranchDraftPr AssignmentPolicyAuthority = "branch-draft-pr"
 )
 
 // Valid indicates whether the value is a known member of the AssignmentPolicyAuthority enum.
 func (e AssignmentPolicyAuthority) Valid() bool {
 	switch e {
-	case BranchDraftPr:
+	case AssignmentPolicyAuthorityBranchDraftPr:
 		return true
 	default:
 		return false
@@ -87,13 +89,13 @@ func (e AssignmentPolicyCommandTemplate) Valid() bool {
 
 // Defines values for AssignmentPolicyEvent.
 const (
-	IssueCommentCreated AssignmentPolicyEvent = "issue_comment.created"
+	AssignmentPolicyEventIssueCommentCreated AssignmentPolicyEvent = "issue_comment.created"
 )
 
 // Valid indicates whether the value is a known member of the AssignmentPolicyEvent enum.
 func (e AssignmentPolicyEvent) Valid() bool {
 	switch e {
-	case IssueCommentCreated:
+	case AssignmentPolicyEventIssueCommentCreated:
 		return true
 	default:
 		return false
@@ -120,13 +122,253 @@ func (e AssignmentPolicyRequiredRoles) Valid() bool {
 
 // Defines values for AssignmentPolicySourceKind.
 const (
-	Issue AssignmentPolicySourceKind = "issue"
+	AssignmentPolicySourceKindIssue AssignmentPolicySourceKind = "issue"
 )
 
 // Valid indicates whether the value is a known member of the AssignmentPolicySourceKind enum.
 func (e AssignmentPolicySourceKind) Valid() bool {
 	switch e {
-	case Issue:
+	case AssignmentPolicySourceKindIssue:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogAdapterContractVersion.
+const (
+	CatalogAdapterContractVersionN1 CatalogAdapterContractVersion = 1
+)
+
+// Valid indicates whether the value is a known member of the CatalogAdapterContractVersion enum.
+func (e CatalogAdapterContractVersion) Valid() bool {
+	switch e {
+	case CatalogAdapterContractVersionN1:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogAdapterId.
+const (
+	CodexChatgptPrivateRunner CatalogAdapterId = "codex-chatgpt-private-runner"
+)
+
+// Valid indicates whether the value is a known member of the CatalogAdapterId enum.
+func (e CatalogAdapterId) Valid() bool {
+	switch e {
+	case CodexChatgptPrivateRunner:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogModelFallback.
+const (
+	None CatalogModelFallback = "none"
+)
+
+// Valid indicates whether the value is a known member of the CatalogModelFallback enum.
+func (e CatalogModelFallback) Valid() bool {
+	switch e {
+	case None:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogModelReasoningEffort.
+const (
+	High   CatalogModelReasoningEffort = "high"
+	Low    CatalogModelReasoningEffort = "low"
+	Max    CatalogModelReasoningEffort = "max"
+	Medium CatalogModelReasoningEffort = "medium"
+	Xhigh  CatalogModelReasoningEffort = "xhigh"
+)
+
+// Valid indicates whether the value is a known member of the CatalogModelReasoningEffort enum.
+func (e CatalogModelReasoningEffort) Valid() bool {
+	switch e {
+	case High:
+		return true
+	case Low:
+		return true
+	case Max:
+		return true
+	case Medium:
+		return true
+	case Xhigh:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileAuthorityMode.
+const (
+	CatalogProfileAuthorityModeBranchDraftPr CatalogProfileAuthorityMode = "branch-draft-pr"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileAuthorityMode enum.
+func (e CatalogProfileAuthorityMode) Valid() bool {
+	switch e {
+	case CatalogProfileAuthorityModeBranchDraftPr:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileAuthorityNetwork.
+const (
+	CatalogProfileAuthorityNetworkFalse CatalogProfileAuthorityNetwork = false
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileAuthorityNetwork enum.
+func (e CatalogProfileAuthorityNetwork) Valid() bool {
+	switch e {
+	case CatalogProfileAuthorityNetworkFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileAuthoritySandbox.
+const (
+	WorkspaceWrite CatalogProfileAuthoritySandbox = "workspace-write"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileAuthoritySandbox enum.
+func (e CatalogProfileAuthoritySandbox) Valid() bool {
+	switch e {
+	case WorkspaceWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileContextImages.
+const (
+	CatalogProfileContextImagesFalse CatalogProfileContextImages = false
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileContextImages enum.
+func (e CatalogProfileContextImages) Valid() bool {
+	switch e {
+	case CatalogProfileContextImagesFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileContextSources.
+const (
+	CatalogProfileContextSourcesChecks        CatalogProfileContextSources = "checks"
+	CatalogProfileContextSourcesInstructions  CatalogProfileContextSources = "instructions"
+	CatalogProfileContextSourcesIssue         CatalogProfileContextSources = "issue"
+	CatalogProfileContextSourcesIssueComments CatalogProfileContextSources = "issue_comments"
+	CatalogProfileContextSourcesPullRequest   CatalogProfileContextSources = "pull_request"
+	CatalogProfileContextSourcesRepository    CatalogProfileContextSources = "repository"
+	CatalogProfileContextSourcesReviewThread  CatalogProfileContextSources = "review_thread"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileContextSources enum.
+func (e CatalogProfileContextSources) Valid() bool {
+	switch e {
+	case CatalogProfileContextSourcesChecks:
+		return true
+	case CatalogProfileContextSourcesInstructions:
+		return true
+	case CatalogProfileContextSourcesIssue:
+		return true
+	case CatalogProfileContextSourcesIssueComments:
+		return true
+	case CatalogProfileContextSourcesPullRequest:
+		return true
+	case CatalogProfileContextSourcesRepository:
+		return true
+	case CatalogProfileContextSourcesReviewThread:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileContinuationPipeline.
+const (
+	Disabled CatalogProfileContinuationPipeline = "disabled"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileContinuationPipeline enum.
+func (e CatalogProfileContinuationPipeline) Valid() bool {
+	switch e {
+	case Disabled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileRole.
+const (
+	Implementation CatalogProfileRole = "implementation"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileRole enum.
+func (e CatalogProfileRole) Valid() bool {
+	switch e {
+	case Implementation:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileTriggersAssignment.
+const (
+	CatalogProfileTriggersAssignmentIssueCommentCreated CatalogProfileTriggersAssignment = "issue_comment.created"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileTriggersAssignment enum.
+func (e CatalogProfileTriggersAssignment) Valid() bool {
+	switch e {
+	case CatalogProfileTriggersAssignmentIssueCommentCreated:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileValidationChecks.
+const (
+	RepositoryCheck CatalogProfileValidationChecks = "repository-check"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileValidationChecks enum.
+func (e CatalogProfileValidationChecks) Valid() bool {
+	switch e {
+	case RepositoryCheck:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CatalogProfileValidationOnFailure.
+const (
+	DraftWithEvidence CatalogProfileValidationOnFailure = "draft-with-evidence"
+)
+
+// Valid indicates whether the value is a known member of the CatalogProfileValidationOnFailure enum.
+func (e CatalogProfileValidationOnFailure) Valid() bool {
+	switch e {
+	case DraftWithEvidence:
 		return true
 	default:
 		return false
@@ -135,19 +377,34 @@ func (e AssignmentPolicySourceKind) Valid() bool {
 
 // Defines values for ErrorCode.
 const (
-	ErrorCodeInternalError    ErrorCode = "internal_error"
-	ErrorCodeMethodNotAllowed ErrorCode = "method_not_allowed"
-	ErrorCodeNotFound         ErrorCode = "not_found"
+	ErrorCodeAccessDenied          ErrorCode = "access_denied"
+	ErrorCodeGithubUnavailable     ErrorCode = "github_unavailable"
+	ErrorCodeInternalError         ErrorCode = "internal_error"
+	ErrorCodeInvalidRequest        ErrorCode = "invalid_request"
+	ErrorCodeMethodNotAllowed      ErrorCode = "method_not_allowed"
+	ErrorCodeNotFound              ErrorCode = "not_found"
+	ErrorCodeRateLimited           ErrorCode = "rate_limited"
+	ErrorCodeRepositoryUnavailable ErrorCode = "repository_unavailable"
 )
 
 // Valid indicates whether the value is a known member of the ErrorCode enum.
 func (e ErrorCode) Valid() bool {
 	switch e {
+	case ErrorCodeAccessDenied:
+		return true
+	case ErrorCodeGithubUnavailable:
+		return true
 	case ErrorCodeInternalError:
+		return true
+	case ErrorCodeInvalidRequest:
 		return true
 	case ErrorCodeMethodNotAllowed:
 		return true
 	case ErrorCodeNotFound:
+		return true
+	case ErrorCodeRateLimited:
+		return true
+	case ErrorCodeRepositoryUnavailable:
 		return true
 	default:
 		return false
@@ -163,6 +420,57 @@ const (
 func (e HealthStatus) Valid() bool {
 	switch e {
 	case Ok:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfileDiagnosticCode.
+const (
+	DUPLICATEKEY       ProfileDiagnosticCode = "DUPLICATE_KEY"
+	DUPLICATEVALUE     ProfileDiagnosticCode = "DUPLICATE_VALUE"
+	INVALIDFILE        ProfileDiagnosticCode = "INVALID_FILE"
+	INVALIDFORMAT      ProfileDiagnosticCode = "INVALID_FORMAT"
+	INVALIDTYPE        ProfileDiagnosticCode = "INVALID_TYPE"
+	INVALIDYAML        ProfileDiagnosticCode = "INVALID_YAML"
+	LIMITEXCEEDED      ProfileDiagnosticCode = "LIMIT_EXCEEDED"
+	MISSINGCONTEXT     ProfileDiagnosticCode = "MISSING_CONTEXT"
+	MISSINGFIELD       ProfileDiagnosticCode = "MISSING_FIELD"
+	MISSINGFILE        ProfileDiagnosticCode = "MISSING_FILE"
+	UNSUPPORTEDFIELD   ProfileDiagnosticCode = "UNSUPPORTED_FIELD"
+	UNSUPPORTEDVALUE   ProfileDiagnosticCode = "UNSUPPORTED_VALUE"
+	UNSUPPORTEDVERSION ProfileDiagnosticCode = "UNSUPPORTED_VERSION"
+)
+
+// Valid indicates whether the value is a known member of the ProfileDiagnosticCode enum.
+func (e ProfileDiagnosticCode) Valid() bool {
+	switch e {
+	case DUPLICATEKEY:
+		return true
+	case DUPLICATEVALUE:
+		return true
+	case INVALIDFILE:
+		return true
+	case INVALIDFORMAT:
+		return true
+	case INVALIDTYPE:
+		return true
+	case INVALIDYAML:
+		return true
+	case LIMITEXCEEDED:
+		return true
+	case MISSINGCONTEXT:
+		return true
+	case MISSINGFIELD:
+		return true
+	case MISSINGFILE:
+		return true
+	case UNSUPPORTEDFIELD:
+		return true
+	case UNSUPPORTEDVALUE:
+		return true
+	case UNSUPPORTEDVERSION:
 		return true
 	default:
 		return false
@@ -193,6 +501,45 @@ const (
 func (e ProfileRevisionPolicyFormat) Valid() bool {
 	switch e {
 	case Full40CharacterSha:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryProfilesCatalogPath.
+const (
+	RepositoryProfilesCatalogPathDotGithubagentProfilesYml RepositoryProfilesCatalogPath = ".github/agent-profiles.yml"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryProfilesCatalogPath enum.
+func (e RepositoryProfilesCatalogPath) Valid() bool {
+	switch e {
+	case RepositoryProfilesCatalogPathDotGithubagentProfilesYml:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryProfilesState.
+const (
+	Invalid     RepositoryProfilesState = "invalid"
+	Missing     RepositoryProfilesState = "missing"
+	Unsupported RepositoryProfilesState = "unsupported"
+	Valid       RepositoryProfilesState = "valid"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryProfilesState enum.
+func (e RepositoryProfilesState) Valid() bool {
+	switch e {
+	case Invalid:
+		return true
+	case Missing:
+		return true
+	case Unsupported:
+		return true
+	case Valid:
 		return true
 	default:
 		return false
@@ -241,6 +588,92 @@ type AssignmentPolicyRequiredRoles string
 // AssignmentPolicySourceKind defines model for AssignmentPolicy.SourceKind.
 type AssignmentPolicySourceKind string
 
+// CatalogAdapter defines model for CatalogAdapter.
+type CatalogAdapter struct {
+	ContractVersion CatalogAdapterContractVersion `json:"contract_version"`
+	Id              CatalogAdapterId              `json:"id"`
+	RunnerLabel     string                        `json:"runner_label"`
+}
+
+// CatalogAdapterContractVersion defines model for CatalogAdapter.ContractVersion.
+type CatalogAdapterContractVersion int
+
+// CatalogAdapterId defines model for CatalogAdapter.Id.
+type CatalogAdapterId string
+
+// CatalogModel defines model for CatalogModel.
+type CatalogModel struct {
+	Fallback        CatalogModelFallback        `json:"fallback"`
+	Id              string                      `json:"id"`
+	ReasoningEffort CatalogModelReasoningEffort `json:"reasoning_effort"`
+}
+
+// CatalogModelFallback defines model for CatalogModel.Fallback.
+type CatalogModelFallback string
+
+// CatalogModelReasoningEffort defines model for CatalogModel.ReasoningEffort.
+type CatalogModelReasoningEffort string
+
+// CatalogProfile defines model for CatalogProfile.
+type CatalogProfile struct {
+	Adapter   CatalogAdapter `json:"adapter"`
+	Authority struct {
+		Mode    CatalogProfileAuthorityMode    `json:"mode"`
+		Network CatalogProfileAuthorityNetwork `json:"network"`
+		Sandbox CatalogProfileAuthoritySandbox `json:"sandbox"`
+	} `json:"authority"`
+	Context struct {
+		Images  CatalogProfileContextImages    `json:"images"`
+		Sources []CatalogProfileContextSources `json:"sources"`
+	} `json:"context"`
+	Continuation struct {
+		Pipeline       CatalogProfileContinuationPipeline `json:"pipeline"`
+		ReviewComments bool                               `json:"review_comments"`
+	} `json:"continuation"`
+	Description string             `json:"description"`
+	Enabled     bool               `json:"enabled"`
+	Model       CatalogModel       `json:"model"`
+	Name        string             `json:"name"`
+	Role        CatalogProfileRole `json:"role"`
+	Triggers    struct {
+		Assignment CatalogProfileTriggersAssignment `json:"assignment"`
+	} `json:"triggers"`
+	Validation struct {
+		Checks    []CatalogProfileValidationChecks  `json:"checks"`
+		OnFailure CatalogProfileValidationOnFailure `json:"on_failure"`
+	} `json:"validation"`
+}
+
+// CatalogProfileAuthorityMode defines model for CatalogProfile.Authority.Mode.
+type CatalogProfileAuthorityMode string
+
+// CatalogProfileAuthorityNetwork defines model for CatalogProfile.Authority.Network.
+type CatalogProfileAuthorityNetwork bool
+
+// CatalogProfileAuthoritySandbox defines model for CatalogProfile.Authority.Sandbox.
+type CatalogProfileAuthoritySandbox string
+
+// CatalogProfileContextImages defines model for CatalogProfile.Context.Images.
+type CatalogProfileContextImages bool
+
+// CatalogProfileContextSources defines model for CatalogProfile.Context.Sources.
+type CatalogProfileContextSources string
+
+// CatalogProfileContinuationPipeline defines model for CatalogProfile.Continuation.Pipeline.
+type CatalogProfileContinuationPipeline string
+
+// CatalogProfileRole defines model for CatalogProfile.Role.
+type CatalogProfileRole string
+
+// CatalogProfileTriggersAssignment defines model for CatalogProfile.Triggers.Assignment.
+type CatalogProfileTriggersAssignment string
+
+// CatalogProfileValidationChecks defines model for CatalogProfile.Validation.Checks.
+type CatalogProfileValidationChecks string
+
+// CatalogProfileValidationOnFailure defines model for CatalogProfile.Validation.OnFailure.
+type CatalogProfileValidationOnFailure string
+
 // Error defines model for Error.
 type Error struct {
 	Code    ErrorCode `json:"code"`
@@ -258,6 +691,16 @@ type Health struct {
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// ProfileDiagnostic defines model for ProfileDiagnostic.
+type ProfileDiagnostic struct {
+	Code    ProfileDiagnosticCode `json:"code"`
+	Message string                `json:"message"`
+	Path    string                `json:"path"`
+}
+
+// ProfileDiagnosticCode defines model for ProfileDiagnostic.Code.
+type ProfileDiagnosticCode string
+
 // ProfileRevisionPolicy defines model for ProfileRevisionPolicy.
 type ProfileRevisionPolicy struct {
 	DefaultBranchAncestor ProfileRevisionPolicyDefaultBranchAncestor `json:"default_branch_ancestor"`
@@ -269,6 +712,30 @@ type ProfileRevisionPolicyDefaultBranchAncestor bool
 
 // ProfileRevisionPolicyFormat defines model for ProfileRevisionPolicy.Format.
 type ProfileRevisionPolicyFormat string
+
+// RepositoryProfile defines model for RepositoryProfile.
+type RepositoryProfile struct {
+	Configuration CatalogProfile `json:"configuration"`
+	Id            string         `json:"id"`
+	Revision      string         `json:"revision"`
+}
+
+// RepositoryProfiles defines model for RepositoryProfiles.
+type RepositoryProfiles struct {
+	CatalogPath   RepositoryProfilesCatalogPath `json:"catalog_path"`
+	DefaultBranch string                        `json:"default_branch"`
+	Diagnostics   []ProfileDiagnostic           `json:"diagnostics"`
+	Profiles      []RepositoryProfile           `json:"profiles"`
+	Repository    string                        `json:"repository"`
+	Revision      string                        `json:"revision"`
+	State         RepositoryProfilesState       `json:"state"`
+}
+
+// RepositoryProfilesCatalogPath defines model for RepositoryProfiles.CatalogPath.
+type RepositoryProfilesCatalogPath string
+
+// RepositoryProfilesState defines model for RepositoryProfiles.State.
+type RepositoryProfilesState string
 
 // InternalError defines model for InternalError.
 type InternalError = Error
@@ -290,6 +757,12 @@ type ServerInterface interface {
 	// HeadAssignmentConvention Check convention availability without a response body
 	// (HEAD /v1/assignment-convention)
 	HeadAssignmentConvention(w http.ResponseWriter, r *http.Request)
+	// GetRepositoryProfiles Read profiles at the current default-branch commit
+	// (GET /v1/repositories/{owner}/{repo}/profiles)
+	GetRepositoryProfiles(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// HeadRepositoryProfiles Check profile read availability without a response body
+	// (HEAD /v1/repositories/{owner}/{repo}/profiles)
+	HeadRepositoryProfiles(w http.ResponseWriter, r *http.Request, owner string, repo string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -348,6 +821,76 @@ func (siw *ServerInterfaceWrapper) HeadAssignmentConvention(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.HeadAssignmentConvention(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryProfiles operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryProfiles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryProfiles(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// HeadRepositoryProfiles operation middleware
+func (siw *ServerInterfaceWrapper) HeadRepositoryProfiles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.HeadRepositoryProfiles(w, r, owner, repo)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -481,6 +1024,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/health", wrapper.HeadHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/assignment-convention", wrapper.GetAssignmentConvention)
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/assignment-convention", wrapper.HeadAssignmentConvention)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profiles", wrapper.GetRepositoryProfiles)
+	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profiles", wrapper.HeadRepositoryProfiles)
 
 	return m
 }

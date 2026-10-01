@@ -1,0 +1,184 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Repository agent profiles v1",
+	"description": "AW-003: declarative profiles; no credentials, commands, or runtime overrides.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["schema_version", "profiles"],
+	"properties": {
+		"schema_version": { "type": "integer", "const": 1 },
+		"profiles": {
+			"type": "object",
+			"minProperties": 1,
+			"maxProperties": 32,
+			"propertyNames": {
+				"pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+				"maxLength": 64
+			},
+			"additionalProperties": { "$ref": "#/$defs/profile" }
+		}
+	},
+	"$defs": {
+		"profile": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [
+				"enabled",
+				"name",
+				"description",
+				"role",
+				"adapter",
+				"model",
+				"triggers",
+				"context",
+				"authority",
+				"validation",
+				"continuation"
+			],
+			"properties": {
+				"enabled": { "type": "boolean" },
+				"name": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 80,
+					"pattern": "\\S"
+				},
+				"description": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 500,
+					"pattern": "\\S"
+				},
+				"role": { "type": "string", "const": "implementation" },
+				"adapter": { "$ref": "#/$defs/adapter" },
+				"model": { "$ref": "#/$defs/model" },
+				"triggers": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["assignment"],
+					"properties": {
+						"assignment": { "type": "string", "const": "issue_comment.created" }
+					}
+				},
+				"context": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["sources", "images"],
+					"properties": {
+						"sources": {
+							"type": "array",
+							"minItems": 1,
+							"maxItems": 7,
+							"uniqueItems": true,
+							"items": {
+								"type": "string",
+								"enum": [
+									"issue",
+									"issue_comments",
+									"repository",
+									"instructions",
+									"pull_request",
+									"review_thread",
+									"checks"
+								]
+							},
+							"allOf": [
+								{ "contains": { "const": "issue" } },
+								{ "contains": { "const": "repository" } }
+							]
+						},
+						"images": { "type": "boolean", "const": false }
+					}
+				},
+				"authority": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["mode", "sandbox", "network"],
+					"properties": {
+						"mode": { "type": "string", "const": "branch-draft-pr" },
+						"sandbox": { "type": "string", "const": "workspace-write" },
+						"network": { "type": "boolean", "const": false }
+					}
+				},
+				"validation": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["checks", "on_failure"],
+					"properties": {
+						"checks": {
+							"type": "array",
+							"minItems": 1,
+							"maxItems": 1,
+							"uniqueItems": true,
+							"items": { "type": "string", "const": "repository-check" }
+						},
+						"on_failure": { "type": "string", "const": "draft-with-evidence" }
+					}
+				},
+				"continuation": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["review_comments", "pipeline"],
+					"properties": {
+						"review_comments": { "type": "boolean" },
+						"pipeline": { "type": "string", "const": "disabled" }
+					}
+				}
+			},
+			"allOf": [
+				{
+					"if": {
+						"properties": {
+							"continuation": {
+								"properties": { "review_comments": { "const": true } }
+							}
+						}
+					},
+					"then": {
+						"properties": {
+							"context": {
+								"properties": {
+									"sources": {
+										"allOf": [
+											{ "contains": { "const": "pull_request" } },
+											{ "contains": { "const": "review_thread" } },
+											{ "contains": { "const": "checks" } }
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		"adapter": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "contract_version", "runner_label"],
+			"properties": {
+				"id": { "type": "string", "const": "codex-chatgpt-private-runner" },
+				"contract_version": { "type": "integer", "const": 1 },
+				"runner_label": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 64,
+					"pattern": "^(?!(?:self-hosted|linux|windows|macOS|x64|ARM|ARM64)$)[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+				}
+			}
+		},
+		"model": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "reasoning_effort", "fallback"],
+			"properties": {
+				"id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+				"reasoning_effort": {
+					"type": "string",
+					"enum": ["low", "medium", "high", "xhigh", "max"]
+				},
+				"fallback": { "type": "string", "const": "none" }
+			}
+		}
+	}
+}

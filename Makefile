@@ -7,10 +7,13 @@ OAPI_CODEGEN_VERSION := v2.8.0
 check: format-check lint test runtime-check profiles-check agents-contract-check
 
 generate-agents-contract:
+	$(PROFILE_PYTHON) ops/agent-profiles/export_contract.py
+	cd frontend && npm exec prettier -- --config .prettierrc --write ../services/agents/api/openapi.yaml src/lib/server/profile-schema.gen.json
 	cd services/agents && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o internal/api/contract/agents.gen.go api/openapi.yaml
 	cd frontend && npm run generate:agents-api
 
 agents-contract-check:
+	$(PROFILE_PYTHON) ops/agent-profiles/export_contract.py --check
 	@set -eu; task_tmp=$$(mktemp -d /tmp/hub-agents-contract.XXXXXX); \
 	trap 'rm -f "$$task_tmp/agents.gen.go" "$$task_tmp/agents-contract.gen.ts"; rmdir "$$task_tmp"' EXIT; \
 	(cd services/agents && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o "$$task_tmp/agents.gen.go" api/openapi.yaml); \

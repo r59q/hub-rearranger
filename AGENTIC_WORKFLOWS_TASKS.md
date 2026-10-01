@@ -19,6 +19,8 @@ The same workflow remains operable after Hub is removed.
 - This file is the source of truth for task status, ordering, dependencies, and
   acceptance criteria. Mark a task complete here only after its acceptance
   criteria are met; add a short completion note when useful.
+- Task IDs remain stable. Phases group related work; dependencies determine
+  which tasks can be picked, including dependencies on later-numbered tasks.
 - Give every implementation task one domain owner and one active
   implementation agent. Review-only agents may work in parallel.
 - Each implementation change references one task ID in its handoff, commit, or
@@ -149,7 +151,7 @@ The same workflow remains operable after Hub is removed.
   stopping Agents left the other services healthy. Profile reads and readiness
   remain AW-005 and AW-006.
 
-- [ ] **AW-005 — Read and validate repository-local profiles**
+- [x] **AW-005 — Read and validate repository-local profiles**
 
   **Domain:** agents  
   **Depends on:** AW-004
@@ -164,6 +166,16 @@ The same workflow remains operable after Hub is removed.
   - Tests cover valid `codex-thorough`, invalid schema, and missing-file cases.
   - No profile data is persisted as a competing Hub source of truth.
 
+  **Completed (2026-09-30):** Added fresh default-branch profile reads through
+  `go-github`, commit-pinned catalog/profile revisions, full canonical v1 schema
+  validation, and safe missing/invalid/unsupported states. The versioned read API
+  and typed server-only frontend adapter expose complete validated profiles and
+  actionable diagnostics without profile persistence. Contract export/drift
+  checks keep Go/frontend schemas and generated transport shapes aligned with
+  AW-003. Updated token/Compose wiring and component documentation. Full
+  `make check` passed; Agents/frontend images built, and an isolated Agents
+  container became healthy. Readiness and the profile UI remain AW-006/AW-007.
+
 - [ ] **AW-006 — Derive readiness diagnostics**
 
   **Domain:** agents  
@@ -171,6 +183,8 @@ The same workflow remains operable after Hub is removed.
 
   Derive “configuration present” from repository files and GitHub workflow
   metadata. Read the no-write GitHub diagnostic result as “runtime verified.”
+  Define the profile-specific evidence contract and update the no-write
+  diagnostic producer to publish it as a GitHub artifact or check.
 
   **Acceptance criteria:**
 
@@ -178,6 +192,16 @@ The same workflow remains operable after Hub is removed.
     verification, verified runtime, and failed verification.
   - The diagnosis names missing files, expected runner label, and next action.
   - Authentication is never exposed; only safe readiness status is shown.
+  - Versioned, machine-readable evidence identifies the repository, profile ID
+    and revision, expected runner label, requested/effective model and reasoning
+    policy, CLI version, workflow run/attempt, verification time, and safe outcome.
+    The reader verifies its origin against the trusted GitHub workflow/job.
+  - Freshness and policy-matching rules are documented and tested. Missing,
+    stale, or mismatched evidence produces pending verification with a next
+    action; a matching failed diagnostic produces failed verification.
+  - The AW-001 `addons` result cannot verify the `hub-agent-codex` profile or
+    its exact model policy. Readiness states can be implemented and tested
+    offline before the dedicated execution runner is provisioned in AW-012.
 
 - [ ] **AW-007 — Build the profile and readiness UI**
 
@@ -195,10 +219,43 @@ The same workflow remains operable after Hub is removed.
 
 ## Phase 2 — Bootstrap GitHub-native conventions
 
+- [ ] **AW-019 — Implement Hub GitHub identity and write authorization**
+
+  **Domain:** identity
+
+  **Depends on:** AW-004
+
+  Implement GitHub sign-in, server-side sessions and token lifecycle, and
+  repository-scoped write authorization for Hub bootstrap and assignment
+  actions. Use the GitHub App user-to-server identity established by AW-002;
+  keep this capability separate from the read-only discovery token.
+
+  **Acceptance criteria:**
+
+  - Sign-in and callbacks bind the verified GitHub identity to a server-side
+    session; callback and mutating requests have forgery protection.
+  - GitHub credentials remain server-side and cannot enter client bundles,
+    browser-accessible storage, responses, logs, or repository artifacts.
+  - Token expiration, refresh where supported, revocation, and sign-out have
+    defined behavior and useful recovery guidance. Invalid sessions or tokens
+    fail closed before a GitHub write.
+  - Each write verifies the signed-in user's current repository access and
+    permissions required by that action. Assignments require current
+    `maintain`/`admin` access and create a comment attributed to that user.
+  - Request only the permissions required by bootstrap PRs and assignment
+    comments. Read-only discovery credentials cannot authorize mutations.
+  - Controlled integration tests cover identity attribution, unauthorized
+    repository access, forged requests, and expired/revoked credentials.
+    Backend ownership and the public API are documented under the repository's
+    Go service/OpenAPI conventions; SvelteKit owns the sign-in interface.
+
+  **Ordering:** The new ID preserves AW-001–AW-018 references. This task
+  precedes AW-009/AW-014; GitHub-native execution does not depend on Hub sign-in.
+
 - [ ] **AW-008 — Define bootstrap PR contents and generator**
 
   **Domain:** agents  
-  **Depends on:** AW-003
+  **Depends on:** AW-003, AW-006, AW-011, AW-013
 
   Build a deterministic generator for the GitHub-owned artifacts needed by
   `codex-thorough`: profile catalog, adapter workflow, validation/diagnostic
@@ -210,11 +267,15 @@ The same workflow remains operable after Hub is removed.
     credentials.
   - Re-running generation is idempotent and presents a clear diff.
   - Generated workflow uses a dedicated runner label and least privilege.
+  - Bootstrap output uses the implemented AW-011–AW-013 workflows and AW-006
+    diagnostic evidence contract as canonical templates. It installs the
+    working GitHub-native flow without placeholder or independently maintained
+    execution logic; runner provisioning remains an explicit manual step.
 
 - [ ] **AW-009 — Create a bootstrap PR from Hub**
 
   **Domain:** agents / GitHub integration  
-  **Depends on:** AW-008, AW-007
+  **Depends on:** AW-008, AW-007, AW-019
 
   Add the Hub action that creates a branch and draft PR containing the
   generated bootstrap artifacts.
@@ -226,6 +287,8 @@ The same workflow remains operable after Hub is removed.
     manual runner-installation checklist.
   - Hub retains no hidden configuration after the PR is created.
   - Write authority is distinct from the existing read-only discovery token.
+  - The action uses AW-019's authenticated identity and repository write
+    authorization, and requires reconnecting when that access is unavailable.
 
 - [ ] **AW-010 — Profile editor and setup tutorial**
 
@@ -261,14 +324,23 @@ The same workflow remains operable after Hub is removed.
   - Untrusted actors, unsupported profiles, and malformed requests fail with a
     clear GitHub check/comment.
   - The workflow uses the profile revision recorded in the assignment.
+  - Both pinned and current policies validate and permit the assignment.
+    Disabled/removed profiles and material policy changes fail closed, and
+    current requester/rerun-actor permissions are checked before dispatch.
+  - Tests cover duplicate delivery, reruns, concurrent requests, and policy or
+    permission revocation. Duplicate delivery cannot create a new assignment;
+    retries/reruns resume the same GitHub-native assignment without concurrent
+    duplicate work. Distinct comment IDs remain separate assignments.
 
 - [ ] **AW-012 — Implement the self-hosted Codex patch job**
 
   **Domain:** repository workflow / runtime adapter  
-  **Depends on:** AW-011
+  **Depends on:** AW-011, AW-006
 
   Run Codex in an isolated checkout on the approved runner and emit a patch plus
   structured summary/evidence.
+  Provision and verify the dedicated execution runner before any live source
+  execution; workflow development and offline tests may proceed independently.
 
   **Acceptance criteria:**
 
@@ -278,6 +350,15 @@ The same workflow remains operable after Hub is removed.
     output or repository-controlled files.
   - The job creates a patch artifact rather than pushing directly to GitHub.
   - Failure and cancellation leave useful GitHub-visible evidence.
+  - A dedicated restricted host/account is provisioned with the profile's
+    `hub-agent-codex` label and approved repository access. The shared `addons`
+    spike exception does not authorize source execution.
+  - Live verification proves the exact `gpt-6.1-sol`/`high` policy with no
+    fallback and publishes matching AW-006 evidence before enabling execution.
+  - Isolation checks demonstrate that workload code cannot read host
+    authentication or unrelated credentials, inherit ambient Codex configuration,
+    or use workload network access. Operator setup/revocation procedures are
+    documented; adding a runner label alone does not satisfy this prerequisite.
 
 - [ ] **AW-013 — Implement the separate branch and draft-PR write job**
 
@@ -294,11 +375,23 @@ The same workflow remains operable after Hub is removed.
     authority, and validation evidence.
   - The job posts a concise issue/PR update and GitHub check.
   - It cannot merge or update an unrelated branch.
+  - Before applying a patch, the job independently verifies artifact identity
+    and digest against the originating assignment/run/attempt, current profile
+    policy and authorization, and the expected repository/branch head.
+  - Protected-path and patch checks enforce the AW-003 adapter contract,
+    including `.github/**`, runtime/profile tooling, instructions, credentials,
+    path escapes, unsafe symlinks, and submodule changes. Tests cover forged
+    artifacts, protected changes, revoked policy, and stale heads.
+  - Duplicate events, reruns, and concurrent attempts cannot create duplicate
+    branches or PRs or overwrite another attempt. Tests prove recovery from
+    partial publication, such as a branch created before PR creation failed,
+    by reconciling verified GitHub artifacts without force-pushing or claiming
+    success before publication completes.
 
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 
   **Domain:** frontend / agents  
-  **Depends on:** AW-011, AW-013
+  **Depends on:** AW-011, AW-013, AW-019
 
   Let a user assign `codex-thorough` from a Hub issue view by writing the same
   GitHub-native request used outside Hub. Display its GitHub-derived outcome.
@@ -308,6 +401,8 @@ The same workflow remains operable after Hub is removed.
   - Hub does not invoke or poll a runner directly.
   - The assignment UI explains profile authority before the GitHub write.
   - Status, PR, branch, check, and summary are derived from GitHub artifacts.
+  - Assignment comments use AW-019's signed-in user identity; missing or revoked
+    access prompts reconnection rather than falling back to a bot or read token.
 
 ## Phase 4 — Pull-request follow-up
 

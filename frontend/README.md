@@ -71,9 +71,12 @@ service. `src/lib/server/issues-api.ts` provides the equivalent issues boundary.
 functions and actions use these adapters on the server; browser components receive
 application-level data and never call the Go services directly.
 
-`src/lib/server/agents-api.ts` reads the Agents assignment convention, using `openapi-fetch`
+`src/lib/server/agents-api.ts` reads the Agents assignment convention and repository profile catalogs, using `openapi-fetch`
 and generated OpenAPI types/enum values in `agents-contract.gen.ts`. It validates successful
-response shapes and exposes safe service/transport errors. Create a client with `agentsClient(fetch)`
+response shapes and exposes safe service/transport errors. `getRepositoryProfiles(owner, repo)`
+returns the catalog state, commit revision, complete typed profile policy, and diagnostics.
+Profile semantics are validated by pinned Ajv against the generated copy of the canonical
+Draft 2020-12 schema; catalog validation does not establish runtime readiness. Create a client with `agentsClient(fetch)`
 inside server load functions when agent views are introduced. No service address or credentials
 belong in browser code. From the repository root, run `make generate-agents-contract` after
 editing the Agents OpenAPI specification; `make agents-contract-check` verifies generated code

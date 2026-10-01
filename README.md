@@ -10,8 +10,7 @@ agents. GitHub remains the source of truth; Hub Rearranger stores only applicati
   service.
 - [`services/issues`](services/issues/README.md) — recently active GitHub issues and relationship
   discovery service.
-- [`services/agents`](services/agents/README.md) — agent convention read API and foundation for
-  repository profiles/readiness.
+- [`services/agents`](services/agents/README.md) — repository profile validation and agent convention read API.
 
 The planned GitHub-native agent workflow, its [assignment comment
 convention](AGENTIC_WORKFLOWS_ANALYSIS.md#aw-002-assignment-convention-v1), and the
@@ -37,7 +36,7 @@ Repository selections persist in the `repositories-data` Docker volume. Use `doc
 `docker compose down --volumes` to also remove the local selection database.
 
 To run the components directly instead, start the repository service with a GitHub token that can
-read the repositories you want to select:
+read the repositories you want to select (Metadata, Contents, and Issues):
 
 ```sh
 cd services/repositories
@@ -51,11 +50,12 @@ cd services/issues
 GITHUB_TOKEN=github_pat_... go run ./cmd/server
 ```
 
-Start the Agents scaffold in another terminal; it needs no credentials:
+Start the Agents service in another terminal with read-only Contents access
+for private repository profiles:
 
 ```sh
 cd services/agents
-go run ./cmd/server
+GITHUB_TOKEN=github_pat_... go run ./cmd/server
 ```
 
 Then run the frontend:
@@ -69,7 +69,7 @@ npm run dev
 The frontend defaults to `http://127.0.0.1:8080` for repositories, `http://127.0.0.1:8081` for
 issues, and `http://127.0.0.1:8082` for agents. Set the server-only `REPOSITORIES_API_URL`,
 `ISSUES_API_URL`, and `AGENTS_API_URL` variables to use other addresses. The Agents adapter is
-available for future profile/readiness views; existing views do not depend on it.
+available for profile reads and future readiness views; existing views do not depend on it.
 
 ## Repository-wide validation
 

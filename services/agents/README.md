@@ -1,77 +1,88 @@
-# Agents service (AW-004)
+# Agents service (AW-004 / AW-005)
 
-The Agents service owns repository profile semantics, derived readiness, and
-the GitHub-native assignment convention. It has no queue, runtime, provider
+The Agents service owns repository profiles, their validation, derived readiness,
+and the GitHub-native assignment convention. It has no queue, runtime, provider
 credential store, transcript store, or durable assignment/profile database.
-GitHub remains the source of truth. Runners and their authentication live
-outside Hub and Docker Compose.
-
-This scaffold exposes liveness and static AW-002/AW-003 convention metadata.
-Repository profile reads/validation are AW-005; runtime readiness is AW-006.
-The service does not report an empty catalog or a verified runner before those
-capabilities exist. Describing an assignment convention does not install its
-GitHub workflow, authorize an actor, or write an assignment.
+GitHub remains the source of truth. Runners and their authentication live outside
+Hub and Docker Compose. Runtime readiness is AW-006; profile validation alone
+never proves that a runner, model, or account is ready.
 
 ## Local setup and configuration
 
-Use Go 1.25. No GitHub token, provider login, database, or runner is needed:
+Use Go 1.25. Public catalogs can be read without a token; private repositories
+require a fine-grained token with read-only Metadata and Contents access:
 
 ```sh
-go run ./cmd/server
+GITHUB_TOKEN=github_pat_... go run ./cmd/server
 ```
 
-`AGENTS_ADDR` defaults to `127.0.0.1:8082`. Set it to `:8082` in a private
-container network. Root Docker Compose builds this service and publishes its
-port on loopback, with an `AGENTS_PORT` override. Copy `.env.example` if a
-different direct-run listen address is needed; environment files are ignored
-and never loaded automatically by the service.
+`GITHUB_TOKEN` stays in the Go process. No provider login, database, or runner
+is needed. `AGENTS_ADDR` defaults to `127.0.0.1:8082`; Compose uses `:8082` on
+its private network, publishes the port on loopback, and passes the root read
+token. `AGENTS_PORT` overrides the published port. Environment files are
+ignored and never loaded automatically by the service.
 
-The API has no caller authentication at this stage. Its only data is public
-protocol metadata. Keep it on loopback or a private application network and
+The API has no caller authentication and projects repositories visible to its
+server-side token. Keep it on loopback or a private application network and
 access it through SvelteKit's server adapter. Do not publish it as a public
-service. Future repository integrations require deliberate credential and
-authorization changes; these scaffold endpoints need neither.
+service. A future multi-user deployment needs caller authorization before
+exposing private repository data.
 
 ## Layers and integration points
 
-- `cmd/server` composes the application, HTTP timeouts, logging, and signal-based shutdown.
-- `internal/api` maps domain results to generated DTOs and returns safe transport errors.
-- `internal/domain` owns convention rules, with no HTTP, OpenAPI, or infrastructure dependencies.
-- `internal/infrastructure/config` reads process configuration. GitHub adapters will live in infrastructure when introduced.
+- `cmd/server` composes dependencies, HTTP timeouts, logging, and graceful shutdown.
+- `internal/api` validates transport input and maps domain results into generated DTOs.
+- `internal/domain` owns convention and profile-read use cases through reader/validator interfaces.
+- `internal/infrastructure/github` reads GitHub through pinned `go-github`.
+- `internal/infrastructure/profiles` implements bounded YAML parsing and canonical JSON Schema validation.
+- `internal/infrastructure/config` reads server environment settings.
 - `api/openapi.yaml` is the versioned public API contract.
 - `frontend/src/lib/server/agents-api.ts` is the typed server-only consumer.
 
-The domain receives request cancellation and creates fresh convention values
-for every read. It stores no mutable cross-request policy. Health means process
-liveness; it is independent of GitHub, profiles, and external runners.
-
 ## Public API
 
-The source of truth is [`api/openapi.yaml`](api/openapi.yaml), version 1.0.0.
-It uses OpenAPI 3.0.3 for the pinned generator/validator compatibility path;
-the API URL version and catalog schema version are separate contracts.
+[`api/openapi.yaml`](api/openapi.yaml), version 1.1.0, uses OpenAPI 3.0.3.
+The API URL version and catalog schema version are separate contracts.
 
-- `GET /health` returns `{"status":"ok"}`.
+- `GET /health` returns `{"status":"ok"}` independently of GitHub and runners.
 - `GET /v1/assignment-convention` describes convention v1, catalog schema v1,
   issue-comment assignment, required current `maintain`/`admin` roles,
   `branch-draft-pr` authority, and a full default-branch ancestor SHA.
-- `HEAD` on either endpoint checks availability with no response body.
+- `GET /v1/repositories/{owner}/{repo}/profiles` reads and validates
+  `.github/agent-profiles.yml` in the requested repository.
+- `HEAD` on these endpoints checks read availability without a response body.
+  A `200` profile response may still describe an invalid or missing catalog;
+  use GET to inspect its state.
 
-The returned command template has `{profile_id}` and `{profile_revision}`
-placeholders; it is documentation, not an assignment request or runnable shell
-command. The profile catalog belongs to the selected repository and will be
-read by AW-005, never inferred from this service's local checkout.
+Each profile read fetches repository metadata, resolves the default branch to
+a full commit SHA, and reads the file at that exact SHA. The response includes
+`repository`, `catalog_path`, `default_branch`, `revision`, `state`, `profiles`,
+and `diagnostics`. Each valid profile has `id`, the same commit `revision`, and
+a typed `configuration` containing all v1 policy fields. Revisions are Git
+commit SHAs, never the Contents API blob SHA. They identify the exact catalog
+snapshot displayed; this endpoint does not authorize a later assignment or
+perform pinned/current execution-policy checks.
 
-Unsupported methods return `405` with `Allow: GET, HEAD`. Unrecognized paths
-return `404`. GET error responses use the contract's `Error` schema with a safe
-`code` and `message`; internal failures return `500`. Exceptions and arbitrary
-request data are excluded from responses and logs. The frontend distinguishes
-invalid responses from service unavailability using safe adapter errors.
+`state` is `valid`, `missing`, `invalid`, or `unsupported` (unknown catalog
+schema version). Missing files, malformed YAML, unknown fields/values, unsupported
+file types, and size/depth limits have safe actionable diagnostics. Invalid
+catalogs return no partially parsed profiles. Disabled profiles remain visible
+when the catalog validates. Profiles sort by ID; diagnostics sort and deduplicate
+by path/code/message. Profile IDs and unknown keys are redacted in error paths;
+raw YAML, parser exceptions, GitHub errors, and repository content never enter
+logs. Display text in valid profiles is repository-owned prose, never executable
+instructions; repositories must not put credentials in catalog fields.
+
+Repository access failures return `403` or `404`, rate limits `429`, GitHub
+failures `502`, invalid owner/name `400`, and internal failures `500`, with
+safe `Error` responses and recovery guidance. Unsupported methods return `405`
+with `Allow: GET, HEAD`; unknown paths return `404`. All reads use `no-store`.
+Every request fetches fresh GitHub data; there is no profile persistence or cache.
+Requests have an eight-second upstream deadline and propagate cancellation.
 
 ## Development, contracts, and tests
 
-Use the repository-wide formatter/linter versions and commands. From this
-component:
+Use the repository-wide tool versions and commands:
 
 ```sh
 gofmt -w cmd internal
@@ -79,7 +90,7 @@ go vet ./...
 go test ./...
 ```
 
-From the repository root, after the documented frontend and Python setup:
+After frontend and Python development-tool setup, from the repository root:
 
 ```sh
 make generate-agents-contract
@@ -87,23 +98,27 @@ make agents-contract-check
 make check
 ```
 
-The pinned `oapi-codegen` generates Go DTOs and standard-library HTTP routes;
-`openapi-typescript` generates frontend types and enum values, consumed through
-a focused `openapi-fetch` adapter. Domain types are mapped at the API boundary.
-Generated transport code is required checked-in contract code, not a domain
-model; regenerate it rather than editing it. Generator options and versions
-are pinned in `api/codegen.yaml`, the root Makefile, and the frontend lockfile.
+[`ops/agent-profiles/schema.v1.json`](../../ops/agent-profiles/schema.v1.json)
+is the normative schema. `export_contract.py` exports its checked-in Go and
+frontend schema snapshots and the `Catalog*` OpenAPI field shapes; do not edit
+these generated definitions. The transport projection converts constants to
+enums and omits JSON Schema conditionals and regex patterns that OpenAPI 3.0
+cannot faithfully validate. Full semantics are checked with the original
+Draft 2020-12 schema by `jsonschema/v6` in Go and Ajv in the server-only frontend
+adapter. Go YAML parsing preserves the AW-003 size/depth/ambiguity restrictions;
+`regexp2` supports the canonical runner-label negative lookahead. The Go service
+needs no Python runtime. Python is only used during contract generation/checks.
 
-Contract checks regenerate into a temporary directory and compare without
-editing the working tree. API tests validate actual HTTP requests/responses
-against OpenAPI with `kin-openapi`, including safe failure responses and
-method rejection. Domain tests cover assignment constraints, cancellation,
-and mutation isolation. Frontend tests cover the server-only address,
-successful reads, malformed policies, and unavailable/error responses.
-No test needs GitHub, OpenAI, authentication, or a self-hosted runner.
+Pinned `oapi-codegen` generates Go DTOs/routes, and `openapi-typescript` generates
+frontend types and enum values. Domain models remain independent of transport
+DTOs. Contract checks verify schema snapshots and transport projection, then
+compare regenerated Go/TypeScript code without changing files.
 
-Generated API types do not perform runtime validation: the frontend additionally
-checks the response shape and supported policy values before returning data.
-Expected enum values come from the generated contract. Profile YAML parsing and
-validation continue to use the separate AW-003 schema; this scaffold does not
-reimplement that schema or install a Python runtime in the Go service.
+Domain tests cover fresh reads, revision propagation, ordering, validation
+states, upstream failures, and cancellation. Controlled GitHub HTTP tests cover
+commit pinning, file absence/types/limits, credentials, and access/rate errors.
+API integration tests exercise valid `codex-thorough`, invalid schema/YAML,
+unsupported versions, missing catalogs, safe failures, and HEAD against OpenAPI.
+Frontend tests cover typed reads, schema validation, revision consistency,
+malformed responses, and useful transport errors. No test needs live GitHub,
+OpenAI, runner authentication, or a self-hosted runner.

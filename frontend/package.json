@@ -36,6 +36,7 @@
 	},
 	"dependencies": {
 		"@picocss/pico": "^2.1.1",
+		"ajv": "8.20.0",
 		"openapi-fetch": "0.15.0"
 	}
 }
