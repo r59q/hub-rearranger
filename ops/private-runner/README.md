@@ -214,3 +214,14 @@ The legacy `addons` probe above remains unchanged and cannot verify
 private-repository-only producer and versioned evidence contract are described
 in [READINESS.md](READINESS.md). Its offline tests are part of `make runtime-check`.
 Dedicated runner provisioning and live verification remain AW-012.
+
+## Patch execution (AW-012)
+
+The [execution guide](EXECUTION.md) documents the separate operator-installed
+patch launcher, pinned CLI, sandbox probes, read-only GitHub collection, result
+contract, replay recovery, and enablement/revocation gates. On 2026-10-02 the
+operator explicitly approved the existing shared `addons` account/runner and
+public `r59q/hub-rearranger` target for this task. That scoped exception extends
+beyond AW-001; workload isolation and exact-policy verification still apply.
+Other public targets remain blocked. A local preflight is not GitHub readiness
+evidence, and installation does not enable the source workflow automatically.

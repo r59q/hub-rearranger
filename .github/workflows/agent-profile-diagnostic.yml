@@ -1,6 +1,7 @@
 name: Agent profile diagnostic
 
-# Dedicated private runner only. The legacy public addons exception does not apply.
+# Private runners by default; the operator approved addons for r59q/hub-rearranger.
+# Maintainer/default-branch/no-fork guards and exact-policy verification still apply.
 on:
   workflow_dispatch:
 
@@ -13,7 +14,7 @@ concurrency:
 jobs:
   authorize:
     if: >-
-      github.event.repository.private == true &&
+      (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') &&
       github.event.repository.fork == false &&
       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-24.04
@@ -54,7 +55,7 @@ jobs:
     needs: authorize
     if: >-
       needs.authorize.result == 'success' &&
-      github.event.repository.private == true &&
+      (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') &&
       github.event.repository.fork == false &&
       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: [self-hosted, linux, hub-agent-codex]

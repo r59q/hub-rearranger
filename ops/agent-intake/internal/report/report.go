@@ -37,5 +37,5 @@ func Accepted(decision domain.Decision, repository domain.Repository) string {
 	if decision.Invocation == nil {
 		return fmt.Sprintf("## Duplicate assignment delivery\n\nNo new dispatch. Rerun the [original workflow](%s/actions/runs/%d) to resume this assignment.\n", domain.RepositoryURL(repository), decision.CanonicalRunID)
 	}
-	return fmt.Sprintf("## Agent assignment %s\n\nAssignment `%s`; profile `%s@%s`; authority `branch-draft-pr`.\n\nVerified input is ready for `codex-chatgpt-private-runner`. **RUNNER_NOT_READY**: source execution is disabled until AW-012 provides the verified dedicated patch job.\n", decision.Disposition, decision.Invocation.AssignmentID, decision.Invocation.ProfileID, decision.Invocation.ProfileRevision)
+	return fmt.Sprintf("## Agent assignment %s\n\nAssignment `%s`; profile `%s@%s`; authority `branch-draft-pr`.\n\nVerified input is ready for `codex-chatgpt-private-runner`. Execution requires independent current authorization, matching runtime evidence, operator enablement, and prior-attempt reconciliation. Intake acceptance does not prove runtime readiness.\n", decision.Disposition, decision.Invocation.AssignmentID, decision.Invocation.ProfileID, decision.Invocation.ProfileRevision)
 }

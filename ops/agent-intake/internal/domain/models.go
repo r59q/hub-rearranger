@@ -34,6 +34,7 @@ type Repository struct {
 	Name           string `json:"name"`
 	DefaultBranch  string `json:"default_branch"`
 	Fork, Archived bool   `json:"-"`
+	Private        bool   `json:"-"`
 }
 
 type User struct {

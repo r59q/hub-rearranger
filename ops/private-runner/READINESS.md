@@ -7,7 +7,9 @@ assignment. The legacy AW-001 `addons` diagnostic remains separate.
 ## Fixed producer and operator setup
 
 `.github/workflows/agent-profile-diagnostic.yml` is manual-only, default-branch,
-non-fork, and **private-repository-only**. Its hosted `authorize` job checks both
+non-fork, and private-repository-only by default. The operator explicitly
+approved shared `addons` for public `r59q/hub-rearranger` on 2026-10-02; this
+exact named exception retains all role/default-branch/no-fork guards. Its hosted `authorize` job checks both
 original and rerun actors' current `maintain`/`admin` permission and validates the
 commit-pinned catalog against the fixed probe policy. The credentialed
 `diagnostic` job requests `[self-hosted, linux, hub-agent-codex]`, has no GitHub

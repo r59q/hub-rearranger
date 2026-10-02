@@ -8,8 +8,10 @@ workflow and GitHub objects remain usable without Hub.
 The [assignment workflow](../../.github/workflows/agent-assignment.yml) is
 implemented locally. Publishing it to a repository's protected default branch
 enables intake; no live workflow was installed or triggered during this task.
-Source execution remains explicitly disabled until AW-012 provides and verifies
-the dedicated patch job. The current `dispatch` job reports `RUNNER_NOT_READY`
+AW-012 adds a read-only execution verifier and an operator-installed patch job;
+see [the execution guide](../private-runner/EXECUTION.md). Execution remains gated
+on matching runtime evidence, isolation, and explicit operator enablement.
+The hosted `dispatch` job reports `RUNNER_NOT_READY`
 on a GitHub-hosted runner and never invokes Codex or a self-hosted runner.
 AW-013 adds the separate branch/draft-PR publisher.
 
@@ -124,7 +126,7 @@ Rejection fails the intake step with a fixed GitHub Actions check/log/summary an
 useful guidance; it does not post rejection comments for arbitrary actors.
 Acceptance updates the source issue with verified identity/profile/authority and
 links to the request and exact workflow attempt. It explicitly reports that
-execution is blocked until AW-012; a green intake indicates accepted input only.
+execution is gated independently by AW-012; a green intake indicates accepted input only.
 
 The hosted authorization job has only Contents read, Actions read, and Issues
 write for this receipt. The dispatcher gate has no GitHub permissions. There is

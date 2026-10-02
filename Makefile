@@ -60,7 +60,7 @@ runtime-check:
 	$(RUNTIME_PYTHON) -m ruff format --check ops/private-runner
 	$(RUNTIME_PYTHON) -m ruff check ops/private-runner
 	$(RUNTIME_PYTHON) -m unittest discover -s ops/private-runner -v
-	cd frontend && npm exec prettier -- --config .prettierrc --check ../ops/private-runner/readiness.schema.v1.json ../.github/workflows/agent-profile-diagnostic.yml ../.github/actionlint.yaml
+	cd frontend && npm exec prettier -- --config .prettierrc --check ../ops/private-runner/readiness.schema.v1.json ../ops/private-runner/result.schema.v1.json ../.github/workflows/agent-profile-diagnostic.yml ../.github/actionlint.yaml
 	node --test ops/private-runner/test_authorize.mjs
 	go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/*.yml
 
