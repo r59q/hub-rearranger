@@ -63,20 +63,146 @@ jobs:
           retention-days: 7
 
   dispatch:
-    name: Execution disabled (AW-012 required)
+    name: dispatch
     needs: authorize
     if: needs.authorize.outputs.dispatch == 'true'
-    # AW-012 replaces this explicit gate with the verified private patch job.
-    # Do not schedule the shared addons runner or source execution from AW-011.
     runs-on: ubuntu-24.04
-    permissions: {}
-    timeout-minutes: 1
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+    timeout-minutes: 10
+    outputs:
+      execute: ${{ steps.verify.outputs.execute }}
+      recovered_artifact_id: ${{ steps.verify.outputs.recovered_artifact_id }}
     steps:
-      - name: Report private adapter execution gate
+      - name: Report operator gate
+        if: (github.event.repository.private != true && github.repository != 'r59q/hub-rearranger') || vars.HUB_AGENT_EXECUTION_ENABLED != 'verified'
         shell: bash
         run: |
-          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
-          ## codex-chatgpt-private-runner
+          echo 'RUNNER_NOT_READY: execution remains disabled. Verify the approved runner, workload isolation and AW-006 evidence, then enable the reviewed operator gate.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        if: (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') && vars.HUB_AGENT_EXECUTION_ENABLED == 'verified'
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        if: (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') && vars.HUB_AGENT_EXECUTION_ENABLED == 'verified'
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: Build reviewed execution verifier
+        if: (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') && vars.HUB_AGENT_EXECUTION_ENABLED == 'verified'
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/profile-tools"
+          "$RUNNER_TEMP/profile-tools/bin/pip" install -r ops/agent-profiles/requirements-dev.txt
+          cd ops/agent-intake
+          go build -o "$RUNNER_TEMP/agent-patch" ./cmd/patch
+      - name: Reauthorize, verify runtime evidence, and reconcile prior attempts
+        id: verify
+        if: (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') && vars.HUB_AGENT_EXECUTION_ENABLED == 'verified'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          "$RUNNER_TEMP/agent-patch" \
+            --python "$RUNNER_TEMP/profile-tools/bin/python" \
+            --policy "$GITHUB_WORKSPACE/ops/agent-intake/profile_policy.py" \
+            --evidence "$GITHUB_WORKSPACE/ops/agent-intake/execution_policy.py" \
+            --output "$RUNNER_TEMP/execution-input"
 
-          **RUNNER_NOT_READY**: AW-011 verified the assignment and published its invocation artifact. Source execution is disabled until AW-012 implements and verifies the dedicated patch job. Rerun the original assignment workflow after setup; this gate has no Codex credentials or GitHub write access.
-          SUMMARY
+  patch:
+    name: patch
+    needs: [authorize, dispatch]
+    if: >-
+      needs.authorize.outputs.dispatch == 'true' &&
+      needs.dispatch.outputs.execute == 'true' &&
+      (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') &&
+      github.event.repository.fork == false &&
+      vars.HUB_AGENT_EXECUTION_ENABLED == 'verified' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: [self-hosted, linux, hub-agent-codex]
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+    timeout-minutes: 35
+    outputs:
+      outcome: ${{ steps.run.outputs.outcome }}
+      reason_code: ${{ steps.run.outputs.reason_code }}
+    steps:
+      - name: Verify operator-installed runtime
+        shell: bash
+        run: |
+          test "$(id -u)" -ne 0
+          test -z "$(find "$HOME/.local/lib/hub-agent-execution" -xdev \( -perm /022 \) -print -quit)"
+          cd "$HOME/.local/lib/hub-agent-execution"
+          echo 'ab71f716de64cc3f03c7884fafae8ed711fa0e4a9f16827b757ac6462176c204  execution.py' | sha256sum --check --status
+      - name: Reverify origin and execute isolated patch proposal
+        id: run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -I "$HOME/.local/lib/hub-agent-execution/execution.py"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always() && steps.run.outcome != 'skipped'
+        with:
+          name: agent-patch-v1-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/agent-patch-output-${{ github.run_id }}-${{ github.run_attempt }}/*
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove private proposal transfer files
+        if: always()
+        shell: bash
+        env:
+          PATCH_OUTPUT: ${{ runner.temp }}/agent-patch-output-${{ github.run_id }}-${{ github.run_attempt }}
+        run: rm -rf -- "$PATCH_OUTPUT"
+
+  report:
+    name: Execution evidence
+    needs: [authorize, dispatch, patch]
+    if: always() && needs.authorize.outputs.dispatch == 'true'
+    runs-on: ubuntu-24.04
+    permissions: {}
+    timeout-minutes: 2
+    steps:
+      - name: Report safe outcome even after runner loss or cancellation
+        shell: bash
+        env:
+          DISPATCH_RESULT: ${{ needs.dispatch.result }}
+          PATCH_RESULT: ${{ needs.patch.result }}
+          PATCH_OUTCOME: ${{ needs.patch.outputs.outcome }}
+          RECOVERED_ARTIFACT: ${{ needs.dispatch.outputs.recovered_artifact_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          outcome, reason = 'blocked', 'RUNNER_NOT_READY'
+          if os.environ['RECOVERED_ARTIFACT'] not in ('', '0'):
+              outcome, reason = 'ready', 'PRIOR_PROPOSAL_RECOVERED'
+          elif os.environ['PATCH_RESULT'] == 'cancelled':
+              outcome, reason = 'cancelled', 'CANCELLED'
+          elif os.environ['PATCH_OUTCOME'] == 'ready':
+              outcome, reason = 'ready', 'PROPOSAL_READY'
+          elif os.environ['PATCH_RESULT'] == 'failure' or os.environ['DISPATCH_RESULT'] == 'failure':
+              outcome, reason = 'failed', 'RUNTIME_FAILED'
+          elif os.environ['PATCH_OUTCOME'] in ('blocked', 'failed', 'cancelled'):
+              outcome, reason = os.environ['PATCH_OUTCOME'], 'RUNTIME_FAILED'
+          record = {
+              'version': 1, 'outcome': outcome, 'reason_code': reason,
+              'run_id': int(os.environ['GITHUB_RUN_ID']),
+              'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT'])}
+          with open('execution-status.json', 'w') as output:
+              json.dump(record, output)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Codex patch proposal\n\n' + reason + '\n\n')
+              summary.write('Review the original attempt and its immutable artifacts. '
+                            'A ready proposal awaits the independent AW-013 write job; '
+                            'no branch or pull request has been published here.\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-execution-status-v1-${{ github.run_attempt }}
+          path: execution-status.json
+          if-no-files-found: error
+          retention-days: 7

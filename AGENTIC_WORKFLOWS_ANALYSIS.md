@@ -660,3 +660,46 @@ account part of the trust boundary; the checksum does not protect against a
 compromised shared account. Dedicated-host/account isolation remains the target
 before expanding execution beyond the diagnostic. The default-branch and
 trusted-actor guards remain in force.
+
+## AW-012 patch execution and shared-runner exception (2026-10-02)
+
+The operator explicitly selected the existing shared `addons` runner/account
+for public `r59q/hub-rearranger`. This supersedes the earlier spike-only
+restriction for this exact repository. Other public repositories stay blocked;
+all default-branch/no-fork/current-maintainer guards remain. Other jobs under
+`r59q` remain part of the approved account trust boundary. Workload code still
+cannot read authentication, inherit ambient runtime configuration, or use network
+access. See the [execution guide](ops/private-runner/EXECUTION.md).
+
+AW-012 extends AW-011 with a hosted read-only `dispatch` verifier and an
+operator-installed `patch` job using the profile's `hub-agent-codex` label. Both
+gates reconstruct live source/roles/current policy and verify invocation and latest
+AW-006 artifact origin/digest. The repository/comment concurrency group stays
+unchanged. Prior attempts are reconciled before another workload; verified ready
+proposals are reused, while ambiguous/failed/missing runner results block retries.
+Only the known AW-011 execution-disabled hosted job proves safe legacy history.
+
+The pinned native Codex CLI uses restricted filesystem permission profiles and
+Bubblewrap/seccomp, explicit no-network tool environments, disabled ambient
+config/rules/extensions/instructions, and private disposable source/scratch roots.
+The auth-bearing harness keeps cached subscription authentication on the host;
+workload commands cannot read its auth/process/runtime data. Actual host process
+IDs are probed rather than a fresh namespace's harmless `/proc/1`. Readiness is
+not inferred from labels, requested flags, or a model-authored response.
+
+Adapter-owned results follow `ops/private-runner/result.schema.v1.json`: exact
+identity/base/model policy, validation, safe outcomes, and bounded patch/summary
+digests. A private Git index captures actual changes and enforces protected paths,
+including intake tooling. Validation runs fixed `make check` in the same offline
+sandbox. Raw provider output is bounded/private and never reported. Hosted
+`always()` reporting preserves safe observations after ordinary failure or loss;
+observations/artifacts never grant publication authority. AW-013 remains the
+independent branch/draft-PR write boundary. Both the disabled operator manifest and
+repository variable gate must be deliberately enabled after live verification.
+
+The disabled installation on `addons` passed the source-free local preflight on
+2026-10-02: real filesystem/network denial and subscription-backed exact
+`gpt-6.1-sol`/`high` with Codex 0.159.3, without warnings or fallback. The matching
+native code-mode helper is also pinned and installed. Full repository checks
+passed. This local proof is separate from the remaining origin-verified AW-006
+GitHub diagnostic artifact and controlled Actions patch-job acceptance run.

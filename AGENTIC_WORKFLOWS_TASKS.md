@@ -423,6 +423,24 @@ The same workflow remains operable after Hub is removed.
     or use workload network access. Operator setup/revocation procedures are
     documented; adding a runner label alone does not satisfy this prerequisite.
 
+  **Operator exception (2026-10-02):** The operator explicitly selected the
+  existing shared `addons` runner/account for public `r59q/hub-rearranger`.
+  This overrides the dedicated host/account and private-target prerequisites
+  for this named repository. Workload isolation, current maintainer/default-branch
+  guards, exact model/reasoning policy, and origin-verified AW-006 evidence remain
+  required before execution is enabled.
+
+  **Implementation and local verification (2026-10-02):** Added the read-only execution verifier,
+  gated patch job, operator-installed isolated launcher, closed result contract,
+  protected-path/patch checks, fixed offline validation, prior-attempt reconciliation,
+  and hosted failure/cancellation reporting. Installation on `addons` remains
+  disabled. The source-free local preflight on `addons` verified real workload
+  filesystem/network isolation and subscription-backed `gpt-6.1-sol`/`high`
+  with Codex 0.159.3 and no fallback. Full `make check` passed, including 137
+  frontend tests and Go/Python/workflow/contract checks. Publishing the reviewed
+  workflows, matching origin-verified GitHub AW-006 evidence, and a controlled
+  Actions patch-job run remain required; this task remains unchecked.
+
 - [ ] **AW-013 — Implement the separate branch and draft-PR write job**
 
   **Domain:** repository workflow / GitHub integration  

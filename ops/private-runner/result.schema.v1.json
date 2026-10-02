@@ -1,0 +1,253 @@
+{
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"contract_version",
+		"assignment_id",
+		"operation",
+		"profile_id",
+		"profile_revision",
+		"policy_revision",
+		"base_sha",
+		"head_sha",
+		"run_id",
+		"run_attempt",
+		"outcome",
+		"reason_code",
+		"message",
+		"next_action",
+		"policy",
+		"validation",
+		"proposal"
+	],
+	"properties": {
+		"contract_version": {
+			"const": 1
+		},
+		"assignment_id": {
+			"type": "string",
+			"pattern": "^[1-9][0-9]*:[1-9][0-9]*$",
+			"maxLength": 40
+		},
+		"operation": {
+			"const": "assignment"
+		},
+		"profile_id": {
+			"const": "codex-thorough"
+		},
+		"profile_revision": {
+			"type": "string",
+			"pattern": "^[0-9a-f]{40}$"
+		},
+		"policy_revision": {
+			"type": "string",
+			"pattern": "^[0-9a-f]{40}$"
+		},
+		"base_sha": {
+			"type": "string",
+			"pattern": "^[0-9a-f]{40}$"
+		},
+		"head_sha": {
+			"type": "string",
+			"pattern": "^[0-9a-f]{40}$"
+		},
+		"run_id": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 9007199254740991
+		},
+		"run_attempt": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 100
+		},
+		"outcome": {
+			"enum": ["ready", "blocked", "failed", "cancelled"]
+		},
+		"reason_code": {
+			"enum": [
+				"PROPOSAL_READY",
+				"RUNNER_NOT_READY",
+				"AUTHORIZATION_DENIED",
+				"REPLAY_STATE_UNAVAILABLE",
+				"MODEL_POLICY_UNSUPPORTED",
+				"NO_CHANGES",
+				"PROTECTED_CHANGE",
+				"CANCELLED",
+				"RUNTIME_FAILED",
+				"RUNTIME_TIMEOUT",
+				"OUTPUT_LIMIT_EXCEEDED",
+				"SOURCE_LIMIT_EXCEEDED",
+				"UNSAFE_SOURCE",
+				"PATCH_UNAVAILABLE",
+				"PATCH_LIMIT_EXCEEDED"
+			]
+		},
+		"message": {
+			"type": "string",
+			"maxLength": 200
+		},
+		"next_action": {
+			"const": "Review the original workflow attempt and its verified artifacts."
+		},
+		"policy": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [
+				"requested_model",
+				"requested_reasoning_effort",
+				"effective_model",
+				"effective_reasoning_effort",
+				"cli_version",
+				"authority",
+				"sandbox",
+				"network",
+				"isolation"
+			],
+			"properties": {
+				"requested_model": {
+					"const": "gpt-6.1-sol"
+				},
+				"requested_reasoning_effort": {
+					"const": "high"
+				},
+				"effective_model": {
+					"enum": [null, "gpt-6.1-sol"]
+				},
+				"effective_reasoning_effort": {
+					"enum": [null, "high"]
+				},
+				"cli_version": {
+					"const": "codex-cli 0.159.3"
+				},
+				"authority": {
+					"const": "branch-draft-pr"
+				},
+				"sandbox": {
+					"const": "workspace-write"
+				},
+				"network": {
+					"const": false
+				},
+				"isolation": {
+					"enum": ["verified", "unverified"]
+				}
+			}
+		},
+		"validation": {
+			"type": "array",
+			"minItems": 1,
+			"maxItems": 1,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["id", "outcome", "evidence"],
+				"properties": {
+					"id": {
+						"const": "repository-check"
+					},
+					"outcome": {
+						"enum": ["passed", "failed", "unavailable", "cancelled"]
+					},
+					"evidence": {
+						"enum": [
+							"Repository check passed.",
+							"Repository check failed; inspect privately.",
+							"Repository check unavailable in the offline sandbox.",
+							"Repository check cancelled."
+						]
+					}
+				}
+			}
+		},
+		"proposal": {
+			"oneOf": [
+				{
+					"type": "null"
+				},
+				{
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["patch", "patch_sha256", "summary", "summary_sha256"],
+					"properties": {
+						"patch": {
+							"const": "proposal.patch"
+						},
+						"patch_sha256": {
+							"type": "string",
+							"pattern": "^[0-9a-f]{64}$"
+						},
+						"summary": {
+							"const": "summary.json"
+						},
+						"summary_sha256": {
+							"type": "string",
+							"pattern": "^[0-9a-f]{64}$"
+						}
+					}
+				}
+			]
+		}
+	},
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://hub-rearranger.invalid/agent-patch/result.v1",
+	"allOf": [
+		{
+			"if": {
+				"properties": {
+					"outcome": {
+						"const": "ready"
+					}
+				}
+			},
+			"then": {
+				"properties": {
+					"proposal": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["patch", "patch_sha256", "summary", "summary_sha256"],
+						"properties": {
+							"patch": {
+								"const": "proposal.patch"
+							},
+							"patch_sha256": {
+								"type": "string",
+								"pattern": "^[0-9a-f]{64}$"
+							},
+							"summary": {
+								"const": "summary.json"
+							},
+							"summary_sha256": {
+								"type": "string",
+								"pattern": "^[0-9a-f]{64}$"
+							}
+						}
+					},
+					"reason_code": {
+						"const": "PROPOSAL_READY"
+					},
+					"policy": {
+						"properties": {
+							"effective_model": {
+								"const": "gpt-6.1-sol"
+							},
+							"effective_reasoning_effort": {
+								"const": "high"
+							},
+							"isolation": {
+								"const": "verified"
+							}
+						}
+					}
+				}
+			},
+			"else": {
+				"properties": {
+					"proposal": {
+						"type": "null"
+					}
+				}
+			}
+		}
+	]
+}

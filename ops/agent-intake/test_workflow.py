@@ -31,7 +31,7 @@ class WorkflowTests(unittest.TestCase):
             },
         )
 
-    def test_all_current_jobs_are_hosted_and_least_privilege(self):
+    def test_authorization_and_reporting_are_hosted_and_least_privilege(self):
         self.assertEqual(self.workflow["permissions"], {})
 
         jobs = self.workflow["jobs"]
@@ -40,11 +40,15 @@ class WorkflowTests(unittest.TestCase):
             {"contents": "read", "actions": "read", "issues": "write"},
         )
 
-        for job in jobs.values():
+        for name in ("authorize", "dispatch", "report"):
+            job = jobs[name]
             self.assertEqual(job["runs-on"], "ubuntu-24.04")
             self.assertNotIn("secrets", job)
 
-        self.assertEqual(jobs["dispatch"]["permissions"], {})
+        self.assertEqual(
+            jobs["dispatch"]["permissions"],
+            {"contents": "read", "actions": "read", "issues": "read"},
+        )
         self.assertEqual(
             jobs["dispatch"]["if"], "needs.authorize.outputs.dispatch == 'true'"
         )

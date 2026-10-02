@@ -12,7 +12,10 @@ import (
 	"github.com/r59q/hub-rearranger/ops/agent-intake/internal/domain"
 )
 
-type Client struct{ api *gh.Client }
+type Client struct {
+	api      *gh.Client
+	download *http.Client
+}
 
 func New(client *gh.Client) *Client { return &Client{api: client} }
 
@@ -31,7 +34,7 @@ func (c *Client) Repository(ctx context.Context, event domain.Event) (domain.Rep
 	}
 
 	return domain.Repository{ID: repo.GetID(), Owner: repo.GetOwner().GetLogin(), Name: repo.GetName(),
-		DefaultBranch: repo.GetDefaultBranch(), Fork: repo.GetFork(), Archived: repo.GetArchived() || repo.GetDisabled()}, nil
+		DefaultBranch: repo.GetDefaultBranch(), Fork: repo.GetFork(), Archived: repo.GetArchived() || repo.GetDisabled(), Private: repo.GetPrivate()}, nil
 }
 
 func (c *Client) Source(ctx context.Context, repo domain.Repository, event domain.Event) (domain.Source, error) {
