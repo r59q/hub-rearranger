@@ -49,13 +49,28 @@ Preserve these canonical helper paths below the runtime directory:
 - `ops/agent-profiles/catalog.py`, `validate.py`, `diagnostics.py`, and `schema.v1.json`;
 - `ops/private-runner/readiness.schema.v1.json` and `result.schema.v1.json`.
 
-Create a `tools` Python virtual environment there, using the pinned
-`ops/agent-profiles/requirements-dev.txt`. Python 3.11+ and a Linux kernel with
+Create a `tools` Python virtual environment there with `python3 -m venv --copies`,
+using the pinned `ops/agent-profiles/requirements-dev.txt`. Materialize any remaining
+symlinks, including `tools/lib64`, as ordinary copies of their trusted local targets.
+The workflow checks every installed entry with `find -perm /022`; symlinks normally
+have mode `0777` and fail this check even when their targets are read-only.
+Python 3.11+ and a Linux kernel with
 Bubblewrap/user-namespace/seccomp support are required. No source dependencies
 or provider credentials belong in that environment. Keep the existing cached
 ChatGPT login in `~/.codex/auth.json`, owned by the runner account with mode
 `0600`; do not copy it into the runtime, checkout, bundle, or artifacts. Global
 `~/.codex/AGENTS.md`/`instructions.md` are unsupported and block startup.
+
+Run the same installation guard as the workflow before generating the manifest:
+
+```sh
+test "$(id -u)" -ne 0
+test -z "$(find "$HOME/.local/lib/hub-agent-execution" -xdev \( -perm /022 \) -print -quit)"
+```
+
+The source-free preflight below checks resolved-path ownership and permissions;
+it does not replace this check of every installed entry. Verify the launcher's
+SHA-256 against the reviewed workflow's pinned value as well.
 
 Generate the **disabled** manifest from the installed reviewed files:
 
@@ -182,5 +197,9 @@ HTTP/TLS servers. They require no model request, live GitHub access, or Codex lo
 The implementation uses the [official permissions profiles](https://learn.chatgpt.com/docs/permissions)
 and [non-interactive CLI](https://learn.chatgpt.com/docs/non-interactive-mode).
 The notice setting follows the [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
-Installation/local preflight does not mark AW-012 complete: published, origin-verified
-AW-006 evidence and a controlled Actions patch-job run are still required.
+Installation/local preflight alone cannot prove readiness. AW-012 was completed
+with origin-verified AW-006 evidence and an independently verified controlled
+Actions patch artifact; see [the task record](../../AGENTIC_WORKFLOWS_TASKS.md)
+for the exact runs, revision, digest, and failed offline validation outcome.
+This historical verification does not authorize future assignments or replace
+fresh evidence for the current default-branch revision.

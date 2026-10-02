@@ -395,7 +395,7 @@ The same workflow remains operable after Hub is removed.
   tests, and Go race tests passed. CI and component/architecture documentation
   are updated. No workflow was published/triggered or source executed live.
 
-- [ ] **AW-012 — Implement the self-hosted Codex patch job**
+- [x] **AW-012 — Implement the self-hosted Codex patch job**
 
   **Domain:** repository workflow / runtime adapter  
   **Depends on:** AW-011, AW-006
@@ -430,29 +430,41 @@ The same workflow remains operable after Hub is removed.
   guards, exact model/reasoning policy, and origin-verified AW-006 evidence remain
   required before execution is enabled.
 
-  **Implementation and local verification (2026-10-02):** Added the read-only execution verifier,
+  **Completed and verified (2026-10-03):** The read-only execution verifier,
   gated patch job, operator-installed isolated launcher, closed result contract,
   protected-path/patch checks, fixed offline validation, prior-attempt reconciliation,
-  and hosted failure/cancellation reporting. Installation on `addons` remains
-  disabled. The source-free local preflight on `addons` verified real workload
-  filesystem/network isolation and subscription-backed `gpt-6.1-sol`/`high`
-  with Codex 0.159.3 and no fallback. Full `make check` passed, including 137
-  frontend tests and Go/Python/workflow/contract checks. Publishing the reviewed
-  workflows, matching origin-verified GitHub AW-006 evidence, and a controlled
-  Actions patch-job run remain required; this task remains unchecked.
+  and hosted failure/cancellation reporting are published. Full `make check`
+  passed, including 137 frontend tests and Go/Python/workflow/contract checks;
+  the verifier repair also passed intake checks and Go race tests.
 
-  **Live verification progress (2026-10-03):** Origin/digest/schema/freshness
-  checks verified the exact-policy AW-006 artifact from
-  [run 37020208961](https://github.com/r59q/hub-rearranger/actions/runs/37020208961)
-  at the merged revision. The first controlled assignment on issue #5,
-  [run 37072451710](https://github.com/r59q/hub-rearranger/actions/runs/37072451710),
-  passed intake but failed hosted dispatch: real Actions run responses omit
-  `default_branch` in their reduced repository object. The self-hosted patch job
-  was skipped, and hosted failure evidence was published. The verifier now reads
-  current branch policy from the live repository endpoint; regression fixtures
-  omit the Actions field and check branch changes, repository identity, and API
-  failures. The runner gate is disabled pending publication of this repair,
-  fresh diagnostic evidence for that revision, and a successful patch-job run.
+  Origin, archive digest, schema, and freshness checks verified the latest
+  exact-policy AW-006 artifact from
+  [run 37073496170](https://github.com/r59q/hub-rearranger/actions/runs/37073496170)
+  at `205ae9755bba04d534590d6385fc0f7fcd0d5603`. The controlled assignment on
+  [issue #5](https://github.com/r59q/hub-rearranger/issues/5#issuecomment-5962748237)
+  completed all four jobs in
+  [run 37074982572](https://github.com/r59q/hub-rearranger/actions/runs/37074982572).
+  Its [patch artifact](https://github.com/r59q/hub-rearranger/actions/runs/37074982572/artifacts/11255798549)
+  has archive SHA-256
+  `fa88fce0a739ab1dded16caee11a5e0192223eb6a765094a6486a30870bc485b`.
+  Independent verification checked assignment/run/attempt, base/profile/policy
+  revisions, the result schema, patch and summary digests, and patch application.
+  The proposal adds only `docs/agent-patch-review.md` with the exact requested
+  contents. It records subscription-backed Codex 0.159.3, effective
+  `gpt-6.1-sol`/`high`, verified isolation, and workload networking disabled.
+  The fixed offline repository check is explicitly `failed`, as permitted by
+  `draft-with-evidence`; workflow success does not claim validation passed.
+  Private source workspaces were removed. Execution published no branch or PR.
+
+  Live verification found two setup issues before source execution: reduced
+  Actions repository objects omit `default_branch`, so the verifier now reads
+  current policy from the repository endpoint; default Python virtual environments
+  contain mode-777 symlinks rejected by the workflow guard, so the installed
+  environment uses ordinary copies and the exact guard was rechecked. Both failed
+  attempts were reconciled before new explicit assignments. The operator guide
+  documents this setup. Default-branch changes require fresh AW-006 evidence;
+  the operator gate is disabled for this completion update until that evidence
+  is renewed. AW-013 remains the separate branch/draft-PR publication task.
 
 - [ ] **AW-013 — Implement the separate branch and draft-PR write job**
 
