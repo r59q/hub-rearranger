@@ -8,6 +8,7 @@ package contract
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -182,25 +183,25 @@ func (e CatalogModelFallback) Valid() bool {
 
 // Defines values for CatalogModelReasoningEffort.
 const (
-	High   CatalogModelReasoningEffort = "high"
-	Low    CatalogModelReasoningEffort = "low"
-	Max    CatalogModelReasoningEffort = "max"
-	Medium CatalogModelReasoningEffort = "medium"
-	Xhigh  CatalogModelReasoningEffort = "xhigh"
+	CatalogModelReasoningEffortHigh   CatalogModelReasoningEffort = "high"
+	CatalogModelReasoningEffortLow    CatalogModelReasoningEffort = "low"
+	CatalogModelReasoningEffortMax    CatalogModelReasoningEffort = "max"
+	CatalogModelReasoningEffortMedium CatalogModelReasoningEffort = "medium"
+	CatalogModelReasoningEffortXhigh  CatalogModelReasoningEffort = "xhigh"
 )
 
 // Valid indicates whether the value is a known member of the CatalogModelReasoningEffort enum.
 func (e CatalogModelReasoningEffort) Valid() bool {
 	switch e {
-	case High:
+	case CatalogModelReasoningEffortHigh:
 		return true
-	case Low:
+	case CatalogModelReasoningEffortLow:
 		return true
-	case Max:
+	case CatalogModelReasoningEffortMax:
 		return true
-	case Medium:
+	case CatalogModelReasoningEffortMedium:
 		return true
-	case Xhigh:
+	case CatalogModelReasoningEffortXhigh:
 		return true
 	default:
 		return false
@@ -428,49 +429,73 @@ func (e HealthStatus) Valid() bool {
 
 // Defines values for ProfileDiagnosticCode.
 const (
-	DUPLICATEKEY       ProfileDiagnosticCode = "DUPLICATE_KEY"
-	DUPLICATEVALUE     ProfileDiagnosticCode = "DUPLICATE_VALUE"
-	INVALIDFILE        ProfileDiagnosticCode = "INVALID_FILE"
-	INVALIDFORMAT      ProfileDiagnosticCode = "INVALID_FORMAT"
-	INVALIDTYPE        ProfileDiagnosticCode = "INVALID_TYPE"
-	INVALIDYAML        ProfileDiagnosticCode = "INVALID_YAML"
-	LIMITEXCEEDED      ProfileDiagnosticCode = "LIMIT_EXCEEDED"
-	MISSINGCONTEXT     ProfileDiagnosticCode = "MISSING_CONTEXT"
-	MISSINGFIELD       ProfileDiagnosticCode = "MISSING_FIELD"
-	MISSINGFILE        ProfileDiagnosticCode = "MISSING_FILE"
-	UNSUPPORTEDFIELD   ProfileDiagnosticCode = "UNSUPPORTED_FIELD"
-	UNSUPPORTEDVALUE   ProfileDiagnosticCode = "UNSUPPORTED_VALUE"
-	UNSUPPORTEDVERSION ProfileDiagnosticCode = "UNSUPPORTED_VERSION"
+	ProfileDiagnosticCodeDUPLICATEKEY       ProfileDiagnosticCode = "DUPLICATE_KEY"
+	ProfileDiagnosticCodeDUPLICATEVALUE     ProfileDiagnosticCode = "DUPLICATE_VALUE"
+	ProfileDiagnosticCodeINVALIDFILE        ProfileDiagnosticCode = "INVALID_FILE"
+	ProfileDiagnosticCodeINVALIDFORMAT      ProfileDiagnosticCode = "INVALID_FORMAT"
+	ProfileDiagnosticCodeINVALIDTYPE        ProfileDiagnosticCode = "INVALID_TYPE"
+	ProfileDiagnosticCodeINVALIDYAML        ProfileDiagnosticCode = "INVALID_YAML"
+	ProfileDiagnosticCodeLIMITEXCEEDED      ProfileDiagnosticCode = "LIMIT_EXCEEDED"
+	ProfileDiagnosticCodeMISSINGCONTEXT     ProfileDiagnosticCode = "MISSING_CONTEXT"
+	ProfileDiagnosticCodeMISSINGFIELD       ProfileDiagnosticCode = "MISSING_FIELD"
+	ProfileDiagnosticCodeMISSINGFILE        ProfileDiagnosticCode = "MISSING_FILE"
+	ProfileDiagnosticCodeUNSUPPORTEDFIELD   ProfileDiagnosticCode = "UNSUPPORTED_FIELD"
+	ProfileDiagnosticCodeUNSUPPORTEDVALUE   ProfileDiagnosticCode = "UNSUPPORTED_VALUE"
+	ProfileDiagnosticCodeUNSUPPORTEDVERSION ProfileDiagnosticCode = "UNSUPPORTED_VERSION"
 )
 
 // Valid indicates whether the value is a known member of the ProfileDiagnosticCode enum.
 func (e ProfileDiagnosticCode) Valid() bool {
 	switch e {
-	case DUPLICATEKEY:
+	case ProfileDiagnosticCodeDUPLICATEKEY:
 		return true
-	case DUPLICATEVALUE:
+	case ProfileDiagnosticCodeDUPLICATEVALUE:
 		return true
-	case INVALIDFILE:
+	case ProfileDiagnosticCodeINVALIDFILE:
 		return true
-	case INVALIDFORMAT:
+	case ProfileDiagnosticCodeINVALIDFORMAT:
 		return true
-	case INVALIDTYPE:
+	case ProfileDiagnosticCodeINVALIDTYPE:
 		return true
-	case INVALIDYAML:
+	case ProfileDiagnosticCodeINVALIDYAML:
 		return true
-	case LIMITEXCEEDED:
+	case ProfileDiagnosticCodeLIMITEXCEEDED:
 		return true
-	case MISSINGCONTEXT:
+	case ProfileDiagnosticCodeMISSINGCONTEXT:
 		return true
-	case MISSINGFIELD:
+	case ProfileDiagnosticCodeMISSINGFIELD:
 		return true
-	case MISSINGFILE:
+	case ProfileDiagnosticCodeMISSINGFILE:
 		return true
-	case UNSUPPORTEDFIELD:
+	case ProfileDiagnosticCodeUNSUPPORTEDFIELD:
 		return true
-	case UNSUPPORTEDVALUE:
+	case ProfileDiagnosticCodeUNSUPPORTEDVALUE:
 		return true
-	case UNSUPPORTEDVERSION:
+	case ProfileDiagnosticCodeUNSUPPORTEDVERSION:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfileReadinessState.
+const (
+	ConfigurationMissing ProfileReadinessState = "configuration_missing"
+	RuntimeVerified      ProfileReadinessState = "runtime_verified"
+	VerificationFailed   ProfileReadinessState = "verification_failed"
+	VerificationPending  ProfileReadinessState = "verification_pending"
+)
+
+// Valid indicates whether the value is a known member of the ProfileReadinessState enum.
+func (e ProfileReadinessState) Valid() bool {
+	switch e {
+	case ConfigurationMissing:
+		return true
+	case RuntimeVerified:
+		return true
+	case VerificationFailed:
+		return true
+	case VerificationPending:
 		return true
 	default:
 		return false
@@ -507,6 +532,39 @@ func (e ProfileRevisionPolicyFormat) Valid() bool {
 	}
 }
 
+// Defines values for ReadinessDiagnosticCode.
+const (
+	ReadinessDiagnosticCodeEVIDENCEMISSING       ReadinessDiagnosticCode = "EVIDENCE_MISSING"
+	ReadinessDiagnosticCodeEVIDENCEORIGIN        ReadinessDiagnosticCode = "EVIDENCE_ORIGIN"
+	ReadinessDiagnosticCodeEVIDENCEPOLICY        ReadinessDiagnosticCode = "EVIDENCE_POLICY"
+	ReadinessDiagnosticCodeEVIDENCESTALE         ReadinessDiagnosticCode = "EVIDENCE_STALE"
+	ReadinessDiagnosticCodeMISSINGFILE           ReadinessDiagnosticCode = "MISSING_FILE"
+	ReadinessDiagnosticCodeRUNTIMEFAILED         ReadinessDiagnosticCode = "RUNTIME_FAILED"
+	ReadinessDiagnosticCodeWORKFLOWCONFIGURATION ReadinessDiagnosticCode = "WORKFLOW_CONFIGURATION"
+)
+
+// Valid indicates whether the value is a known member of the ReadinessDiagnosticCode enum.
+func (e ReadinessDiagnosticCode) Valid() bool {
+	switch e {
+	case ReadinessDiagnosticCodeEVIDENCEMISSING:
+		return true
+	case ReadinessDiagnosticCodeEVIDENCEORIGIN:
+		return true
+	case ReadinessDiagnosticCodeEVIDENCEPOLICY:
+		return true
+	case ReadinessDiagnosticCodeEVIDENCESTALE:
+		return true
+	case ReadinessDiagnosticCodeMISSINGFILE:
+		return true
+	case ReadinessDiagnosticCodeRUNTIMEFAILED:
+		return true
+	case ReadinessDiagnosticCodeWORKFLOWCONFIGURATION:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RepositoryProfilesCatalogPath.
 const (
 	RepositoryProfilesCatalogPathDotGithubagentProfilesYml RepositoryProfilesCatalogPath = ".github/agent-profiles.yml"
@@ -524,22 +582,166 @@ func (e RepositoryProfilesCatalogPath) Valid() bool {
 
 // Defines values for RepositoryProfilesState.
 const (
-	Invalid     RepositoryProfilesState = "invalid"
-	Missing     RepositoryProfilesState = "missing"
-	Unsupported RepositoryProfilesState = "unsupported"
-	Valid       RepositoryProfilesState = "valid"
+	RepositoryProfilesStateInvalid     RepositoryProfilesState = "invalid"
+	RepositoryProfilesStateMissing     RepositoryProfilesState = "missing"
+	RepositoryProfilesStateUnsupported RepositoryProfilesState = "unsupported"
+	RepositoryProfilesStateValid       RepositoryProfilesState = "valid"
 )
 
 // Valid indicates whether the value is a known member of the RepositoryProfilesState enum.
 func (e RepositoryProfilesState) Valid() bool {
 	switch e {
-	case Invalid:
+	case RepositoryProfilesStateInvalid:
 		return true
-	case Missing:
+	case RepositoryProfilesStateMissing:
 		return true
-	case Unsupported:
+	case RepositoryProfilesStateUnsupported:
 		return true
-	case Valid:
+	case RepositoryProfilesStateValid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryReadinessCatalogState.
+const (
+	RepositoryReadinessCatalogStateInvalid     RepositoryReadinessCatalogState = "invalid"
+	RepositoryReadinessCatalogStateMissing     RepositoryReadinessCatalogState = "missing"
+	RepositoryReadinessCatalogStateUnsupported RepositoryReadinessCatalogState = "unsupported"
+	RepositoryReadinessCatalogStateValid       RepositoryReadinessCatalogState = "valid"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryReadinessCatalogState enum.
+func (e RepositoryReadinessCatalogState) Valid() bool {
+	switch e {
+	case RepositoryReadinessCatalogStateInvalid:
+		return true
+	case RepositoryReadinessCatalogStateMissing:
+		return true
+	case RepositoryReadinessCatalogStateUnsupported:
+		return true
+	case RepositoryReadinessCatalogStateValid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceEffectiveModel.
+const (
+	RuntimeEvidenceEffectiveModelGpt61Sol RuntimeEvidenceEffectiveModel = "gpt-6.1-sol"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceEffectiveModel enum.
+func (e RuntimeEvidenceEffectiveModel) Valid() bool {
+	switch e {
+	case RuntimeEvidenceEffectiveModelGpt61Sol:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceEffectiveReasoningEffort.
+const (
+	RuntimeEvidenceEffectiveReasoningEffortHigh RuntimeEvidenceEffectiveReasoningEffort = "high"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceEffectiveReasoningEffort enum.
+func (e RuntimeEvidenceEffectiveReasoningEffort) Valid() bool {
+	switch e {
+	case RuntimeEvidenceEffectiveReasoningEffortHigh:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceOutcome.
+const (
+	RuntimeEvidenceOutcomeFailed   RuntimeEvidenceOutcome = "failed"
+	RuntimeEvidenceOutcomeVerified RuntimeEvidenceOutcome = "verified"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceOutcome enum.
+func (e RuntimeEvidenceOutcome) Valid() bool {
+	switch e {
+	case RuntimeEvidenceOutcomeFailed:
+		return true
+	case RuntimeEvidenceOutcomeVerified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceReasonCode.
+const (
+	RuntimeEvidenceReasonCodeAuthenticationUnavailable  RuntimeEvidenceReasonCode = "authentication_unavailable"
+	RuntimeEvidenceReasonCodeEffectivePolicyUnavailable RuntimeEvidenceReasonCode = "effective_policy_unavailable"
+	RuntimeEvidenceReasonCodeInstallationUnavailable    RuntimeEvidenceReasonCode = "installation_unavailable"
+	RuntimeEvidenceReasonCodeRequestFailed              RuntimeEvidenceReasonCode = "request_failed"
+	RuntimeEvidenceReasonCodeVerified                   RuntimeEvidenceReasonCode = "verified"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceReasonCode enum.
+func (e RuntimeEvidenceReasonCode) Valid() bool {
+	switch e {
+	case RuntimeEvidenceReasonCodeAuthenticationUnavailable:
+		return true
+	case RuntimeEvidenceReasonCodeEffectivePolicyUnavailable:
+		return true
+	case RuntimeEvidenceReasonCodeInstallationUnavailable:
+		return true
+	case RuntimeEvidenceReasonCodeRequestFailed:
+		return true
+	case RuntimeEvidenceReasonCodeVerified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceRequestedModel.
+const (
+	RuntimeEvidenceRequestedModelGpt61Sol RuntimeEvidenceRequestedModel = "gpt-6.1-sol"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceRequestedModel enum.
+func (e RuntimeEvidenceRequestedModel) Valid() bool {
+	switch e {
+	case RuntimeEvidenceRequestedModelGpt61Sol:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceRequestedReasoningEffort.
+const (
+	RuntimeEvidenceRequestedReasoningEffortHigh RuntimeEvidenceRequestedReasoningEffort = "high"
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceRequestedReasoningEffort enum.
+func (e RuntimeEvidenceRequestedReasoningEffort) Valid() bool {
+	switch e {
+	case RuntimeEvidenceRequestedReasoningEffortHigh:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RuntimeEvidenceVersion.
+const (
+	RuntimeEvidenceVersionN1 RuntimeEvidenceVersion = 1
+)
+
+// Valid indicates whether the value is a known member of the RuntimeEvidenceVersion enum.
+func (e RuntimeEvidenceVersion) Valid() bool {
+	switch e {
+	case RuntimeEvidenceVersionN1:
 		return true
 	default:
 		return false
@@ -701,6 +903,20 @@ type ProfileDiagnostic struct {
 // ProfileDiagnosticCode defines model for ProfileDiagnostic.Code.
 type ProfileDiagnosticCode string
 
+// ProfileReadiness defines model for ProfileReadiness.
+type ProfileReadiness struct {
+	Diagnostics []ReadinessDiagnostic `json:"diagnostics"`
+	Evidence    *RuntimeEvidence      `json:"evidence,omitempty"`
+	Id          string                `json:"id"`
+	NextAction  string                `json:"next_action"`
+	Revision    string                `json:"revision"`
+	RunnerLabel string                `json:"runner_label"`
+	State       ProfileReadinessState `json:"state"`
+}
+
+// ProfileReadinessState defines model for ProfileReadiness.State.
+type ProfileReadinessState string
+
 // ProfileRevisionPolicy defines model for ProfileRevisionPolicy.
 type ProfileRevisionPolicy struct {
 	DefaultBranchAncestor ProfileRevisionPolicyDefaultBranchAncestor `json:"default_branch_ancestor"`
@@ -712,6 +928,16 @@ type ProfileRevisionPolicyDefaultBranchAncestor bool
 
 // ProfileRevisionPolicyFormat defines model for ProfileRevisionPolicy.Format.
 type ProfileRevisionPolicyFormat string
+
+// ReadinessDiagnostic defines model for ReadinessDiagnostic.
+type ReadinessDiagnostic struct {
+	Code    ReadinessDiagnosticCode `json:"code"`
+	Message string                  `json:"message"`
+	Path    string                  `json:"path"`
+}
+
+// ReadinessDiagnosticCode defines model for ReadinessDiagnostic.Code.
+type ReadinessDiagnosticCode string
 
 // RepositoryProfile defines model for RepositoryProfile.
 type RepositoryProfile struct {
@@ -736,6 +962,59 @@ type RepositoryProfilesCatalogPath string
 
 // RepositoryProfilesState defines model for RepositoryProfiles.State.
 type RepositoryProfilesState string
+
+// RepositoryReadiness defines model for RepositoryReadiness.
+type RepositoryReadiness struct {
+	CatalogState  RepositoryReadinessCatalogState `json:"catalog_state"`
+	DefaultBranch string                          `json:"default_branch"`
+	Diagnostics   []ProfileDiagnostic             `json:"diagnostics"`
+	Profiles      []ProfileReadiness              `json:"profiles"`
+	Repository    string                          `json:"repository"`
+	Revision      string                          `json:"revision"`
+}
+
+// RepositoryReadinessCatalogState defines model for RepositoryReadiness.CatalogState.
+type RepositoryReadinessCatalogState string
+
+// RuntimeEvidence defines model for RuntimeEvidence.
+type RuntimeEvidence struct {
+	CliVersion               *string                                  `json:"cli_version"`
+	EffectiveModel           *RuntimeEvidenceEffectiveModel           `json:"effective_model"`
+	EffectiveReasoningEffort *RuntimeEvidenceEffectiveReasoningEffort `json:"effective_reasoning_effort"`
+	Outcome                  RuntimeEvidenceOutcome                   `json:"outcome"`
+	ProfileId                string                                   `json:"profile_id"`
+	ProfileRevision          string                                   `json:"profile_revision"`
+	ReasonCode               RuntimeEvidenceReasonCode                `json:"reason_code"`
+	Repository               string                                   `json:"repository"`
+	RequestedModel           RuntimeEvidenceRequestedModel            `json:"requested_model"`
+	RequestedReasoningEffort RuntimeEvidenceRequestedReasoningEffort  `json:"requested_reasoning_effort"`
+	RunAttempt               int                                      `json:"run_attempt"`
+	RunId                    int                                      `json:"run_id"`
+	RunnerLabel              string                                   `json:"runner_label"`
+	VerifiedAt               time.Time                                `json:"verified_at"`
+	Version                  RuntimeEvidenceVersion                   `json:"version"`
+}
+
+// RuntimeEvidenceEffectiveModel defines model for RuntimeEvidence.EffectiveModel.
+type RuntimeEvidenceEffectiveModel string
+
+// RuntimeEvidenceEffectiveReasoningEffort defines model for RuntimeEvidence.EffectiveReasoningEffort.
+type RuntimeEvidenceEffectiveReasoningEffort string
+
+// RuntimeEvidenceOutcome defines model for RuntimeEvidence.Outcome.
+type RuntimeEvidenceOutcome string
+
+// RuntimeEvidenceReasonCode defines model for RuntimeEvidence.ReasonCode.
+type RuntimeEvidenceReasonCode string
+
+// RuntimeEvidenceRequestedModel defines model for RuntimeEvidence.RequestedModel.
+type RuntimeEvidenceRequestedModel string
+
+// RuntimeEvidenceRequestedReasoningEffort defines model for RuntimeEvidence.RequestedReasoningEffort.
+type RuntimeEvidenceRequestedReasoningEffort string
+
+// RuntimeEvidenceVersion defines model for RuntimeEvidence.Version.
+type RuntimeEvidenceVersion int
 
 // InternalError defines model for InternalError.
 type InternalError = Error
@@ -763,6 +1042,12 @@ type ServerInterface interface {
 	// HeadRepositoryProfiles Check profile read availability without a response body
 	// (HEAD /v1/repositories/{owner}/{repo}/profiles)
 	HeadRepositoryProfiles(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// GetRepositoryReadiness Derive repository profile readiness
+	// (GET /v1/repositories/{owner}/{repo}/readiness)
+	GetRepositoryReadiness(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// HeadRepositoryReadiness Check readiness read availability without a response body
+	// (HEAD /v1/repositories/{owner}/{repo}/readiness)
+	HeadRepositoryReadiness(w http.ResponseWriter, r *http.Request, owner string, repo string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -900,6 +1185,76 @@ func (siw *ServerInterfaceWrapper) HeadRepositoryProfiles(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetRepositoryReadiness operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryReadiness(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryReadiness(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// HeadRepositoryReadiness operation middleware
+func (siw *ServerInterfaceWrapper) HeadRepositoryReadiness(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.HeadRepositoryReadiness(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1026,6 +1381,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/assignment-convention", wrapper.HeadAssignmentConvention)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profiles", wrapper.GetRepositoryProfiles)
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profiles", wrapper.HeadRepositoryProfiles)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/readiness", wrapper.GetRepositoryReadiness)
+	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/readiness", wrapper.HeadRepositoryReadiness)
 
 	return m
 }

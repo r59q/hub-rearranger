@@ -206,3 +206,11 @@ failure, timeout, cleanup, maintainer role handling, and the workflow guard.
   explain scheduling and the risks of credentialed self-hosted runners.
 - [GitHub collaborator permissions](https://docs.github.com/en/rest/collaborators/collaborators#get-repository-permissions-for-a-user)
   defines the `role_name` response used by the hosted authorization job.
+
+## Profile readiness (AW-006)
+
+The legacy `addons` probe above remains unchanged and cannot verify
+`codex-thorough`, `hub-agent-codex`, or an exact model policy. The new fixed,
+private-repository-only producer and versioned evidence contract are described
+in [READINESS.md](READINESS.md). Its offline tests are part of `make runtime-check`.
+Dedicated runner provisioning and live verification remain AW-012.

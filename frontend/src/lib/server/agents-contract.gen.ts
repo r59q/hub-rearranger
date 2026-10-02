@@ -70,8 +70,34 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/readiness': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		/**
+		 * Derive repository profile readiness
+		 * @description Fresh commit-pinned configuration and latest diagnostic attempt. Evidence must match the repository, revision, exact model policy, dedicated runner, and trusted GitHub jobs, and be at most 24 hours old. Missing bootstrap files differ from pending or failed verification. Read credentials require Metadata, Contents, and Actions read permissions. Service remains private to the local application network.
+		 */
+		get: operations['getRepositoryReadiness'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		/** Check readiness read availability without a response body */
+		head: operations['headRepositoryReadiness'];
+		patch?: never;
+		trace?: never;
+	};
 }
+
 export type webhooks = Record<string, never>;
+
 export interface components {
 	schemas: {
 		Health: {
@@ -153,6 +179,42 @@ export interface components {
 			path: string;
 			message: string;
 		};
+		ReadinessDiagnostic: {
+			/** @enum {string} */
+			code:
+				| 'MISSING_FILE'
+				| 'WORKFLOW_CONFIGURATION'
+				| 'EVIDENCE_MISSING'
+				| 'EVIDENCE_ORIGIN'
+				| 'EVIDENCE_POLICY'
+				| 'EVIDENCE_STALE'
+				| 'RUNTIME_FAILED';
+			path: string;
+			message: string;
+		};
+		ProfileReadiness: {
+			id: string;
+			revision: string;
+			/** @enum {string} */
+			state:
+				| 'configuration_missing'
+				| 'verification_pending'
+				| 'runtime_verified'
+				| 'verification_failed';
+			runner_label: string;
+			next_action: string;
+			diagnostics: components['schemas']['ReadinessDiagnostic'][];
+			evidence?: components['schemas']['RuntimeEvidence'];
+		};
+		RepositoryReadiness: {
+			repository: string;
+			default_branch: string;
+			revision: string;
+			/** @enum {string} */
+			catalog_state: 'valid' | 'missing' | 'invalid' | 'unsupported';
+			profiles: components['schemas']['ProfileReadiness'][];
+			diagnostics: components['schemas']['ProfileDiagnostic'][];
+		};
 		CatalogProfile: {
 			enabled: boolean;
 			name: string;
@@ -211,6 +273,36 @@ export interface components {
 			/** @enum {string} */
 			fallback: 'none';
 		};
+		RuntimeEvidence: {
+			/** @enum {integer} */
+			version: 1;
+			repository: string;
+			profile_id: string;
+			profile_revision: string;
+			runner_label: string;
+			/** @enum {string} */
+			requested_model: 'gpt-6.1-sol';
+			/** @enum {string} */
+			requested_reasoning_effort: 'high';
+			/** @enum {string|null} */
+			effective_model: 'gpt-6.1-sol' | null;
+			/** @enum {string|null} */
+			effective_reasoning_effort: 'high' | null;
+			cli_version: string | null;
+			run_id: number;
+			run_attempt: number;
+			/** Format: date-time */
+			verified_at: string;
+			/** @enum {string} */
+			outcome: 'verified' | 'failed';
+			/** @enum {string} */
+			reason_code:
+				| 'verified'
+				| 'installation_unavailable'
+				| 'authentication_unavailable'
+				| 'request_failed'
+				| 'effective_policy_unavailable';
+		};
 	};
 	responses: {
 		/** @description This endpoint accepts only GET and HEAD. */
@@ -238,7 +330,9 @@ export interface components {
 	headers: never;
 	pathItems: never;
 }
+
 export type $defs = Record<string, never>;
+
 export interface operations {
 	getHealth: {
 		parameters: {
@@ -474,7 +568,156 @@ export interface operations {
 			};
 		};
 	};
+	getRepositoryReadiness: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Configuration and runtime readiness for each validated profile. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['RepositoryReadiness'];
+				};
+			};
+			/** @description Invalid owner or repository name. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Read credentials lack Metadata, Contents, or Actions read access. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Repository is unavailable or not visible to the read credentials. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			405: components['responses']['MethodNotAllowed'];
+			/** @description GitHub rate limit reached; retry later. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Service failed; retry. */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description GitHub failed or returned an invalid response; retry. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+		};
+	};
+	headRepositoryReadiness: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Fresh repository catalog projection and validation results. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Invalid owner or repository name. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Read credentials lack repository Contents permission. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Repository is unavailable or not visible to the read credentials. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description This endpoint accepts GET and HEAD. */
+			405: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description GitHub rate limit reached; retry later. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Service failed; retry. */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description GitHub failed or returned an invalid response; retry. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
 }
+
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
 	? Readonly<Exclude<T, undefined>>
 	: Readonly<Exclude<T, undefined>[]>;
@@ -539,6 +782,23 @@ export const profileDiagnosticCodeValues: ReadonlyArray<
 	'MISSING_CONTEXT',
 	'LIMIT_EXCEEDED'
 ];
+export const readinessDiagnosticCodeValues: ReadonlyArray<
+	components['schemas']['ReadinessDiagnostic']['code']
+> = [
+	'MISSING_FILE',
+	'WORKFLOW_CONFIGURATION',
+	'EVIDENCE_MISSING',
+	'EVIDENCE_ORIGIN',
+	'EVIDENCE_POLICY',
+	'EVIDENCE_STALE',
+	'RUNTIME_FAILED'
+];
+export const profileReadinessStateValues: ReadonlyArray<
+	components['schemas']['ProfileReadiness']['state']
+> = ['configuration_missing', 'verification_pending', 'runtime_verified', 'verification_failed'];
+export const repositoryReadinessCatalog_stateValues: ReadonlyArray<
+	components['schemas']['RepositoryReadiness']['catalog_state']
+> = ['valid', 'missing', 'invalid', 'unsupported'];
 export const catalogProfileRoleValues: ReadonlyArray<
 	components['schemas']['CatalogProfile']['role']
 > = ['implementation'];
@@ -582,6 +842,33 @@ export const catalogModelReasoning_effortValues: ReadonlyArray<
 export const catalogModelFallbackValues: ReadonlyArray<
 	components['schemas']['CatalogModel']['fallback']
 > = ['none'];
+export const runtimeEvidenceVersionValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['version']
+> = [1];
+export const runtimeEvidenceRequested_modelValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['requested_model']
+> = ['gpt-6.1-sol'];
+export const runtimeEvidenceRequested_reasoning_effortValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['requested_reasoning_effort']
+> = ['high'];
+export const runtimeEvidenceEffective_modelValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['effective_model']
+> = ['gpt-6.1-sol'];
+export const runtimeEvidenceEffective_reasoning_effortValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['effective_reasoning_effort']
+> = ['high'];
+export const runtimeEvidenceOutcomeValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['outcome']
+> = ['verified', 'failed'];
+export const runtimeEvidenceReason_codeValues: ReadonlyArray<
+	components['schemas']['RuntimeEvidence']['reason_code']
+> = [
+	'verified',
+	'installation_unavailable',
+	'authentication_unavailable',
+	'request_failed',
+	'effective_policy_unavailable'
+];
 export const componentsResponsesMethodNotAllowedHeadersAllowValues: ReadonlyArray<
 	components['responses']['MethodNotAllowed']['headers']['Allow']
 > = ['GET, HEAD'];

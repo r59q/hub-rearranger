@@ -152,3 +152,8 @@ func (s *failingService) RepositoryProfiles(ctx context.Context, _ domain.Reposi
 	s.ctx = ctx
 	return domain.ProfileCatalog{}, errors.New("private upstream detail")
 }
+
+func (s *failingService) RepositoryReadiness(ctx context.Context, repo domain.Repository) (domain.RepositoryReadiness, error) {
+	_, err := s.RepositoryProfiles(ctx, repo)
+	return domain.RepositoryReadiness{}, err
+}

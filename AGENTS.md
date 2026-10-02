@@ -37,6 +37,23 @@ that component's README for the combined pinned development tools. Profile
 validation proves configuration shape, not runtime readiness. New consumers
 must use the same schema; never add credentials or arbitrary command fields.
 
+The identity service owns GitHub App user credentials, encrypted sessions, and
+live repository write authorization. `GITHUB_TOKEN` is discovery-only. Never
+export user/refresh tokens through a public API or into another service. Future
+user writes must execute within identity's `WithAuthorization` boundary; its
+public preflight is context, not a reusable write grant. Keep account checks out
+of unrelated frontend loads so identity outages do not delay browsing.
+
+Trusted assignment intake lives under `ops/agent-intake`, outside Compose, and
+uses `go-github` plus the canonical AW-003 Python validator. Run `make intake-check`
+(included in `make check`). The workflow serializes all attempts by repository
+ID/comment ID; only the earliest verified run may dispatch. Reruns must preserve
+the accepted base and independently recheck current source, roles, and policy.
+Receipts/artifacts are context, never authorization. AW-012/AW-013 must maintain
+that concurrency group, verify invocation origin, and reconcile their own GitHub
+results before retrying execution/publication. Keep source execution disabled
+until the dedicated runner and isolation contract are verified.
+
 ## Product principles
 
 - Build focused views around agent workflows: understanding repository state,
@@ -81,8 +98,25 @@ must use the same schema; never add credentials or arbitrary command fields.
   Update the Compose configuration whenever services, dependencies,
   configuration, ports, volumes, or local-development requirements change.
 - Prefer clear, conventional names and small, composable modules.
+- Keep imports together and separate the import block from the rest of the code
+  with at least one empty line. Do not insert empty lines between individual
+  import declarations. Preserve conventional import groups and keep multiline
+  import declarations intact.
 - Keep methods and functions small and focused. Extract helper methods or
   functions when doing so makes the code easier to read or reuse.
+- Separate function, method, and type definitions with at least one empty line.
+  This includes methods within a class and definitions of structs, interfaces,
+  classes, and TypeScript type aliases. Keep documentation comments attached to
+  their definition; place the separating empty line before those comments.
+- Use whitespace to make logical groupings easy to read. Keep related code
+  together and prefer an empty line when moving to a distinct part of the logic,
+  even within one method or script. For example, setup, fetching an entity,
+  changing it, and saving it may form four separate groups. Lifecycle behavior,
+  such as `useEffect`, `$effect`, intervals, or timeouts, usually benefits from
+  separation from general variable declarations. Keep variables used only by
+  that behavior close to it, including directly above its invocation when useful.
+  These are readability guidelines: use judgment rather than inserting blank
+  lines mechanically between every statement or category of code.
 - Keep GitHub API access behind a narrow, typed integration layer. UI components
   should consume application-level data rather than raw API responses.
 - Make asynchronous states explicit: loading, empty, error, stale, and
@@ -205,8 +239,16 @@ must use the same schema; never add credentials or arbitrary command fields.
   The profile contract exporter also derives `Catalog*` OpenAPI field shapes and
   embedded Go/server-only frontend schema snapshots from the canonical AW-003
   schema; do not maintain separate field policies or edit generated snapshots.
+  The AW-006 runtime evidence contract is canonical in
+  `ops/private-runner/readiness.schema.v1.json`; the same exporter derives
+  `RuntimeEvidence` transport shapes and Go/server-only frontend snapshots.
+  Never use the legacy `addons` diagnostic as profile readiness proof.
   `make agents-contract-check` verifies it without editing files and is included
   in `make check`. Other domains may adopt this pattern when their APIs change.
+
+- Identity also generates Go transport and server-only frontend types with the
+  repository-pinned tools. Run `make generate-identity-contract` after its API
+  changes; `make identity-contract-check` verifies them and is part of `make check`.
 
 ## Testing
 

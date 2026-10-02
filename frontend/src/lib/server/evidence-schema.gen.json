@@ -1,0 +1,135 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://hub-rearranger.local/agent-readiness/v1",
+	"title": "Safe profile runtime evidence v1",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"version",
+		"repository",
+		"profile_id",
+		"profile_revision",
+		"runner_label",
+		"requested_model",
+		"requested_reasoning_effort",
+		"effective_model",
+		"effective_reasoning_effort",
+		"cli_version",
+		"run_id",
+		"run_attempt",
+		"verified_at",
+		"outcome",
+		"reason_code"
+	],
+	"properties": {
+		"version": {
+			"type": "integer",
+			"const": 1
+		},
+		"repository": {
+			"type": "string",
+			"pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]{1,100}$"
+		},
+		"profile_id": {
+			"type": "string",
+			"pattern": "^[a-z][a-z0-9-]{0,63}$"
+		},
+		"profile_revision": {
+			"type": "string",
+			"pattern": "^[0-9a-f]{40}$"
+		},
+		"runner_label": {
+			"type": "string",
+			"pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+		},
+		"requested_model": {
+			"type": "string",
+			"enum": ["gpt-6.1-sol"]
+		},
+		"requested_reasoning_effort": {
+			"type": "string",
+			"enum": ["high"]
+		},
+		"effective_model": {
+			"type": ["string", "null"],
+			"enum": ["gpt-6.1-sol", null]
+		},
+		"effective_reasoning_effort": {
+			"type": ["string", "null"],
+			"enum": ["high", null]
+		},
+		"cli_version": {
+			"type": ["string", "null"],
+			"pattern": "^codex-cli [0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][a-zA-Z0-9.-]+)?$",
+			"maxLength": 100
+		},
+		"run_id": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 9007199254740991
+		},
+		"run_attempt": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 10000
+		},
+		"verified_at": {
+			"type": "string",
+			"format": "date-time",
+			"maxLength": 40
+		},
+		"outcome": {
+			"type": "string",
+			"enum": ["verified", "failed"]
+		},
+		"reason_code": {
+			"type": "string",
+			"enum": [
+				"verified",
+				"installation_unavailable",
+				"authentication_unavailable",
+				"request_failed",
+				"effective_policy_unavailable"
+			]
+		}
+	},
+	"allOf": [
+		{
+			"if": {
+				"properties": {
+					"outcome": {
+						"const": "verified"
+					}
+				}
+			},
+			"then": {
+				"properties": {
+					"effective_model": {
+						"const": "gpt-6.1-sol"
+					},
+					"effective_reasoning_effort": {
+						"const": "high"
+					},
+					"cli_version": {
+						"type": "string"
+					},
+					"reason_code": {
+						"const": "verified"
+					}
+				}
+			},
+			"else": {
+				"properties": {
+					"reason_code": {
+						"enum": [
+							"installation_unavailable",
+							"authentication_unavailable",
+							"request_failed",
+							"effective_policy_unavailable"
+						]
+					}
+				}
+			}
+		}
+	]
+}

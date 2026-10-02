@@ -1,0 +1,82 @@
+name: Agent assignment
+run-name: Agent assignment ${{ github.event.repository.id }}:${{ github.event.comment.id }}
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+# All attempts, including duplicate deliveries and reruns, hold the same group.
+# GitHub may replace a pending duplicate; it never cancels the active assignment.
+concurrency:
+  group: agent-assignment-${{ github.event.repository.id }}-${{ github.event.comment.id }}
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    if: startsWith(github.event.comment.body, '/agent')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    timeout-minutes: 10
+    outputs:
+      dispatch: ${{ steps.intake.outputs.dispatch }}
+      disposition: ${{ steps.intake.outputs.disposition }}
+      canonical_run_id: ${{ steps.intake.outputs.canonical_run_id }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: Install pinned profile validation tools
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/profile-tools"
+          "$RUNNER_TEMP/profile-tools/bin/pip" install -r ops/agent-profiles/requirements-dev.txt
+      - name: Build reviewed intake
+        working-directory: ops/agent-intake
+        shell: bash
+        run: go build -o "$RUNNER_TEMP/agent-intake" ./cmd/intake
+      - name: Verify current source, roles, policies, and assignment ownership
+        id: intake
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          "$RUNNER_TEMP/agent-intake" \
+            --python "$RUNNER_TEMP/profile-tools/bin/python" \
+            --policy "$GITHUB_WORKSPACE/ops/agent-intake/profile_policy.py" \
+            --output "$RUNNER_TEMP/invocation.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.intake.outputs.dispatch == 'true'
+        with:
+          name: agent-invocation-v1-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/invocation.json
+          if-no-files-found: error
+          retention-days: 7
+
+  dispatch:
+    name: Execution disabled (AW-012 required)
+    needs: authorize
+    if: needs.authorize.outputs.dispatch == 'true'
+    # AW-012 replaces this explicit gate with the verified private patch job.
+    # Do not schedule the shared addons runner or source execution from AW-011.
+    runs-on: ubuntu-24.04
+    permissions: {}
+    timeout-minutes: 1
+    steps:
+      - name: Report private adapter execution gate
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## codex-chatgpt-private-runner
+
+          **RUNNER_NOT_READY**: AW-011 verified the assignment and published its invocation artifact. Source execution is disabled until AW-012 implements and verifies the dedicated patch job. Rerun the original assignment workflow after setup; this gate has no Codex credentials or GitHub write access.
+          SUMMARY

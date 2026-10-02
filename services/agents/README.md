@@ -1,16 +1,16 @@
-# Agents service (AW-004 / AW-005)
+# Agents service (AW-004 / AW-005 / AW-006)
 
 The Agents service owns repository profiles, their validation, derived readiness,
 and the GitHub-native assignment convention. It has no queue, runtime, provider
 credential store, transcript store, or durable assignment/profile database.
 GitHub remains the source of truth. Runners and their authentication live outside
-Hub and Docker Compose. Runtime readiness is AW-006; profile validation alone
+Hub and Docker Compose. Readiness derives configuration and trusted diagnostic evidence; profile validation alone
 never proves that a runner, model, or account is ready.
 
 ## Local setup and configuration
 
 Use Go 1.25. Public catalogs can be read without a token; private repositories
-require a fine-grained token with read-only Metadata and Contents access:
+require a fine-grained token with read-only Metadata and Contents access. Readiness also requires Actions read access:
 
 ```sh
 GITHUB_TOKEN=github_pat_... go run ./cmd/server
@@ -32,16 +32,17 @@ exposing private repository data.
 
 - `cmd/server` composes dependencies, HTTP timeouts, logging, and graceful shutdown.
 - `internal/api` validates transport input and maps domain results into generated DTOs.
-- `internal/domain` owns convention and profile-read use cases through reader/validator interfaces.
+- `internal/domain` owns convention, profile-read, and readiness use cases through reader/validator interfaces.
 - `internal/infrastructure/github` reads GitHub through pinned `go-github`.
 - `internal/infrastructure/profiles` implements bounded YAML parsing and canonical JSON Schema validation.
+- `internal/infrastructure/evidence` validates the closed runtime evidence schema.
 - `internal/infrastructure/config` reads server environment settings.
 - `api/openapi.yaml` is the versioned public API contract.
 - `frontend/src/lib/server/agents-api.ts` is the typed server-only consumer.
 
 ## Public API
 
-[`api/openapi.yaml`](api/openapi.yaml), version 1.1.0, uses OpenAPI 3.0.3.
+[`api/openapi.yaml`](api/openapi.yaml), version 1.2.0, uses OpenAPI 3.0.3.
 The API URL version and catalog schema version are separate contracts.
 
 - `GET /health` returns `{"status":"ok"}` independently of GitHub and runners.
@@ -50,6 +51,7 @@ The API URL version and catalog schema version are separate contracts.
   `branch-draft-pr` authority, and a full default-branch ancestor SHA.
 - `GET /v1/repositories/{owner}/{repo}/profiles` reads and validates
   `.github/agent-profiles.yml` in the requested repository.
+- `GET /v1/repositories/{owner}/{repo}/readiness` derives per-profile configuration/runtime state.
 - `HEAD` on these endpoints checks read availability without a response body.
   A `200` profile response may still describe an invalid or missing catalog;
   use GET to inspect its state.
@@ -122,3 +124,57 @@ unsupported versions, missing catalogs, safe failures, and HEAD against OpenAPI.
 Frontend tests cover typed reads, schema validation, revision consistency,
 malformed responses, and useful transport errors. No test needs live GitHub,
 OpenAI, runner authentication, or a self-hosted runner.
+
+## Readiness derivation
+
+Readiness reads the catalog and required files at the same default-branch commit,
+then projects current Actions workflow/run/job/artifact metadata. It returns
+`catalog_state`, catalog diagnostics, and sorted profile rows with `state`,
+`runner_label`, `next_action`, safe diagnostics, and optional matching evidence.
+Invalid/missing catalogs have no profile rows. Disabled profiles remain visible;
+readiness never grants assignment authority. Requests have a 20-second deadline.
+
+Required regular, nonempty files (each at most 64 KiB) are `AGENTS.md`,
+`docs/agent-workflows.md`, `.github/workflows/agent-assignment.yml`, and
+`.github/workflows/agent-profile-diagnostic.yml`. Workflow YAML uses the catalog's
+bounded, unambiguous parser. Both workflows must be registered and active in
+Actions. Assignment metadata needs `issue_comment` with `created` and jobs named
+`authorize`, `patch`, and `publish`; diagnostic metadata needs manual dispatch
+only and jobs named `authorize` and `diagnostic`. The patch/diagnostic jobs must
+statically request `self-hosted`, `linux`, and the profile's custom runner label.
+Dynamic runner expressions cannot establish readiness. These presence/metadata
+checks do not audit workflow security or prove execution isolation (AW-012/AW-013).
+AW-008 owns complete bootstrap templates; this task installs no assignment stub.
+
+| State                   | Meaning and next step                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `configuration_missing` | Add named missing files or repair workflow registration/metadata.                                                                                                        |
+| `verification_pending`  | Run the dedicated profile diagnostic on a private repository's default branch. Evidence is absent, stale, malformed, or mismatched, or the newest attempt is incomplete. |
+| `runtime_verified`      | Fresh matching no-write diagnostic succeeded; refresh after changes and within 24 hours.                                                                                 |
+| `verification_failed`   | A fresh matching diagnostic returned a safe failure; repair the runner locally and rerun.                                                                                |
+
+The [evidence contract and operator guide](../../ops/private-runner/READINESS.md)
+define origin, freshness, and exact policy matching. Only the latest run on the
+default branch is considered, using exact-attempt jobs and immutable attempt
+artifact names. A newer queued run never falls back to an older success.
+The run's head commit must equal the current catalog revision, so _any_ new commit
+requires a new diagnostic. Records are valid for 24 hours inclusive, with at
+most one minute future-clock tolerance, and must fall within the diagnostic
+job's timestamps. Matching failed records expire under the same rules.
+
+GitHub access/rate failures remain transport errors with recovery guidance;
+they are not reported as missing configuration. Missing/expired/malformed or
+unverifiable artifacts remain pending. Downloads use go-github's supported
+artifact redirect API and a separate HTTPS client without GitHub credentials,
+with redirects disabled. Archives are SHA-256 checked, bounded to 64 KiB, contain
+exactly one regular `readiness.json` (16 KiB maximum), and are never extracted.
+The canonical evidence schema validates all fields before domain matching.
+Raw process output and untrusted artifact strings never reach responses/logs.
+
+The contract exporter also derives `RuntimeEvidence` OpenAPI shapes and Go/
+frontend schema snapshots from `ops/private-runner/readiness.schema.v1.json`.
+Regenerate/check them with the same Agents contract commands. Offline tests
+cover all four states, freshness, model/runner/origin mismatches, rerun behavior,
+safe producer failures, artifact digest/shape/expiry, token-free downloads,
+Actions access errors, API methods/contracts, and server-only frontend validation.
+The profile/readiness UI remains AW-007.

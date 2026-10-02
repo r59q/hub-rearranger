@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../ops/agent-profiles/schema.v1.json
-# Configuration only: intake and patch execution are not installed yet.
+# Intake is implemented; dedicated patch execution remains disabled until AW-012.
 schema_version: 1
 profiles:
   codex-thorough:

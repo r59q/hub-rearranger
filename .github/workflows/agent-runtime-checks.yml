@@ -36,8 +36,12 @@ jobs:
         run: |
           python3 -m venv ops/private-runner/.venv
           ops/private-runner/.venv/bin/python -m pip install -r ops/agent-profiles/requirements-dev.txt
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: ops/agent-intake/go.sum
       - name: Install pinned frontend formatting tools
         working-directory: frontend
         run: npm ci
       - name: Validate diagnostic, profiles, and workflows
-        run: make runtime-check profiles-check
+        run: make runtime-check profiles-check intake-check

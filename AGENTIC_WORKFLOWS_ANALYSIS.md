@@ -259,9 +259,131 @@ authentication, like the other local read services; a public multi-user deployme
 must add caller authorization before exposing private data. Provider credentials
 and runner authentication remain outside Hub.
 
+## AW-006 profile readiness diagnostics
+
+The separate read-only readiness API derives configuration presence from
+commit-pinned bootstrap files and active Actions workflow metadata. Its four
+profile states are `configuration_missing`, `verification_pending`,
+`runtime_verified`, and `verification_failed`, with expected runner labels,
+missing file paths, and explicit next actions. Profile validation remains separate;
+invalid catalogs expose no profile rows, and readiness never authorizes work.
+
+The canonical bootstrap paths are `AGENTS.md`, `docs/agent-workflows.md`,
+`.github/workflows/agent-assignment.yml`, and
+`.github/workflows/agent-profile-diagnostic.yml`, alongside the profile catalog.
+Metadata checks require assignment `issue_comment.created` intake with
+`authorize`/`patch`/`publish` jobs, a manual diagnostic with
+`authorize`/`diagnostic` jobs, and static dedicated runner labels. They establish
+configuration presence, not workflow security or execution isolation. AW-008
+must use these paths and the implemented execution templates and supporting
+helpers; no placeholder assignment workflow is added by AW-006.
+
+The new private-only fixed diagnostic probes `codex-thorough` on
+`hub-agent-codex` with exact `gpt-6.1-sol`/`high` policy, checks CLI session headers
+and a live no-write marker, rejects warning/reroute/ambiguous policy output, and
+publishes only a closed versioned evidence record. The credentialed job executes
+checksum-pinned operator-installed scripts without checkout or GitHub permissions;
+a hosted job uploads its immutable attempt artifact. Legacy AW-001 `addons`
+results remain independent and cannot verify a profile's exact runtime policy.
+
+Origin validation uses the registered workflow, latest default-branch run,
+exact-attempt authorization/diagnostic jobs, an assigned dedicated runner,
+artifact run/repository/head binding, and a bounded SHA-256-verified archive.
+Evidence must match the current full commit/profile/runner/model policy, fall
+within job timestamps, and be no older than 24 hours. A newer pending attempt
+supersedes older successes. Missing, expired, stale, malformed, or mismatched
+records remain pending; a fresh matching failed record reports failed verification.
+No credential, transcript, raw CLI/GitHub error, or untrusted artifact text reaches
+Hub responses or logs. The contract exporter/checks cover the canonical AW-006
+schema, Go/frontend snapshots, and `RuntimeEvidence` OpenAPI shapes.
+
+Offline producer, domain, controlled GitHub/storage boundary, API-contract, and
+server-only frontend tests verify these rules without live authentication.
+Readiness adds Actions read permission to the server-side read token. The API
+stays private/loopback with the existing local access boundary; runner provisioning
+and live verification remain AW-012, and the repository profile/readiness view
+is described below. See [the evidence/operator guide](ops/private-runner/READINESS.md).
+
+## AW-007 profile and readiness view
+
+The `/agents` workdesk tab lists profiles for a selected repository and exposes
+role, authority, model/reasoning policy, dedicated runner requirements, configuration
+diagnostics, and runtime status together. Native disclosures show execution/review
+policy and safe diagnostic evidence; pinned catalog/commit and workflow/run links
+preserve access to GitHub. Repository cards link directly to this view.
+
+The server loads catalogs and readiness concurrently and maps validated transport
+data into frontend presentation models. Reads must describe the same repository,
+branch, revision, profile set, runner, and requested model policy before runtime
+proof is shown. A readiness-only failure keeps policy visible with unknown status;
+catalog errors never expose partial profile rows. Missing, invalid, unsupported,
+empty, loading, error, and success states remain distinct.
+
+The browser marks a view stale after five minutes or evidence expiry (24 hours),
+on a snapshot mismatch, or after a failed refresh. Previous evidence cannot keep
+a current verification label while refreshing or stale. Initial server rendering
+and GET forms work without JavaScript; client navigation streams explicit loading.
+The view follows system dark mode and supports keyboard controls and narrow touch
+layouts. It reads GitHub state through the existing services and performs no writes
+or runner actions. Live dedicated-runner verification still belongs to AW-012.
+
+## AW-019 Hub identity and write authorization
+
+The independent [Identity service](services/identity/README.md) owns GitHub App
+user sign-in, encrypted server-side sessions, token refresh/revocation, and live
+repository write authorization. The `/account` interface uses server-only
+SvelteKit adapters; cookies contain opaque identifiers and credentials stay inside
+Identity. Account availability does not block repository or agent read views.
+Sign-in uses one-use browser-bound state and PKCE; authenticated mutations require
+the exact public Origin and session anti-forgery nonce.
+
+Each authorized operation rechecks the actual GitHub user, current repository role,
+configured App installation, repository selection, and required permissions.
+Assignments require `maintain`/`admin` and Issues write; bootstrap requires
+`write`/`maintain`/`admin` and Contents, Pull requests, and Workflows write.
+The discovery token cannot authorize these operations. Revoked/expired credentials
+fail closed, transient outages give safe recovery guidance, and sign-out removes
+local authority before remote revocation.
+
+AW-009/AW-014 must execute their user-attributed writes through Identity's
+`WithAuthorization` boundary, adding versioned mutation APIs with those features.
+The public authorization preflight is not a reusable grant and never exports a
+token. Other domains retain their business payloads and rules. Controlled GitHub
+HTTP tests prove comment attribution and current-access rejection; live App setup
+and real GitHub verification still require operator configuration.
+
+## AW-011 trusted assignment intake
+
+The [GitHub-hosted assignment workflow](.github/workflows/agent-assignment.yml)
+uses the independent [intake tooling](ops/agent-intake/README.md) to re-fetch the
+source comment/open issue, verify current requester/original/rerun roles, resolve
+revision ancestry, and validate pinned/current catalogs with the canonical AW-003
+parser/schema. Every material execution field must match current policy; source,
+role, and moving-branch policy checks run again before acceptance. No comment body
+becomes shell code or a provider instruction during intake.
+
+Assignment IDs and workflow concurrency use immutable repository/comment IDs.
+Only the earliest verified workflow run for a comment may dispatch; duplicate
+deliveries point to that original run. Reruns update one GitHub Actions bot receipt,
+retain its accepted base SHA, and recheck current policy rather than trusting prior
+acceptance. Ambiguous receipt POSTs are reconciled before dispatch. Missing,
+truncated, or inconsistent GitHub run/receipt provenance fails closed.
+
+The versioned invocation artifact carries verified identity/source/profile/base/run
+metadata and execution policy, excluding display prose, credentials, source bodies,
+and raw errors. Rejections have fixed GitHub check/summary guidance. Acceptance
+comments link to the exact request/run and explicitly report `RUNNER_NOT_READY`.
+The dispatcher currently runs only an execution-disabled hosted gate. AW-012 must
+add and verify the dedicated patch job, reauthorize artifact origin/current policy,
+and reconcile execution before retrying; AW-013 independently reconciles branches
+and PRs. Receipts and invocation metadata never grant authority. No source execution
+or self-hosted runner is enabled by AW-011, and the workflow is not yet published
+to a live repository by this local implementation.
+
 ## Backlog refinements after AW-005 (2026-10-01)
 
-AW-006 remains the next implementation task. It includes defining a versioned
+The post-AW-005 recommendation made AW-006 the next implementation task,
+now completed in the section above. Its scope included defining a versioned
 profile-specific diagnostic evidence contract and updating the no-write
 producer, so the reader can verify repository/profile revision, runner
 requirements, exact model/reasoning policy, CLI version, originating workflow
@@ -410,15 +532,16 @@ Hub-only configuration.
 
 ## Domain map
 
-The existing backend domains are **repositories**, **issues**, and **agents**. They should
-remain focused:
+The existing backend domains are **repositories**, **issues**, **agents**, and
+**identity**. They should remain focused:
 
 | Domain | Status | Responsibility |
 | --- | --- | --- |
-| Repositories | Exists | Repository discovery, selection, identity, and basic metadata. It does not own agent profile semantics. |
+| Repositories | Exists | Repository discovery, selection, and basic metadata. It does not own user identity or agent profile semantics. |
+| Identity | Exists (AW-019) | GitHub App user sign-in, encrypted sessions, token lifecycle, and live user-attributed write authorization; no agent execution or discovery token. |
 | Issues | Exists | Issue views, relationships, and issue-specific UI context. It asks for available profiles; it does not execute them. |
 | Pull requests | Needed | PRs, review threads, agent provenance on PRs, branches, and related checks. This deserves its own domain once PR workflows are introduced. |
-| Agents | Profile reads (AW-005) | Convention and validated repository-profile read API; readiness, bootstrap-PR planning, and GitHub assignment requests follow in later tasks. It owns no queue, runner, transcript, or provider credential. |
+| Agents | Profile/readiness reads (AW-005/AW-006) | Convention, validated repository profiles, and derived readiness API; bootstrap-PR planning and GitHub assignment requests follow in later tasks. It owns no queue, runner, transcript, or provider credential. |
 | Pipelines | Later, if needed | Cross-PR/repository workflow runs, artifacts, and analysis. Initially, related checks can remain part of the pull-request view. |
 
 The **Agents** domain is intentionally not an orchestration domain. Its job is

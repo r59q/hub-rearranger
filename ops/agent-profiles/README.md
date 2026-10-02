@@ -76,9 +76,11 @@ requires a reviewed adapter/schema change.
 
 ## Adapter contract v1
 
-These are logical inputs and outputs for the later AW-011–AW-013 workflows,
-not an HTTP API or runnable workflow. GitHub Actions transports the verified
-metadata between jobs as structured data, never interpolated shell commands.
+These are the logical inputs and outputs for AW-011–AW-013, rather than an HTTP
+API. The [AW-011 intake](../agent-intake/README.md) implements assignment input
+verification and its invocation artifact; AW-012/AW-013 provide execution/results.
+GitHub Actions transports verified metadata as structured data, never interpolated
+shell commands.
 
 ### Input and authorization
 
@@ -136,8 +138,9 @@ metadata, checkout, artifacts, caches, results, or logs.
 Use a dedicated restricted runner host/account before enabling source execution.
 The shared `addons` exception in AW-001 authorized the fixed diagnostic only;
 this catalog does not extend it. The custom `hub-agent-codex` label and model
-policy still require setup and verification. Missing intake/patch workflows
-mean execution is unavailable even when this catalog validates.
+policy still require setup and verification. The intake is implemented, while
+the dedicated patch job remains gated until AW-012. Execution is unavailable
+even when this catalog validates.
 
 ### Output and separate write job
 
@@ -231,3 +234,9 @@ Run `make generate-agents-contract` after schema/API changes; do not edit the
 generated snapshots or `Catalog*` definitions. `make agents-contract-check`
 verifies these exports and generated Go/TypeScript DTOs without editing files.
 The service needs no Python runtime, and generation needs no GitHub credentials.
+
+The exporter also consumes the separate [runtime evidence schema](../private-runner/readiness.schema.v1.json)
+to generate `RuntimeEvidence` transport shapes and Go/server-only frontend
+snapshots. `make agents-contract-check` verifies both contracts without editing
+files. Profile configuration validation and runtime evidence validation have
+separate semantics; see the [readiness guide](../private-runner/READINESS.md).

@@ -1,0 +1,8 @@
+/intake
+/coverage.out
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.env
+.env.*

@@ -1,0 +1,4 @@
+# Dedicated credentialed runner; provisioning and access restrictions are AW-012.
+self-hosted-runner:
+  labels:
+    - hub-agent-codex

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { profilesQuery } from '$lib/agents/presentation';
 	import type { Repository } from '$lib/repositories/types';
 
 	let { repository, pending = false }: { repository: Repository; pending?: boolean } = $props();
@@ -24,6 +26,14 @@
 		<h2>{repository.name}</h2>
 		<p>{repository.description || 'No description provided on GitHub.'}</p>
 	</div>
+	{#if !pending}
+		<!-- The base-aware resolved Agents route is followed by an encoded query string. -->
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
+		<a class="agents-link" href={resolve('/agents') + profilesQuery(repository.full_name)}
+			>Agent profiles <span aria-hidden="true">→</span></a
+		>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
+	{/if}
 	<footer>
 		<span class="branch" title="Default branch">
 			<svg viewBox="0 0 24 24" aria-hidden="true"
@@ -119,6 +129,16 @@
 		font-size: 0.88rem;
 	}
 
+	.agents-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 2.75rem;
+		margin-bottom: 1rem;
+		font-size: 0.85rem;
+		font-weight: 650;
+		width: fit-content;
+	}
 	footer {
 		gap: 1rem;
 		padding-top: 1rem;

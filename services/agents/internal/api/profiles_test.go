@@ -36,11 +36,11 @@ func TestRepositoryProfileReadIntegrationHonorsContract(t *testing.T) {
 		missing bool
 		state   contract.RepositoryProfilesState
 	}{
-		{"valid codex-thorough", valid, false, contract.Valid},
-		{"malformed YAML", []byte("private-sentinel: ["), false, contract.Invalid},
-		{"invalid schema", []byte("schema_version: 1\nprofiles: {private-sentinel: {}}"), false, contract.Invalid},
-		{"unsupported schema", []byte("schema_version: 2\nprofiles: {}"), false, contract.Unsupported},
-		{"missing catalog", nil, true, contract.Missing},
+		{"valid codex-thorough", valid, false, contract.RepositoryProfilesStateValid},
+		{"malformed YAML", []byte("private-sentinel: ["), false, contract.RepositoryProfilesStateInvalid},
+		{"invalid schema", []byte("schema_version: 1\nprofiles: {private-sentinel: {}}"), false, contract.RepositoryProfilesStateInvalid},
+		{"unsupported schema", []byte("schema_version: 2\nprofiles: {}"), false, contract.RepositoryProfilesStateUnsupported},
+		{"missing catalog", nil, true, contract.RepositoryProfilesStateMissing},
 	}
 	for _, item := range cases {
 		t.Run(item.name, func(t *testing.T) {
@@ -67,6 +67,7 @@ func TestRepositoryProfileReadIntegrationHonorsContract(t *testing.T) {
 			}))
 			defer upstream.Close()
 			client := gh.NewClient(upstream.Client())
+
 			client.BaseURL, _ = client.BaseURL.Parse(upstream.URL + "/")
 			validator, err := profiles.NewValidator()
 			if err != nil {
@@ -76,8 +77,10 @@ func TestRepositoryProfileReadIntegrationHonorsContract(t *testing.T) {
 			for _, method := range []string{http.MethodGet, http.MethodHead} {
 				request := httptest.NewRequest(method, profilePath, nil)
 				response := httptest.NewRecorder()
+
 				// Act.
 				handler.ServeHTTP(response, request)
+
 				// Assert.
 				if response.Code != http.StatusOK || response.Header().Get("Cache-Control") != "no-store" {
 					t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
@@ -96,7 +99,7 @@ func TestRepositoryProfileReadIntegrationHonorsContract(t *testing.T) {
 				if result.State != item.state || result.Revision != profileSHA {
 					t.Fatalf("result = %v", result)
 				}
-				if item.state == contract.Valid {
+				if item.state == contract.RepositoryProfilesStateValid {
 					if len(result.Profiles) != 1 || result.Profiles[0].Id != "codex-thorough" || result.Profiles[0].Revision != profileSHA {
 						t.Fatalf("profiles = %v", result.Profiles)
 					}
@@ -116,6 +119,7 @@ type profileFailureService struct {
 func (s *profileFailureService) AssignmentConvention(ctx context.Context) (domain.Convention, error) {
 	return domain.NewService(nil).AssignmentConvention(ctx)
 }
+
 func (s *profileFailureService) RepositoryProfiles(_ context.Context, _ domain.Repository) (domain.ProfileCatalog, error) {
 	s.called = true
 	return domain.ProfileCatalog{}, s.err
@@ -130,8 +134,10 @@ func TestProfileFailureStatusesAndLogsAreSafe(t *testing.T) {
 			handler := NewHandler(service, slog.New(slog.NewTextHandler(&logs, nil)))
 			request := httptest.NewRequest(http.MethodGet, profilePath, nil)
 			response := httptest.NewRecorder()
+
 			// Act.
 			handler.ServeHTTP(response, request)
+
 			// Assert.
 			if response.Code != status || !service.called {
 				t.Fatalf("status = %d", response.Code)
@@ -159,12 +165,19 @@ func TestProfileInputAndWriteMethodsDoNotCallDomain(t *testing.T) {
 			service := &profileFailureService{err: errors.New("private-sentinel")}
 			handler := NewHandler(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
 			response := httptest.NewRecorder()
+
 			// Act.
 			handler.ServeHTTP(response, httptest.NewRequest(item.method, item.path, nil))
+
 			// Assert.
 			if response.Code != item.status || service.called {
 				t.Fatalf("status = %d, called = %t", response.Code, service.called)
 			}
 		})
 	}
+}
+
+func (s *profileFailureService) RepositoryReadiness(ctx context.Context, repo domain.Repository) (domain.RepositoryReadiness, error) {
+	_, err := s.RepositoryProfiles(ctx, repo)
+	return domain.RepositoryReadiness{}, err
 }

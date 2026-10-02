@@ -11,7 +11,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test": "vitest run",
-		"generate:agents-api": "openapi-typescript ../services/agents/api/openapi.yaml --enum-values -o src/lib/server/agents-contract.gen.ts && prettier --write src/lib/server/agents-contract.gen.ts"
+		"generate:agents-api": "openapi-typescript ../services/agents/api/openapi.yaml --enum-values -o src/lib/server/agents-contract.gen.ts && node scripts/format-contract.mjs src/lib/server/agents-contract.gen.ts && prettier --write src/lib/server/agents-contract.gen.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.3.2",
@@ -37,6 +37,7 @@
 	"dependencies": {
 		"@picocss/pico": "^2.1.1",
 		"ajv": "8.20.0",
+		"ajv-formats": "3.0.1",
 		"openapi-fetch": "0.15.0"
 	}
 }

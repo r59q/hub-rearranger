@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+identity-service
+coverage.out
+data
+*.db
+*.db-shm
+*.db-wal

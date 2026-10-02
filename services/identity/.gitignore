@@ -1,0 +1,11 @@
+/identity-service
+.env
+.env.*
+!.env.example
+/coverage.out
+
+# Encrypted local session store and SQLite journals.
+/data/
+*.db
+*.db-shm
+*.db-wal

@@ -13,6 +13,7 @@ import (
 type conventionUseCases interface {
 	AssignmentConvention(context.Context) (domain.Convention, error)
 	RepositoryProfiles(context.Context, domain.Repository) (domain.ProfileCatalog, error)
+	RepositoryReadiness(context.Context, domain.Repository) (domain.RepositoryReadiness, error)
 }
 
 type Handler struct {
@@ -38,14 +39,17 @@ func NewHandler(service conventionUseCases, logger *slog.Logger) http.Handler {
 			})
 		},
 	})
+
 	mux.HandleFunc("/health", methodNotAllowed)
 	mux.HandleFunc("/v1/assignment-convention", methodNotAllowed)
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/profiles", methodNotAllowed)
+	mux.HandleFunc("/v1/repositories/{owner}/{repo}/readiness", methodNotAllowed)
 	mux.HandleFunc("/", func(response http.ResponseWriter, _ *http.Request) {
 		writeJSON(response, http.StatusNotFound, contract.Error{
 			Code: contract.ErrorCodeNotFound, Message: "The Agents endpoint was not found.",
 		})
 	})
+
 	return mux
 }
 
@@ -67,6 +71,7 @@ func (h *Handler) GetAssignmentConvention(response http.ResponseWriter, request 
 		})
 		return
 	}
+
 	writeJSON(response, http.StatusOK, toConventionDTO(convention))
 }
 

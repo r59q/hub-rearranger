@@ -176,7 +176,7 @@ The same workflow remains operable after Hub is removed.
   `make check` passed; Agents/frontend images built, and an isolated Agents
   container became healthy. Readiness and the profile UI remain AW-006/AW-007.
 
-- [ ] **AW-006 — Derive readiness diagnostics**
+- [x] **AW-006 — Derive readiness diagnostics**
 
   **Domain:** agents  
   **Depends on:** AW-005, AW-001
@@ -203,7 +203,21 @@ The same workflow remains operable after Hub is removed.
     its exact model policy. Readiness states can be implemented and tested
     offline before the dedicated execution runner is provisioned in AW-012.
 
-- [ ] **AW-007 — Build the profile and readiness UI**
+  **Completion note:** Implemented the separate versioned readiness read API and
+  typed server-only frontend adapter with all four states, named bootstrap files,
+  expected runner labels, and next actions. Added the closed v1 evidence schema
+  and a private-only, checksum-pinned no-write producer for the dedicated profile;
+  the legacy `addons` diagnostic remains independent. The GitHub reader verifies
+  latest run/attempt/job origin, exact policy/revision, 24-hour freshness, artifact
+  binding/digest, and bounded archive/schema shape. Updated generated contracts,
+  permissions, operator recovery docs, and canonical bootstrap conventions.
+  Full `make check` passed (81 frontend tests plus Go/Python/Node/workflow/contract
+  checks); Agents/frontend images built and an isolated Agents container passed
+  health and readiness parameter validation. No live credentialed diagnostic was
+  dispatched; dedicated runner provisioning/live verification remains AW-012,
+  and the UI remains AW-007.
+
+- [x] **AW-007 — Build the profile and readiness UI**
 
   **Domain:** frontend / agents  
   **Depends on:** AW-005, AW-006
@@ -217,9 +231,22 @@ The same workflow remains operable after Hub is removed.
   - Loading, empty, error, stale, and success states are explicit.
   - The UI is accessible, responsive, and works in dark mode.
 
+  **Completion note:** Added the `/agents` workdesk tab and repository-card links,
+  selected-repository controls, profile policy/runner context, distinct configuration
+  and runtime states, safe evidence disclosures, and GitHub source links. The
+  server joins matching catalog/readiness snapshots and preserves policy during
+  readiness outages. Explicit loading, empty, error, and stale states prevent old
+  or mismatched evidence from appearing currently verified. Native GET forms and
+  initial rendering work without JavaScript; client navigation streams loading.
+  Full `make check` passed (113 frontend tests plus Go/Python/Node/workflow/contract
+  checks), and production/Compose frontend builds passed. Controlled Chromium
+  checks verified repository switching, refresh/loading, failure recovery, keyboard
+  disclosures, freshness expiry, dark mobile layouts at 390px/320px, and no-JavaScript
+  selection. No GitHub writes or live credentialed diagnostics were performed.
+
 ## Phase 2 — Bootstrap GitHub-native conventions
 
-- [ ] **AW-019 — Implement Hub GitHub identity and write authorization**
+- [x] **AW-019 — Implement Hub GitHub identity and write authorization**
 
   **Domain:** identity
 
@@ -252,6 +279,22 @@ The same workflow remains operable after Hub is removed.
   **Ordering:** The new ID preserves AW-001–AW-018 references. This task
   precedes AW-009/AW-014; GitHub-native execution does not depend on Hub sign-in.
 
+  **Completed (2026-10-01):** Added the independent Identity Go service and
+  generated v1 OpenAPI contracts, GitHub App user sign-in with browser-bound
+  one-use state/PKCE, encrypted server-side sessions, refresh/revocation, and
+  exact-role/current-installation authorization. The `/account` interface and
+  server-only auth routes support safe recovery and native forms. Future
+  AW-009/AW-014 writes must use Identity's `WithAuthorization` boundary;
+  controlled GitHub HTTP tests prove user-attributed comments and access/token
+  revocation rejection. Compose and component/operator documentation are updated.
+  Full `make check` passed (137 frontend tests plus Go/Python/Node/workflow/contract
+  checks); Identity race tests and static analysis passed. Identity/frontend
+  container builds and isolated disabled/configured vault smoke checks passed.
+  Controlled Chromium checks verified sign-in, refresh, sign-out/revocation
+  recovery, outages, keyboard access, dark mobile layouts, and JavaScript-disabled
+  forms. No live GitHub sign-in or writes were performed; those require a real
+  App/installation configured using the [setup guide](services/identity/README.md).
+
 - [ ] **AW-008 — Define bootstrap PR contents and generator**
 
   **Domain:** agents  
@@ -271,6 +314,8 @@ The same workflow remains operable after Hub is removed.
     diagnostic evidence contract as canonical templates. It installs the
     working GitHub-native flow without placeholder or independently maintained
     execution logic; runner provisioning remains an explicit manual step.
+  - Generated files use AW-006’s canonical bootstrap paths and include the
+    pinned validator/authorization helpers needed by the working workflows.
 
 - [ ] **AW-009 — Create a bootstrap PR from Hub**
 
@@ -309,7 +354,7 @@ The same workflow remains operable after Hub is removed.
 
 ## Phase 3 — Execute one `codex-thorough` assignment
 
-- [ ] **AW-011 — Implement the trusted GitHub Actions intake workflow**
+- [x] **AW-011 — Implement the trusted GitHub Actions intake workflow**
 
   **Domain:** repository workflow / agents  
   **Depends on:** AW-001, AW-002, AW-003
@@ -331,6 +376,24 @@ The same workflow remains operable after Hub is removed.
     permission revocation. Duplicate delivery cannot create a new assignment;
     retries/reruns resume the same GitHub-native assignment without concurrent
     duplicate work. Distinct comment IDs remain separate assignments.
+
+  **Completed (2026-10-01):** Added `agent-assignment.yml` and independent
+  `ops/agent-intake` Go tooling using `go-github` and the canonical AW-003 Python
+  validator. Intake verifies live source/requester/rerun access, exact revision
+  ancestry, enabled pinned/current profiles, and material policy agreement,
+  rechecking source/roles/moving policy before acceptance. Repository/comment IDs
+  define assignment identity and workflow concurrency; only the earliest verified
+  workflow run dispatches. Reruns preserve one receipt and accepted base; receipt
+  publication is reconciled against the exact attempt before dispatch. Safe
+  GitHub checks/receipts and a v1 invocation artifact provide the handoff to
+  `codex-chatgpt-private-runner`; its hosted gate explicitly reports
+  `RUNNER_NOT_READY` until AW-012 implements/verifies the dedicated patch job.
+  Controlled HTTP tests cover nine concurrent duplicates producing one dispatch,
+  retries, partial receipt publication, forged/truncated provenance, and current
+  permission/profile revocation. Full `make check` passed (137 frontend tests,
+  Go/Python/Node/workflow/contract checks); final intake checks, nine new Python
+  tests, and Go race tests passed. CI and component/architecture documentation
+  are updated. No workflow was published/triggered or source executed live.
 
 - [ ] **AW-012 — Implement the self-hosted Codex patch job**
 

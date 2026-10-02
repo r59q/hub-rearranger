@@ -21,6 +21,7 @@ func parseCatalog(content []byte) (any, *domain.Diagnostic) {
 	if !utf8.Valid(content) {
 		return nil, invalidYAML()
 	}
+
 	decoder := yaml.NewDecoder(bytes.NewReader(content))
 	var document yaml.Node
 	if err := decoder.Decode(&document); err != nil {
@@ -33,10 +34,12 @@ func parseCatalog(content []byte) (any, *domain.Diagnostic) {
 	if decoder.Decode(&extra) != io.EOF {
 		return nil, invalidYAML()
 	}
+
 	value, issue := nodeValue(document.Content[0], 1)
 	if issue != nil {
 		return nil, issue
 	}
+
 	// Normalize numeric values to JSON types; nonfinite YAML scalars fail safely.
 	encoded, err := json.Marshal(value)
 	if err != nil {
@@ -59,6 +62,7 @@ func nodeValue(node *yaml.Node, depth int) (any, *domain.Diagnostic) {
 	if node.Style&yaml.TaggedStyle != 0 {
 		return nil, problem("INVALID_YAML", "Remove explicit YAML tags.")
 	}
+
 	switch node.Kind {
 	case yaml.MappingNode:
 		result := map[string]any{}
@@ -73,6 +77,7 @@ func nodeValue(node *yaml.Node, depth int) (any, *domain.Diagnostic) {
 			if _, exists := result[key.Value]; exists {
 				return nil, problem("DUPLICATE_KEY", "Remove duplicate mapping keys.")
 			}
+
 			value, issue := nodeValue(node.Content[i+1], depth+1)
 			if issue != nil {
 				return nil, issue
@@ -107,6 +112,13 @@ func nodeValue(node *yaml.Node, depth int) (any, *domain.Diagnostic) {
 func problem(code, message string) *domain.Diagnostic {
 	return &domain.Diagnostic{Code: code, Path: "/", Message: message}
 }
+
 func invalidYAML() *domain.Diagnostic {
 	return problem("INVALID_YAML", "Use one UTF-8 YAML document with supported scalar values.")
+}
+
+// ParseDocument applies the same bounded, unambiguous YAML policy to workflow metadata.
+func ParseDocument(content []byte) (any, bool) {
+	value, issue := parseCatalog(content)
+	return value, issue == nil
 }

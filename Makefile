@@ -4,11 +4,38 @@ RUNTIME_PYTHON ?= ops/private-runner/.venv/bin/python
 PROFILE_PYTHON ?= $(RUNTIME_PYTHON)
 OAPI_CODEGEN_VERSION := v2.8.0
 
-check: format-check lint test runtime-check profiles-check agents-contract-check
+check: format-check lint test runtime-check profiles-check intake-check agents-contract-check identity-contract-check
+
+.PHONY: intake-check
+
+intake-check:
+	@test -z "$$(find ops/agent-intake -type f -name '*.go' -exec gofmt -l {} +)" || \
+		(echo "Intake Go files need formatting."; exit 1)
+	cd ops/agent-intake && go vet ./... && INTAKE_PYTHON="$(abspath $(PROFILE_PYTHON))" go test ./...
+	$(PROFILE_PYTHON) -m ruff format --check --config ops/private-runner/pyproject.toml ops/agent-intake
+	$(PROFILE_PYTHON) -m ruff check --config ops/private-runner/pyproject.toml ops/agent-intake
+	$(PROFILE_PYTHON) -m unittest discover -s ops/agent-intake -v
+	cd frontend && npm exec prettier -- --config .prettierrc --check ../.github/workflows/agent-assignment.yml
+
+.PHONY: generate-identity-contract identity-contract-check
+
+generate-identity-contract:
+	cd frontend && npm exec prettier -- --config .prettierrc --write ../services/identity/api/*.yaml
+	cd services/identity && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o internal/api/contract/identity.gen.go api/openapi.yaml
+	cd frontend && npm exec openapi-typescript -- ../services/identity/api/openapi.yaml --enum-values -o src/lib/server/identity-contract.gen.ts && node scripts/format-contract.mjs src/lib/server/identity-contract.gen.ts && npm exec prettier -- --write src/lib/server/identity-contract.gen.ts
+
+identity-contract-check:
+	@set -eu; task_tmp=$$(mktemp -d /tmp/hub-identity-contract.XXXXXX); \
+	trap 'rm -f "$$task_tmp/identity.gen.go" "$$task_tmp/identity-contract.gen.ts"; rmdir "$$task_tmp"' EXIT; \
+	(cd services/identity && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o "$$task_tmp/identity.gen.go" api/openapi.yaml); \
+	cmp services/identity/internal/api/contract/identity.gen.go "$$task_tmp/identity.gen.go" || { echo 'Identity Go contract is stale; run make generate-identity-contract.'; exit 1; }; \
+	(cd frontend && npm exec openapi-typescript -- ../services/identity/api/openapi.yaml --enum-values -o "$$task_tmp/identity-contract.gen.ts" && node scripts/format-contract.mjs "$$task_tmp/identity-contract.gen.ts" && npm exec prettier -- --config .prettierrc --write "$$task_tmp/identity-contract.gen.ts"); \
+	cmp frontend/src/lib/server/identity-contract.gen.ts "$$task_tmp/identity-contract.gen.ts" || { echo 'Identity frontend contract is stale; run make generate-identity-contract.'; exit 1; }
+	cd frontend && npm exec prettier -- --config .prettierrc --check ../services/identity/api/*.yaml
 
 generate-agents-contract:
 	$(PROFILE_PYTHON) ops/agent-profiles/export_contract.py
-	cd frontend && npm exec prettier -- --config .prettierrc --write ../services/agents/api/openapi.yaml src/lib/server/profile-schema.gen.json
+	cd frontend && npm exec prettier -- --config .prettierrc --write ../services/agents/api/openapi.yaml src/lib/server/profile-schema.gen.json src/lib/server/evidence-schema.gen.json
 	cd services/agents && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o internal/api/contract/agents.gen.go api/openapi.yaml
 	cd frontend && npm run generate:agents-api
 
@@ -18,7 +45,7 @@ agents-contract-check:
 	trap 'rm -f "$$task_tmp/agents.gen.go" "$$task_tmp/agents-contract.gen.ts"; rmdir "$$task_tmp"' EXIT; \
 	(cd services/agents && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o "$$task_tmp/agents.gen.go" api/openapi.yaml); \
 	cmp services/agents/internal/api/contract/agents.gen.go "$$task_tmp/agents.gen.go" || { echo 'Agents Go contract is stale; run make generate-agents-contract.'; exit 1; }; \
-	(cd frontend && npm exec openapi-typescript -- ../services/agents/api/openapi.yaml --enum-values -o "$$task_tmp/agents-contract.gen.ts" && npm exec prettier -- --config .prettierrc --write "$$task_tmp/agents-contract.gen.ts"); \
+	(cd frontend && npm exec openapi-typescript -- ../services/agents/api/openapi.yaml --enum-values -o "$$task_tmp/agents-contract.gen.ts" && node scripts/format-contract.mjs "$$task_tmp/agents-contract.gen.ts" && npm exec prettier -- --config .prettierrc --write "$$task_tmp/agents-contract.gen.ts"); \
 	cmp frontend/src/lib/server/agents-contract.gen.ts "$$task_tmp/agents-contract.gen.ts" || { echo 'Agents frontend contract is stale; run make generate-agents-contract.'; exit 1; }
 	cd frontend && npm exec prettier -- --config .prettierrc --check ../services/agents/api/*.yaml ../compose.yaml ../.github/workflows/application-checks.yml
 
@@ -33,6 +60,7 @@ runtime-check:
 	$(RUNTIME_PYTHON) -m ruff format --check ops/private-runner
 	$(RUNTIME_PYTHON) -m ruff check ops/private-runner
 	$(RUNTIME_PYTHON) -m unittest discover -s ops/private-runner -v
+	cd frontend && npm exec prettier -- --config .prettierrc --check ../ops/private-runner/readiness.schema.v1.json ../.github/workflows/agent-profile-diagnostic.yml ../.github/actionlint.yaml
 	node --test ops/private-runner/test_authorize.mjs
 	go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/*.yml
 

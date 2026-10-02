@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 
 	const dashboardHref = resolve('/');
 	const issuesHref = resolve('/issues');
+	const agentsHref = resolve('/agents');
+
+	let loadingAgents = $derived(navigating.to?.url.pathname === agentsHref);
 </script>
 
 <div class="workdesk-bar">
@@ -24,6 +27,18 @@
 					<path d="M9 4 7 20m10-16-2 16M4 9h16M3 15h16" />
 				</svg>
 				Issues
+			</a>
+			<a
+				href={agentsHref}
+				aria-current={page.url.pathname === agentsHref ? 'page' : undefined}
+				aria-busy={loadingAgents}
+			>
+				<svg viewBox="0 0 24 24" aria-hidden="true"
+					><path
+						d="M12 3v3m-7 5H3m18 0h-2M7 6h10a2 2 0 0 1 2 2v10H5V8a2 2 0 0 1 2-2ZM9 11h.01M15 11h.01M9 15h6"
+					/></svg
+				>
+				{loadingAgents ? 'Loading agents…' : 'Agents'}
 			</a>
 		</nav>
 	</div>

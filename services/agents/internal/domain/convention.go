@@ -25,10 +25,17 @@ type ProfileRevisionPolicy struct {
 
 // Service owns repository agent semantics, not execution or durable run state.
 // Profile validation is independent of runtime readiness.
-type Service struct{ profiles *ProfileService }
+type Service struct {
+	profiles  *ProfileService
+	readiness *ReadinessService
+}
 
-func NewService(profiles *ProfileService) *Service {
-	return &Service{profiles: profiles}
+func NewService(profiles *ProfileService, readiness ...*ReadinessService) *Service {
+	s := &Service{profiles: profiles}
+	if len(readiness) > 0 {
+		s.readiness = readiness[0]
+	}
+	return s
 }
 
 func (s *Service) AssignmentConvention(ctx context.Context) (Convention, error) {
@@ -53,4 +60,11 @@ func (s *Service) RepositoryProfiles(ctx context.Context, repository Repository)
 		return ProfileCatalog{}, ErrGitHubUnavailable
 	}
 	return s.profiles.RepositoryProfiles(ctx, repository)
+}
+
+func (s *Service) RepositoryReadiness(ctx context.Context, repository Repository) (RepositoryReadiness, error) {
+	if s.readiness == nil {
+		return RepositoryReadiness{}, ErrGitHubUnavailable
+	}
+	return s.readiness.RepositoryReadiness(ctx, repository)
 }

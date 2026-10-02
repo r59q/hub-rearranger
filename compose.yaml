@@ -45,7 +45,7 @@ services:
     build:
       context: ./services/agents
     environment:
-      # Read-only Metadata and Contents access is sufficient for profile catalogs.
+      # Read-only Metadata/Contents for profiles; Actions read access for readiness evidence.
       GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
       AGENTS_ADDR: :8082
     init: true
@@ -54,6 +54,31 @@ services:
     healthcheck:
       test:
         ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8082/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  identity:
+    build:
+      context: ./services/identity
+    environment:
+      IDENTITY_ADDR: :8083
+      IDENTITY_DB_PATH: /app/data/identity.db
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      # Optional as a group: sign-in stays disabled until the App is configured.
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_CLIENT_ID: ${GITHUB_APP_CLIENT_ID:-}
+      GITHUB_APP_CLIENT_SECRET: ${GITHUB_APP_CLIENT_SECRET:-}
+      IDENTITY_ENCRYPTION_KEY: ${IDENTITY_ENCRYPTION_KEY:-}
+    init: true
+    ports:
+      - '127.0.0.1:${IDENTITY_PORT:-8083}:8083'
+    volumes:
+      - identity-data:/app/data
+    healthcheck:
+      test:
+        ['CMD', 'wget', '--quiet', '--output-document=/dev/null', 'http://127.0.0.1:8083/health']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -72,6 +97,7 @@ services:
       REPOSITORIES_API_URL: http://repositories:8080
       ISSUES_API_URL: http://issues:8081
       AGENTS_API_URL: http://agents:8082
+      IDENTITY_API_URL: http://identity:8083
     init: true
     ports:
       - '127.0.0.1:${FRONTEND_PORT:-3000}:3000'
@@ -85,3 +111,4 @@ services:
 
 volumes:
   repositories-data:
+  identity-data:

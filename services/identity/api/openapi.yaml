@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: Hub Rearranger Identity API
+  version: 1.0.0
+  description: Private GitHub App user sign-in and repository-scoped authorization,
+    reached through the SvelteKit server. Never returns GitHub credentials. Future
+    writes must use the live authorized-operation boundary, not a cached preflight.
+servers:
+  - url: http://localhost:8083
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is alive, even when sign-in is unconfigured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+    head:
+      operationId: headHealth
+      responses:
+        '200':
+          description: Service is alive.
+  /v1/session:
+    get:
+      operationId: getSession
+      description: Verify the App-bound user token, refreshing it when necessary.
+        Missing cookies return signed_out; invalid sessions are cleared.
+      responses:
+        '200':
+          description: Safe identity status; never credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400': &id001
+          $ref: '#/components/responses/Error'
+        '401': *id001
+        '403': *id001
+        '503': *id001
+  /v1/sign-in:
+    post:
+      operationId: startSignIn
+      parameters:
+        - &id003
+          $ref: '#/components/parameters/Origin'
+      description: Exact public Origin required. Sets a ten-minute HttpOnly binding
+        cookie and redirects to GitHub with one-use state and S256 PKCE. Requests
+        no OAuth scopes.
+      responses:
+        '303': &id002
+          description: Continue authorization; sets an opaque HttpOnly browser cookie.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+            Set-Cookie:
+              schema:
+                type: string
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '503': *id001
+  /v1/sign-in/callback:
+    get:
+      operationId: completeSignIn
+      description: Requires the browser-binding cookie and one-use state. Exchanges
+        code server-side, verifies App-bound identity, creates a fresh session, and
+        redirects to /account.
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema: &id005
+            type: string
+            minLength: 43
+            maxLength: 43
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 1024
+      responses:
+        '303': *id002
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '503': *id001
+  /v1/sign-out:
+    post:
+      operationId: signOut
+      parameters:
+        - *id003
+      security: &id004
+        - secureSession: []
+        - localSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProtectedRequest'
+      responses:
+        '200':
+          description: Local session removed before remote revocation. Failure includes
+            GitHub settings recovery.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignOutResult'
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '503': *id001
+  /v1/repositories/{owner}/{repo}/authorization:
+    post:
+      operationId: authorizeRepository
+      security: *id004
+      description: Live identity, token, repository, role, installation selection,
+        and App permission checks. Assignment requires maintain/admin and Issues write.
+        Bootstrap requires write/maintain/admin and Contents, Pull requests, and Workflows
+        write. Archived/disabled repositories fail closed. This is preflight context,
+        never a reusable write permit or credential.
+      parameters:
+        - *id003
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9_.-]{1,100}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '200':
+          description: Live authorization context for the verified user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Authorization'
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '503': *id001
+components:
+  securitySchemes:
+    secureSession:
+      type: apiKey
+      in: cookie
+      name: __Host-hub_session
+      description: Opaque HttpOnly Secure SameSite=Lax host-only HTTPS cookie.
+    localSession:
+      type: apiKey
+      in: cookie
+      name: hub_session
+      description: Development equivalent for a configured loopback HTTP origin only.
+  parameters:
+    Origin:
+      name: Origin
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Exact configured public origin, required for every POST.
+  responses:
+    Error:
+      description: Safe recovery guidance, without provider text or credentials.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - login
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+        login:
+          type: string
+          minLength: 1
+    Session:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+        - user
+        - csrf
+        - expires_at
+      properties:
+        state:
+          type: string
+          enum:
+            - disabled
+            - signed_out
+            - authenticated
+        user:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/User'
+        csrf:
+          type: string
+          minLength: 43
+          maxLength: 43
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    ProtectedRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - csrf
+      properties:
+        csrf: *id005
+    Action:
+      type: string
+      enum:
+        - assign_comment
+        - bootstrap_pull_request
+    AuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - csrf
+        - action
+      properties:
+        csrf: *id005
+        action:
+          $ref: '#/components/schemas/Action'
+    Authorization:
+      type: object
+      additionalProperties: false
+      required:
+        - user
+        - repository_id
+        - repository
+        - action
+        - checked_at
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        repository_id:
+          type: integer
+          format: int64
+          minimum: 1
+        repository:
+          type: string
+          minLength: 3
+        action:
+          $ref: '#/components/schemas/Action'
+        checked_at:
+          type: string
+          format: date-time
+    SignOutResult:
+      type: object
+      additionalProperties: false
+      required:
+        - revoked
+        - message
+      properties:
+        revoked:
+          type: boolean
+        message:
+          type: string
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - invalid_request
+            - reconnect_required
+            - forbidden
+            - forgery_rejected
+            - identity_unavailable
+            - not_found
+            - method_not_allowed
+        message:
+          type: string

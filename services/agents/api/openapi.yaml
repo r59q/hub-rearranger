@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: Hub Rearranger Agents API
-  version: 1.1.0
+  version: 1.2.0
   description:
-    Read-only GitHub repository profiles, validation results, and assignment conventions. Catalog
-    validation does not verify runtime readiness or authorize execution.
+    Read-only repository profiles, readiness evidence, and assignment conventions. Readiness
+    does not authorize execution.
 servers:
   - url: http://localhost:8082
 security: []
@@ -127,6 +127,96 @@ paths:
     head:
       operationId: headRepositoryProfiles
       summary: Check profile read availability without a response body
+      responses:
+        '200':
+          description: Fresh repository catalog projection and validation results.
+        '400':
+          description: Invalid owner or repository name.
+        '403':
+          description: Read credentials lack repository Contents permission.
+        '404':
+          description: Repository is unavailable or not visible to the read credentials.
+        '429':
+          description: GitHub rate limit reached; retry later.
+        '502':
+          description: GitHub failed or returned an invalid response; retry.
+        '500':
+          description: Service failed; retry.
+        '405':
+          description: This endpoint accepts GET and HEAD.
+  /v1/repositories/{owner}/{repo}/readiness:
+    parameters:
+      - name: owner
+        in: path
+        required: true
+        schema:
+          type: string
+          maxLength: 39
+          pattern: ^[A-Za-z0-9][A-Za-z0-9-]*$
+      - name: repo
+        in: path
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+          pattern: ^[A-Za-z0-9_.-]+$
+    get:
+      operationId: getRepositoryReadiness
+      summary: Derive repository profile readiness
+      description:
+        Fresh commit-pinned configuration and latest diagnostic attempt. Evidence must match
+        the repository, revision, exact model policy, dedicated runner, and trusted GitHub jobs, and be
+        at most 24 hours old. Missing bootstrap files differ from pending or failed verification. Read
+        credentials require Metadata, Contents, and Actions read permissions. Service remains private
+        to the local application network.
+      responses:
+        '200':
+          description: Configuration and runtime readiness for each validated profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepositoryReadiness'
+        '400':
+          description: Invalid owner or repository name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Read credentials lack Metadata, Contents, or Actions read access.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Repository is unavailable or not visible to the read credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: GitHub rate limit reached; retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: GitHub failed or returned an invalid response; retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Service failed; retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+    head:
+      operationId: headRepositoryReadiness
+      summary: Check readiness read availability without a response body
       responses:
         '200':
           description: Fresh repository catalog projection and validation results.
@@ -356,6 +446,96 @@ components:
         message:
           type: string
           minLength: 1
+    ReadinessDiagnostic:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - path
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - MISSING_FILE
+            - WORKFLOW_CONFIGURATION
+            - EVIDENCE_MISSING
+            - EVIDENCE_ORIGIN
+            - EVIDENCE_POLICY
+            - EVIDENCE_STALE
+            - RUNTIME_FAILED
+        path:
+          type: string
+        message:
+          type: string
+    ProfileReadiness:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision
+        - state
+        - runner_label
+        - next_action
+        - diagnostics
+      properties:
+        id:
+          type: string
+        revision:
+          type: string
+          minLength: 40
+          maxLength: 40
+        state:
+          type: string
+          enum:
+            - configuration_missing
+            - verification_pending
+            - runtime_verified
+            - verification_failed
+        runner_label:
+          type: string
+        next_action:
+          type: string
+        diagnostics:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReadinessDiagnostic'
+        evidence:
+          $ref: '#/components/schemas/RuntimeEvidence'
+    RepositoryReadiness:
+      type: object
+      additionalProperties: false
+      required:
+        - repository
+        - default_branch
+        - revision
+        - catalog_state
+        - profiles
+        - diagnostics
+      properties:
+        repository:
+          type: string
+        default_branch:
+          type: string
+        revision:
+          type: string
+          minLength: 40
+          maxLength: 40
+        catalog_state:
+          type: string
+          enum:
+            - valid
+            - missing
+            - invalid
+            - unsupported
+        profiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileReadiness'
+        diagnostics:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileDiagnostic'
     CatalogProfile:
       type: object
       additionalProperties: false
@@ -521,3 +701,82 @@ components:
           type: string
           enum:
             - none
+    RuntimeEvidence:
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - repository
+        - profile_id
+        - profile_revision
+        - runner_label
+        - requested_model
+        - requested_reasoning_effort
+        - effective_model
+        - effective_reasoning_effort
+        - cli_version
+        - run_id
+        - run_attempt
+        - verified_at
+        - outcome
+        - reason_code
+      properties:
+        version:
+          type: integer
+          enum:
+            - 1
+        repository:
+          type: string
+        profile_id:
+          type: string
+        profile_revision:
+          type: string
+        runner_label:
+          type: string
+        requested_model:
+          type: string
+          enum:
+            - gpt-6.1-sol
+        requested_reasoning_effort:
+          type: string
+          enum:
+            - high
+        effective_model:
+          type: string
+          nullable: true
+          enum:
+            - gpt-6.1-sol
+        effective_reasoning_effort:
+          type: string
+          nullable: true
+          enum:
+            - high
+        cli_version:
+          type: string
+          nullable: true
+          maxLength: 100
+        run_id:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        run_attempt:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        verified_at:
+          type: string
+          format: date-time
+          maxLength: 40
+        outcome:
+          type: string
+          enum:
+            - verified
+            - failed
+        reason_code:
+          type: string
+          enum:
+            - verified
+            - installation_unavailable
+            - authentication_unavailable
+            - request_failed
+            - effective_policy_unavailable
