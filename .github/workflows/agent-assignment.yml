@@ -138,7 +138,7 @@ jobs:
           test "$(id -u)" -ne 0
           test -z "$(find "$HOME/.local/lib/hub-agent-execution" -xdev \( -perm /022 \) -print -quit)"
           cd "$HOME/.local/lib/hub-agent-execution"
-          echo 'c2f8aba33b37d51c2d2becf3315511576303a27e5afe62c11bc61fb9dc59b55e  execution.py' | sha256sum --check --status
+          echo 'ab71f716de64cc3f03c7884fafae8ed711fa0e4a9f16827b757ac6462176c204  execution.py' | sha256sum --check --status
       - name: Reverify origin and execute isolated patch proposal
         id: run
         shell: bash

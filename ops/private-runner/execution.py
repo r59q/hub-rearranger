@@ -162,7 +162,7 @@ def execute(input, source, context, directory, invoke_process=invoke):
                 + json.dumps({"context": context, "repository_instructions": rules})
             ).encode()
             response = invoke_process(
-                codex_arguments(workspace, scratch),
+                [binary, *codex_arguments(workspace, scratch)],
                 workspace,
                 env,
                 prompt,

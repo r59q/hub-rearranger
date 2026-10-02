@@ -68,6 +68,7 @@ class ExecutionTests(unittest.TestCase):
 
         def fake(arguments, cwd, env, prompt=b"", timeout=120):
             calls.append((arguments, env, prompt))
+            self.assertEqual(Path(arguments[0]).name, "codex")
             self.assertNotIn("GH_TOKEN", env)
             self.assertNotIn("OPENAI_API_KEY", env)
             if arguments[-1] == "--version":
@@ -203,6 +204,8 @@ class ExecutionTests(unittest.TestCase):
         self.assertNotEqual(env["CODEX_HOME"], str(AUTH))
         args = codex_arguments(directory / "source", scratch)
         self.assertIn("permissions.aw012.network.enabled=false", args)
+        self.assertIn("features.multi_agent=false", args)
+        self.assertIn("features.multi_agent_v2=false", args)
         self.assertIn('shell_environment_policy.inherit="none"', args)
         policy = next(
             value for value in args if value.startswith("permissions.aw012.filesystem=")

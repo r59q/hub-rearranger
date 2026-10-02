@@ -171,6 +171,7 @@ def policy_arguments(workspace, scratch):
         "web_search": "disabled",
         "features.shell_snapshot": False,
         "project_doc_max_bytes": 0,
+        "features.multi_agent": False,
         "features.multi_agent_v2": False,
         "features.apps": False,
         "features.plugins": False,
@@ -186,6 +187,10 @@ def policy_arguments(workspace, scratch):
         "features.skill_search": False,
         "features.skill_mcp_dependency_install": False,
         "features.skip_host_skill_discovery": True,
+        # This pinned flag intentionally disables host skill discovery. Suppress
+        # only its generic under-development notice; runtime warnings still fail
+        # effective_policy and the exact launcher preflight.
+        "suppress_unstable_features_warning": True,
         "features.daemon_auto_start": False,
     }
     arguments = []

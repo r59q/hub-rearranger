@@ -81,7 +81,8 @@ filesystem/network policy used for source execution. Real host/auth/process
 canaries must be unreadable, scratch/source access must work, and networking must
 return enforcement errors rather than merely time out. The fresh PID namespace
 has its own harmless `/proc/1`; the probe tests the actual host harness PID.
-The fixed no-write subscription probe verifies `gpt-6.1-sol`/`high` from CLI session
+The fixed no-write subscription probe uses the exact launcher flags and verifies
+`gpt-6.1-sol`/`high` from CLI session
 headers with no fallback. It prints only allowlisted metadata. A local preflight
 is **not** AW-006 GitHub evidence or assignment authorization.
 
@@ -121,6 +122,9 @@ repository `AGENTS.md` contents are explicitly supplied as bounded untrusted
 context. Automatic instruction discovery is disabled. User config/rules, hooks,
 plugins, apps, host skills, browser/computer/image tools, and subagents are disabled;
 ambient managed restrictions may only cause a safe failure.
+Codex's generic notice for the pinned host-skill-discovery flag is suppressed
+with the documented `suppress_unstable_features_warning` setting. Other runtime
+warnings still fail exact-policy verification.
 
 Git metadata/index/config stays outside the workload's readable roots. The adapter
 captures actual source changes, including new files, while honoring ignores for
@@ -177,5 +181,6 @@ GitHub-hosted runners with synthetic source, tokens, CLI processes, and controll
 HTTP/TLS servers. They require no model request, live GitHub access, or Codex login.
 The implementation uses the [official permissions profiles](https://learn.chatgpt.com/docs/permissions)
 and [non-interactive CLI](https://learn.chatgpt.com/docs/non-interactive-mode).
+The notice setting follows the [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
 Installation/local preflight does not mark AW-012 complete: published, origin-verified
 AW-006 evidence and a controlled Actions patch-job run are still required.

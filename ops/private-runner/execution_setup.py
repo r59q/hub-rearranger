@@ -14,7 +14,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from execution import isolation
-from execution_config import CLI_VERSION, REQUIRED_FILES, RUNTIME, WORK, operator_config
+from execution_config import (
+    CLI_VERSION,
+    REQUIRED_FILES,
+    RUNTIME,
+    WORK,
+    codex_arguments,
+    environment,
+    operator_config,
+)
+from execution_process import invoke
 
 
 def manifest(repository, runner):
@@ -49,8 +58,20 @@ def preflight(repository, runner):
         workspace.mkdir()
         scratch.mkdir()
         isolation(RUNTIME / "codex", workspace, scratch)
-    probe = runpy.run_path(str(RUNTIME / "profile_diagnostic.py"))["probe"]
-    fields, reason = probe(binary=RUNTIME / "codex")
+        probe = runpy.run_path(str(RUNTIME / "profile_diagnostic.py"))["probe"]
+        env = environment(workspace, scratch, auth=True)
+
+        def invoke_probe(binary, arguments, directory, timeout=120):
+            prompt = b""
+            if "exec" in arguments:
+                arguments = codex_arguments(workspace, scratch)
+                prompt = (
+                    b"Reply with exactly HUB_CODEX_READY. "
+                    b"Do not use tools or read files."
+                )
+            return invoke([binary, *arguments], workspace, env, prompt, timeout)
+
+        fields, reason = probe(binary=RUNTIME / "codex", invoke=invoke_probe)
     return {
         "version": 1,
         "repository": repository,
