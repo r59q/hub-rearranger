@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../ops/agent-profiles/schema.v1.json
-# Intake is implemented; dedicated patch execution remains disabled until AW-012.
+# Patch execution requires matching AW-006 evidence and both operator gates.
+# Branch and draft-PR publication remains the separate AW-013 task.
 schema_version: 1
 profiles:
   codex-thorough:
