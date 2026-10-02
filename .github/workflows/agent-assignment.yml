@@ -159,9 +159,87 @@ jobs:
           PATCH_OUTPUT: ${{ runner.temp }}/agent-patch-output-${{ github.run_id }}-${{ github.run_attempt }}
         run: rm -rf -- "$PATCH_OUTPUT"
 
+  publish:
+    name: publish
+    needs: [authorize, dispatch, patch]
+    if: >-
+      always() && needs.authorize.outputs.dispatch == 'true' &&
+      needs.dispatch.result == 'success' &&
+      (needs.patch.outputs.outcome == 'ready' ||
+       (needs.dispatch.outputs.recovered_artifact_id != '' &&
+        needs.dispatch.outputs.recovered_artifact_id != '0')) &&
+      (github.event.repository.private == true || github.repository == 'r59q/hub-rearranger') &&
+      github.event.repository.fork == false &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+      issues: write
+      pull-requests: write
+      checks: write
+    timeout-minutes: 15
+    outputs:
+      outcome: ${{ steps.publish.outputs.outcome }}
+      pr_number: ${{ steps.publish.outputs.pr_number }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: Build reviewed publication adapters
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/profile-tools"
+          "$RUNNER_TEMP/profile-tools/bin/pip" install -r ops/agent-profiles/requirements-dev.txt
+          cd ops/agent-intake
+          go build -o "$RUNNER_TEMP/agent-publish" ./cmd/publish
+      - name: Independently authorize and publish the verified patch
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          "$RUNNER_TEMP/agent-publish" \
+            --python "$RUNNER_TEMP/profile-tools/bin/python" \
+            --policy "$GITHUB_WORKSPACE/ops/agent-intake/profile_policy.py" \
+            --evidence "$GITHUB_WORKSPACE/ops/agent-intake/publication_policy.py" \
+            --patch "$GITHUB_WORKSPACE/ops/agent-intake/publication_patch.py" \
+            --output "$RUNNER_TEMP/publication-status.json"
+      - name: Preserve safe publication failure evidence
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'publication-status.json'
+          if not path.exists():
+              record = {
+                  'version': 1, 'outcome': 'incomplete',
+                  'reason_code': 'PUBLICATION_INCOMPLETE',
+                  'run_id': int(os.environ['GITHUB_RUN_ID']),
+                  'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT'])}
+              path.write_text(json.dumps(record))
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                  summary.write('Publication incomplete. Review the original run '
+                                'and reconcile its branch, PR and evidence before retrying.\n')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: agent-publication-status-v1-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publication-status.json
+          if-no-files-found: error
+          retention-days: 7
+
   report:
     name: Execution evidence
-    needs: [authorize, dispatch, patch]
+    needs: [authorize, dispatch, patch, publish]
     if: always() && needs.authorize.outputs.dispatch == 'true'
     runs-on: ubuntu-24.04
     permissions: {}
@@ -174,6 +252,8 @@ jobs:
           PATCH_RESULT: ${{ needs.patch.result }}
           PATCH_OUTCOME: ${{ needs.patch.outputs.outcome }}
           RECOVERED_ARTIFACT: ${{ needs.dispatch.outputs.recovered_artifact_id }}
+          PUBLICATION_OUTCOME: ${{ needs.publish.outputs.outcome }}
+          PUBLICATION_PR: ${{ needs.publish.outputs.pr_number }}
         run: |
           python3 - <<'PY'
           import json, os
@@ -196,9 +276,12 @@ jobs:
               json.dump(record, output)
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
               summary.write('## Codex patch proposal\n\n' + reason + '\n\n')
-              summary.write('Review the original attempt and its immutable artifacts. '
-                            'A ready proposal awaits the independent AW-013 write job; '
-                            'no branch or pull request has been published here.\n')
+              summary.write('Review the original attempt and its immutable artifacts.\n')
+              if os.environ['PUBLICATION_OUTCOME'] == 'published':
+                  number = int(os.environ['PUBLICATION_PR'])
+                  summary.write('Draft PR: https://github.com/' + os.environ['GITHUB_REPOSITORY'] + '/pull/' + str(number) + '\n')
+              else:
+                  summary.write('Publication is incomplete or skipped. Reconcile the separate write job before retrying.\n')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

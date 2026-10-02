@@ -81,6 +81,47 @@ class WorkflowTests(unittest.TestCase):
             artifact["with"]["name"], "agent-invocation-v1-${{ github.run_attempt }}"
         )
 
+    def test_publication_is_separate_hosted_and_reconciles_recovered_proposals(self):
+        job = self.workflow["jobs"]["publish"]
+        self.assertEqual(job["runs-on"], "ubuntu-24.04")
+        self.assertEqual(job["needs"], ["authorize", "dispatch", "patch"])
+        self.assertEqual(
+            job["permissions"],
+            {
+                "contents": "write",
+                "actions": "read",
+                "issues": "write",
+                "pull-requests": "write",
+                "checks": "write",
+            },
+        )
+        self.assertIn("always()", job["if"])
+        self.assertIn("needs.patch.outputs.outcome == 'ready'", job["if"])
+        self.assertIn("needs.dispatch.outputs.recovered_artifact_id", job["if"])
+        self.assertIn("github.event.repository.fork == false", job["if"])
+        self.assertEqual(
+            job["steps"][0]["with"],
+            {"ref": "${{ github.workflow_sha }}", "persist-credentials": False},
+        )
+        command = next(step for step in job["steps"] if step.get("id") == "publish")
+        self.assertEqual(command["env"], {"GH_TOKEN": "${{ github.token }}"})
+        for step in job["steps"]:
+            if "uses" in step:
+                self.assertEqual(len(step["uses"].split("@")[1]), 40)
+            if "run" in step:
+                self.assertNotIn("${{", step["run"])
+                self.assertNotIn("codex", step["run"])
+                self.assertNotIn("git push", step["run"])
+                self.assertNotIn("make check", step["run"])
+        failure = next(
+            step
+            for step in job["steps"]
+            if step.get("name") == "Preserve safe publication failure evidence"
+        )
+        self.assertEqual(failure["if"], "always()")
+        self.assertEqual(job["steps"][-1]["if"], "always()")
+        self.assertIn("publish", self.workflow["jobs"]["report"]["needs"])
+
 
 if __name__ == "__main__":
     unittest.main()
