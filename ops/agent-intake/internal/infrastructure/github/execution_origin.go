@@ -53,16 +53,20 @@ func uniqueJob(jobs []*gh.WorkflowJob, name string) (*gh.WorkflowJob, error) {
 // ExecutionInput proves the original artifact came from this run's successful
 // exact-attempt intake. Live authorization is separately reconstructed by domain.
 func (c *Client) ExecutionInput(ctx context.Context, event domain.Event) (domain.Invocation, error) {
+	// Actions embeds a reduced repository object without default_branch. Resolve
+	// current repository policy through the repository endpoint instead.
+	repo, err := c.Repository(ctx, event)
+	if err != nil {
+		return domain.Invocation{}, err
+	}
 	run, _, err := c.api.Actions.GetWorkflowRunByID(ctx, event.Repository.Owner, event.Repository.Name, event.RunID)
 	if err != nil {
 		return domain.Invocation{}, domain.Unavailable
 	}
 	_, valid := verifiedRun(run, event.Repository, event.CommentID)
-	if !valid || run.GetRunAttempt() != event.Attempt || run.GetHeadSHA() != event.WorkflowSHA || run.GetHeadRepository().GetID() != event.Repository.ID || run.GetHeadBranch() != run.GetRepository().GetDefaultBranch() || (!run.GetRepository().GetPrivate() && (event.Repository.Owner != "r59q" || event.Repository.Name != "hub-rearranger")) {
+	if !valid || repo.ID != event.Repository.ID || repo.DefaultBranch == "" || repo.Fork || repo.Archived || run.GetRunAttempt() != event.Attempt || run.GetHeadSHA() != event.WorkflowSHA || run.GetHeadRepository().GetID() != repo.ID || run.GetHeadBranch() != repo.DefaultBranch || (!repo.Private && (repo.Owner != "r59q" || repo.Name != "hub-rearranger")) {
 		return domain.Invocation{}, domain.HistoryUnavailable
 	}
-	repo := event.Repository
-	repo.DefaultBranch = run.GetRepository().GetDefaultBranch()
 	jobs, err := c.executionJobs(ctx, repo, run, event.Attempt)
 	if err != nil {
 		return domain.Invocation{}, err

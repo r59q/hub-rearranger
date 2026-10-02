@@ -35,7 +35,7 @@ func executionArchive(t *testing.T, files map[string][]byte) []byte {
 }
 
 func TestExecutionInputVerifiesOriginDigestJobsAndLiveAccess(t *testing.T) {
-	for _, variant := range []string{"valid", "digest", "branch", "job", "attempt", "unknown-file", "role", "public", "edited", "redirect", "storage-auth"} {
+	for _, variant := range []string{"valid", "digest", "branch", "default-branch-changed", "repository-id", "repository-unavailable", "job", "attempt", "unknown-file", "role", "public", "edited", "redirect", "storage-auth"} {
 		t.Run(variant, func(t *testing.T) {
 			service, client, fixture, event := setup(t)
 			fixture.run(100)
@@ -74,10 +74,22 @@ func TestExecutionInputVerifiesOriginDigestJobsAndLiveAccess(t *testing.T) {
 				respond := func(value any) { _ = json.NewEncoder(w).Encode(value) }
 				switch r.URL.Path {
 				case "/repos/octo/demo":
-					respond(map[string]any{"id": 42, "owner": map[string]any{"login": "octo"}, "name": "demo", "default_branch": "main", "private": variant != "public"})
+					if variant == "repository-unavailable" {
+						w.WriteHeader(http.StatusServiceUnavailable)
+						return
+					}
+					repo := map[string]any{"id": 42, "owner": map[string]any{"login": "octo"}, "name": "demo", "default_branch": "main", "private": variant != "public"}
+					if variant == "default-branch-changed" {
+						repo["default_branch"] = "replacement"
+					}
+					if variant == "repository-id" {
+						repo["id"] = 43
+					}
+					respond(repo)
 				case "/repos/octo/demo/actions/runs/100":
 					run := fixture.run(100)
-					run["repository"] = map[string]any{"id": 42, "private": true, "default_branch": "main"}
+					// Real Actions responses omit default_branch in this reduced object.
+					run["repository"] = map[string]any{"id": 42, "private": true}
 					run["head_repository"] = map[string]any{"id": 42}
 					run["head_branch"] = "main"
 					if variant == "branch" {

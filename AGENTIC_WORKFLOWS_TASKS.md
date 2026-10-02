@@ -441,6 +441,19 @@ The same workflow remains operable after Hub is removed.
   workflows, matching origin-verified GitHub AW-006 evidence, and a controlled
   Actions patch-job run remain required; this task remains unchecked.
 
+  **Live verification progress (2026-10-03):** Origin/digest/schema/freshness
+  checks verified the exact-policy AW-006 artifact from
+  [run 37020208961](https://github.com/r59q/hub-rearranger/actions/runs/37020208961)
+  at the merged revision. The first controlled assignment on issue #5,
+  [run 37072451710](https://github.com/r59q/hub-rearranger/actions/runs/37072451710),
+  passed intake but failed hosted dispatch: real Actions run responses omit
+  `default_branch` in their reduced repository object. The self-hosted patch job
+  was skipped, and hosted failure evidence was published. The verifier now reads
+  current branch policy from the live repository endpoint; regression fixtures
+  omit the Actions field and check branch changes, repository identity, and API
+  failures. The runner gate is disabled pending publication of this repair,
+  fresh diagnostic evidence for that revision, and a successful patch-job run.
+
 - [ ] **AW-013 — Implement the separate branch and draft-PR write job**
 
   **Domain:** repository workflow / GitHub integration  
