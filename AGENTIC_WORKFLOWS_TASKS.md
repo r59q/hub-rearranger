@@ -466,7 +466,7 @@ The same workflow remains operable after Hub is removed.
   the operator gate is disabled for this completion update until that evidence
   is renewed. AW-013 remains the separate branch/draft-PR publication task.
 
-- [ ] **AW-013 — Implement the separate branch and draft-PR write job**
+- [x] **AW-013 — Implement the separate branch and draft-PR write job**
 
   **Domain:** repository workflow / GitHub integration  
   **Depends on:** AW-012
@@ -494,49 +494,47 @@ The same workflow remains operable after Hub is removed.
     by reconciling verified GitHub artifacts without force-pushing or claiming
     success before publication completes.
 
-  **Implementation merged; live verification pending (2026-10-03):** Added a separate hosted publisher,
-  independent artifact/result/current-authorization checks, private cached Git
-  patch application using the canonical protected paths, deterministic Git-object
-  and branch creation, draft provenance, issue link and honest validation check.
-  Receipt intent survives reruns and prevents blind comment/check POST retries;
-  recovery verifies actual GitHub objects before claiming completion. Tests cover
-  forged artifacts, protected/unsafe patches, revoked roles/policy, stale heads,
-  lost responses, partial branch/PR publication, and an overlapping old attempt.
-  Full `make check` passed, including 137 frontend tests, 21 intake Python tests,
-  Go integration tests, and workflow/profile/contract checks; Go race tests also
-  passed. The implementation was merged in [PR #8](https://github.com/r59q/hub-rearranger/pull/8).
-  The operator-installed verifier was updated and its 21 pinned runtime files and
-  local isolation/exact-model preflight verified. Independent verification of
-  [diagnostic run 37109570817](https://github.com/r59q/hub-rearranger/actions/runs/37109570817)
-  checked the readiness artifact's origin, archive digest, schema, latest attempt,
-  freshness, exact policy, and current `df8cd0fdc00bca5badd9932017b669635358d112` revision.
+  **Completed (2026-10-03):** A separate hosted publisher verifies the original
+  artifact/digest/schema, live authorization and policy, accepted base, protected
+  paths, and proposed head before creating a deterministic assignment branch,
+  draft PR with AW-002 provenance, one issue update, and an honest validation
+  check. Receipt intent and actual GitHub reconciliation prevent duplicate writes
+  and reject altered, stale, revoked, or ambiguous history. The publisher cannot
+  force-push, merge, or update an unrelated branch or PR.
 
-  [Controlled assignment run 37110372566](https://github.com/r59q/hub-rearranger/actions/runs/37110372566)
-  passed authorization, dispatch, and patch execution, then publication failed
-  before creating a branch or PR. The expected immutable commit was found at
-  `eb80dc0bd818556c847485319ef31624f7aa837a`; GitHub returned its exact message
-  without the final newline, which the original strict comparison rejected.
-  Private workspaces were removed and execution disabled. [PR #9](https://github.com/r59q/hub-rearranger/pull/9) merged the repair using a
-  canonical message without a final newline, tests GitHub's actual response and
-  rejection of altered messages, and preserves specific safe failure codes in
-  status artifacts. Fresh [diagnostic run 37111803131](https://github.com/r59q/hub-rearranger/actions/runs/37111803131)
-  was independently verified against merged revision
-  `5aad6bdf6afc23c0b4bf2ab0f73d11c5466ef3ee`. The next assignment created its
-  branch, but PR creation required enabling the repository's Actions setting.
-  Its rerun correctly refused execution with `REPLAY_STATE_UNAVAILABLE` when
-  the original producer artifacts were unavailable; their disappearance was
-  observed, but its cause was not established.
+  [PR #8](https://github.com/r59q/hub-rearranger/pull/8) implemented publication;
+  [PR #9](https://github.com/r59q/hub-rearranger/pull/9) normalized GitHub's returned
+  commit message and retained safe failure codes;
+  [PR #11](https://github.com/r59q/hub-rearranger/pull/11) reconciled the exact
+  GitHub-generated check URL while preserving all other evidence checks.
+  Full `make check` and race tests passed. Controlled HTTP/TLS and real Git/schema
+  tests cover forged artifacts, protected/unsafe patches, revoked roles/policy,
+  stale heads, lost responses, partial publication, and concurrent old attempts.
+  Recovery-guidance changes passed `make intake-check` and GitHub CI.
 
-  After reconciliation, [fresh assignment run 37113910321](https://github.com/r59q/hub-rearranger/actions/runs/37113910321)
-  created [draft PR #10](https://github.com/r59q/hub-rearranger/pull/10), one issue
-  update, and one neutral validation check. Their provenance, exact document-only
-  diff, and GitHub ownership were independently verified. Final publication
-  verification failed because GitHub replaced the requested check details URL
-  with its own check page. The repair accepts only that exact repository/check-ID
-  URL or the original producer URL, retaining all other evidence checks; tests
-  reproduce the response and reject forged links. Execution is disabled.
-  Repair review/merge, renewed readiness, successful workflow completion, and
-  live retry verification remain required; this task remains unchecked.
+  [Diagnostic run 37116462081](https://github.com/r59q/hub-rearranger/actions/runs/37116462081)
+  independently verified readiness for
+  `d03e4283696f130bb8913a229bd049b1738f5de7`; all 21 runtime digests and the
+  exact-model/isolation preflight passed. [Live assignment 37117465286](https://github.com/r59q/hub-rearranger/actions/runs/37117465286/attempts/1)
+  completed all jobs and published [draft PR #13](https://github.com/r59q/hub-rearranger/pull/13)
+  at `a4edea2a5b9626b105c9bb0bd751f06b7d28e4ed`. Its exact document-only diff,
+  bot ownership, provenance, issue update, and app-owned neutral check were
+  independently verified. Offline repository validation was **failed**, honestly
+  represented under `draft-with-evidence`; workflow success does not imply it passed.
+
+  [Job-specific retry, attempt 2](https://github.com/r59q/hub-rearranger/actions/runs/37117465286/attempts/2)
+  reauthorized and completed publication successfully while skipping source
+  execution (runner ID 0). All four original artifacts retained their exact IDs,
+  digests, sizes, and origins; proposal artifact `11271817075` was reused.
+  The branch/head, PR #13, issue update `5968438509`, and check `111187426646`
+  remained unique and unchanged. No new patch artifact or private workspace remained.
+
+  Recovery requires the individual `authorize` job's rerun control and its
+  dependent jobs. A full rerun of [assignment 37116695777](https://github.com/r59q/hub-rearranger/actions/runs/37116695777/attempts/2)
+  removed its original artifacts and safely refused execution/publication,
+  preserving draft PR #12 and its evidence. Instructions and bot guidance now
+  distinguish artifact-preserving recovery from this mandatory safe refusal.
+  Renew readiness for a new default-branch revision before future source execution.
 
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 

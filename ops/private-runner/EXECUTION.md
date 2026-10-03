@@ -117,7 +117,9 @@ is **not** AW-006 GitHub evidence or assignment authorization.
 4. Only after local isolation and GitHub evidence are verified, set manifest
    `enabled: true` and repository variable `HUB_AGENT_EXECUTION_ENABLED=verified`.
    Both gates are required; changing the variable alone cannot enable execution.
-5. Create a trusted assignment, or rerun its original canonical workflow.
+5. Create a trusted assignment, or rerun only the `authorize` job and dependent
+   jobs in its original canonical workflow. Avoid **Re-run all jobs** after source
+   execution: the original proposal artifacts must remain available for recovery.
    The hosted `dispatch` gate independently reconstructs authority and readiness
    and reconciles all previous attempts. The runner repeats those checks before
    collecting pinned source/current permitted issue context and before execution.
@@ -168,6 +170,13 @@ attempts can resume; a previous successful runner attempt with a verified ready
 artifact is reused without another Codex run. Recovery independently checks run,
 attempt, assignment/base/profile identity, schema, origin, archive digest, and patch
 and summary digests. The write job still has to authorize and publish it.
+
+Use the original `authorize` job's individual rerun control so its dependent
+jobs reauthorize and reconcile execution/publication while retaining earlier
+artifacts. We observed full workflow reruns remove those artifacts, consistent
+with the [support behavior reported here](https://github.com/orgs/community/discussions/17854).
+Downloading a ZIP does not preserve its GitHub origin or restore a deleted
+artifact. Retention limits and unique attempt names do not prevent this loss.
 
 A failed/cancelled runner, incomplete jobs history, expired/missing artifact, or
 ambiguous prior execution fails closed as `REPLAY_STATE_UNAVAILABLE`; it cannot

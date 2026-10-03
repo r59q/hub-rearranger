@@ -423,10 +423,23 @@ and check-ID page while retaining exact app, assignment, head, conclusion, and
 summary verification. Tests reproduce the observed response and reject forged
 hosts, repositories, and check IDs.
 
-The implementation has controlled HTTP/TLS and real Git/schema tests. Controlled
-live workflow completion and retry verification remain required before
-AW-013 is marked complete. Native Actions pull-request creation must be enabled
-in repository settings; no extra long-lived publication credential is introduced.
+The implementation has controlled HTTP/TLS and real Git/schema tests. Live
+assignment 37116695777 completed publication of draft PR #12 with the exact
+document patch and matching provenance. Its full rerun lost the original
+artifacts and correctly refused recovery without duplicate execution or writes.
+This matches [reported GitHub support behavior](https://github.com/orgs/community/discussions/17854):
+full reruns replace artifacts; job-specific reruns retain them. Recovery must
+use the individual `authorize` job and dependent jobs, retaining earlier evidence.
+Unique artifact names, retention settings, and downloaded ZIPs cannot restore
+verified origin after deletion. Live [assignment 37117465286](https://github.com/r59q/hub-rearranger/actions/runs/37117465286/attempts/1)
+completed publication of draft PR #13. Its [job-specific retry](https://github.com/r59q/hub-rearranger/actions/runs/37117465286/attempts/2)
+reauthorized, skipped source execution, preserved all four original artifact
+identities/digests/origins, and reconciled the unchanged PR, branch head, issue
+update, and validation check without duplicates. AW-013 live verification is
+complete. The neutral check explicitly preserves failed offline repository
+validation under `draft-with-evidence`. Native Actions pull-request creation must
+be enabled in repository settings; no extra long-lived publication credential is
+introduced. Readiness must be renewed after default-branch revision changes.
 
 ## Backlog refinements after AW-005 (2026-10-01)
 

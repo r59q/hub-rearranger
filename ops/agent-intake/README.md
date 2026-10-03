@@ -200,6 +200,14 @@ can be recovered by verified GitHub state. Missing branch/PR creation can resume
 existing objects cannot be overwritten. Force cancellation or ambiguous history
 requires operator reconciliation of the original run before a new assignment.
 
+For recovery, rerun only the original `authorize` job and its dependent jobs
+using the job's rerun control ([GitHub's instructions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs#re-running-a-specific-job)).
+Avoid **Re-run all jobs**: we observed the original artifacts disappear on a full
+rerun, matching the [support behavior reported here](https://github.com/orgs/community/discussions/17854).
+Unique attempt names and retention settings do not preserve deleted artifacts.
+Missing original evidence must still fail closed; a saved ZIP, receipt, or existing
+draft cannot replace verified GitHub artifact origin and current authorization.
+
 After confirming the branch, draft PR, comment and check, `publication-status.json`
 records version 1, assignment/run/attempt, `published`/`DRAFT_PR_PUBLISHED`, and the
 branch/head/PR identity. It is uploaded as `agent-publication-status-v1-<attempt>`.
@@ -223,7 +231,9 @@ For live verification after merging this workflow:
    re-enable both execution gates. Old artifacts cannot authorize a stale base.
 4. Use a new controlled documentation-only assignment. Verify the resulting
    branch, draft provenance, actual diff, validation check and issue link; then
-   rerun the original assignment and confirm no duplicate execution/publication.
+   rerun only its `authorize` job and dependent jobs, preserving the original
+   artifacts, and confirm no duplicate execution/publication. A full rerun with
+   missing artifacts must refuse execution and publication.
 
 Workflow-code repairs do not change an old run's immutable checkout revision.
 After merging a repair, renew readiness for the new default-branch revision.
