@@ -417,8 +417,14 @@ requires operator reconciliation; intent and receipts never grant authority.
 Failed/unavailable offline validation remains explicit and produces a neutral
 proposal check, not a claim that repository validation passed.
 
-The implementation has controlled HTTP/TLS and real Git/schema tests. Deployment
-and a controlled live publication/retry verification remain required before
+GitHub replaces a `GITHUB_TOKEN` check's supplied details URL with its own check
+page. Reconciliation accepts the original producer URL or the exact repository
+and check-ID page while retaining exact app, assignment, head, conclusion, and
+summary verification. Tests reproduce the observed response and reject forged
+hosts, repositories, and check IDs.
+
+The implementation has controlled HTTP/TLS and real Git/schema tests. Controlled
+live workflow completion and retry verification remain required before
 AW-013 is marked complete. Native Actions pull-request creation must be enabled
 in repository settings; no extra long-lived publication credential is introduced.
 

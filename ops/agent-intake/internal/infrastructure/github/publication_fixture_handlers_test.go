@@ -184,7 +184,9 @@ func (f *publicationFixture) objectsRequest(w http.ResponseWriter, r *http.Reque
 	case path == "/repos/octo/demo/check-runs" && r.Method == "POST":
 		var options gh.CreateCheckRunOptions
 		_ = json.NewDecoder(r.Body).Decode(&options)
-		check := &gh.CheckRun{ID: gh.Ptr(int64(20)), Name: gh.Ptr(options.Name), HeadSHA: gh.Ptr(options.HeadSHA), ExternalID: options.ExternalID, DetailsURL: options.DetailsURL, Status: options.Status, Conclusion: options.Conclusion, Output: options.Output, App: &gh.App{ID: gh.Ptr(int64(15368))}}
+		// Actions GITHUB_TOKEN checks replace a requested details URL with their
+		// own GitHub check page. Preserve the actual REST response in the fixture.
+		check := &gh.CheckRun{ID: gh.Ptr(int64(20)), Name: gh.Ptr(options.Name), HeadSHA: gh.Ptr(options.HeadSHA), ExternalID: options.ExternalID, DetailsURL: gh.Ptr("https://github.com/octo/demo/runs/20"), Status: options.Status, Conclusion: options.Conclusion, Output: options.Output, App: &gh.App{ID: gh.Ptr(int64(15368))}}
 		f.checks = append(f.checks, check)
 		f.replyPost(w, "check", check)
 	default:

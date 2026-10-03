@@ -134,7 +134,7 @@ func TestPublicationRejectsForgedArtifactsAndUnsuccessfulOrigin(t *testing.T) {
 }
 
 func TestRecoveryRejectsMovedHeadEditedPRAndForgedCheck(t *testing.T) {
-	for _, variant := range []string{"head", "body", "closed", "fork", "check"} {
+	for _, variant := range []string{"head", "body", "closed", "fork", "check", "check-link-host", "check-link-id", "check-link-repository"} {
 		t.Run(variant, func(t *testing.T) {
 			f := publicationSetup(t)
 			if _, err := f.publish(); err != nil {
@@ -151,12 +151,32 @@ func TestRecoveryRejectsMovedHeadEditedPRAndForgedCheck(t *testing.T) {
 				f.pull.Head.Repo.ID = gh.Ptr(int64(43))
 			case "check":
 				f.checks[0].App.ID = gh.Ptr(int64(99))
+			case "check-link-host":
+				f.checks[0].DetailsURL = gh.Ptr("https://example.invalid/runs/20")
+			case "check-link-id":
+				f.checks[0].DetailsURL = gh.Ptr("https://github.com/octo/demo/runs/21")
+			case "check-link-repository":
+				f.checks[0].DetailsURL = gh.Ptr("https://github.com/octo/other/runs/20")
 			}
 			_, err := f.publish()
 			if err == nil || f.posts["branch"] != 1 || f.posts["pr"] != 1 || f.posts["comment"] != 1 || f.posts["check"] != 1 {
 				t.Fatal("recovery overwrote or claimed unrelated publication")
 			}
 		})
+	}
+}
+
+func TestPublicationReconcilesCheckWithOriginalWorkflowDetailsURL(t *testing.T) {
+	f := publicationSetup(t)
+	if _, err := f.publish(); err != nil {
+		t.Fatal(err)
+	}
+	f.checks[0].DetailsURL = gh.Ptr(f.proposal.Invocation.RunURL)
+
+	_, err := f.publish()
+
+	if err != nil || f.posts["check"] != 1 {
+		t.Fatalf("original workflow check link not reconciled: %v", err)
 	}
 }
 
