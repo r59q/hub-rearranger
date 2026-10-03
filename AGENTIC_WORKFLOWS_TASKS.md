@@ -625,7 +625,7 @@ The same workflow remains operable after Hub is removed.
   distinguish artifact-preserving recovery from this mandatory safe refusal.
   Renew readiness for a new default-branch revision before future source execution.
 
-- [ ] **AW-014 — Add Hub assignment UI and derived run view**
+- [x] **AW-014 — Add Hub assignment UI and derived run view**
 
   **Domain:** frontend / agents  
   **Depends on:** AW-011, AW-013, AW-019
@@ -640,6 +640,20 @@ The same workflow remains operable after Hub is removed.
   - Status, PR, branch, check, and summary are derived from GitHub artifacts.
   - Assignment comments use AW-019's signed-in user identity; missing or revoked
     access prompts reconnection rather than falling back to a bot or read token.
+
+
+  **Completed:** 2026-10-03. Issue cards now open a focused assignment/activity
+  view with explained authority, a fresh user/App review, and separate consent
+  to the exact GitHub-native request. Identity consumes encrypted session-bound
+  one-use review intents and writes only as the signed-in user inside
+  `WithAuthorization`; source/head/history changes and lost responses fail safely
+  without automatic POST replay. Agents derives request/run/job status and
+  proposal/branch/check summaries from GitHub objects and immutable artifact
+  origin/digests, preserving neutral validation and incomplete evidence.
+  Full `make check` passed (255 frontend tests), along with Agents/Identity race
+  tests, production builds, controlled desktop/dark mobile/no-JavaScript Chromium
+  flows and isolated five-service Compose smoke checks. Validation used synthetic
+  credentials/services; no live assignment or runner execution was needed.
 
 ## Phase 4 — Pull-request follow-up
 

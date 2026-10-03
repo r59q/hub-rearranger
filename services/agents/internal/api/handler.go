@@ -43,6 +43,10 @@ func NewHandler(service conventionUseCases, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("/health", methodNotAllowed)
 	mux.HandleFunc("/v1/assignment-convention", methodNotAllowed)
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/profiles", methodNotAllowed)
+	mux.HandleFunc("/v1/repositories/{owner}/{repo}/issues/{number}/assignment", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Allow", "GET")
+		writeJSON(w, 405, contract.Error{Code: contract.ErrorCodeMethodNotAllowed, Message: "Use GET for issue assignment context."})
+	})
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/readiness", methodNotAllowed)
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/bootstrap", methodNotAllowed)
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/profile-editor", func(w http.ResponseWriter, _ *http.Request) {

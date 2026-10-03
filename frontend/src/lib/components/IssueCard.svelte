@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { formatIssueActivity } from '$lib/issues/presentation';
 	import type { Issue, RelatedIssue } from '$lib/issues/types';
 
@@ -43,6 +44,12 @@
 		<span><strong>{issue.linked_issues.length}</strong> linked issues</span>
 		<span><strong>{issue.linked_pull_requests.length}</strong> pull requests</span>
 	</div>
+
+	<a
+		href={resolve(
+			`/issues/assignment?${new URLSearchParams({ repository: issue.repository, number: String(issue.number) })}`
+		)}>Agent assignment</a
+	>
 
 	{#if expanded}
 		{#if issue.details_available}

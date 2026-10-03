@@ -17,6 +17,10 @@ EVIDENCE_EMBEDDED = (
     ROOT / "services/agents/internal/infrastructure/evidence/schema.v1.gen.json"
 )
 EVIDENCE_FRONTEND = ROOT / "frontend/src/lib/server/evidence-schema.gen.json"
+RESULT = ROOT / "ops/private-runner/result.schema.v1.json"
+RESULT_EMBEDDED = (
+    ROOT / "services/agents/internal/infrastructure/evidence/result.v1.gen.json"
+)
 OPENAPI = ROOT / "services/agents/api/openapi.yaml"
 
 
@@ -110,7 +114,9 @@ def main():
 
     if args.check:
         if (
-            not EMBEDDED.exists()
+            not RESULT_EMBEDDED.exists()
+            or RESULT_EMBEDDED.read_bytes() != RESULT.read_bytes()
+            or not EMBEDDED.exists()
             or EMBEDDED.read_bytes() != content
             or not FRONTEND_SCHEMA.exists()
             or json.loads(FRONTEND_SCHEMA.read_bytes()) != json.loads(content)
@@ -124,6 +130,7 @@ def main():
             return 1
         return 0
 
+    RESULT_EMBEDDED.write_bytes(RESULT.read_bytes())
     EVIDENCE_EMBEDDED.write_bytes(evidence_content)
     EVIDENCE_FRONTEND.write_bytes(evidence_content)
     EMBEDDED.write_bytes(content)

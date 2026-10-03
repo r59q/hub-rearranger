@@ -2,6 +2,7 @@ import { env } from '$env/dynamic/private';
 import createClient from 'openapi-fetch';
 import type { components, paths } from './identity-contract.gen';
 import type { IdentityState } from '$lib/identity/types';
+import { isAssignmentReview, isAssignmentResult } from './identity-assignment-response';
 
 type Session = components['schemas']['Session'];
 
@@ -12,9 +13,13 @@ export class IdentityApiError extends Error {
 	) {
 		super(
 			status === 409
-				? code === 'bootstrap_incomplete'
-					? 'Publication could not be confirmed. Reload and review again; Hub will reconcile the existing GitHub branch and PR before retrying.'
-					: 'The reviewed base or bootstrap branch changed. Reload and review the current changes before trying again.'
+				? code?.startsWith('assignment_')
+					? code === 'assignment_stale'
+						? 'The issue, profile or comment history changed. Refresh and review the existing GitHub request before trying again.'
+						: 'This review cannot be retried. GitHub may have posted the request; inspect the issue comments and original workflow, then refresh.'
+					: code === 'bootstrap_incomplete'
+						? 'Publication could not be confirmed. Reload and review again; Hub will reconcile the existing GitHub branch and PR before retrying.'
+						: 'The reviewed base or bootstrap branch changed. Reload and review the current changes before trying again.'
 				: status === 401
 					? 'Your GitHub connection expired or was revoked. Sign in again.'
 					: status === 403
@@ -145,6 +150,71 @@ export class IdentityApiClient {
 				throw error;
 			}
 			throw new IdentityApiError(503);
+		}
+	}
+
+	async reviewAssignment(
+		owner: string,
+		repo: string,
+		number: number,
+		csrf: string,
+		revision: string
+	) {
+		try {
+			const { data, error, response } = await this.api.POST(
+				'/v1/repositories/{owner}/{repo}/issues/{number}/assignment-review',
+				{
+					params: { path: { owner, repo, number }, header: { Origin: this.origin } },
+					body: { csrf, profile_revision: revision },
+					signal: AbortSignal.timeout(125_000)
+				}
+			);
+			if (!response.ok) {
+				throw new IdentityApiError(response.status, error?.code);
+			}
+			if (!isAssignmentReview(data, `${owner}/${repo}`, number, revision)) {
+				throw new IdentityApiError(502);
+			}
+			return data;
+		} catch (error) {
+			if (error instanceof IdentityApiError) {
+				throw error;
+			}
+			throw new IdentityApiError(503);
+		}
+	}
+
+	async createAssignment(
+		owner: string,
+		repo: string,
+		number: number,
+		csrf: string,
+		reviewToken: string
+	) {
+		try {
+			const { data, error, response } = await this.api.POST(
+				'/v1/repositories/{owner}/{repo}/issues/{number}/assignment',
+				{
+					params: { path: { owner, repo, number }, header: { Origin: this.origin } },
+					body: { csrf, review_token: reviewToken },
+					signal: AbortSignal.timeout(125_000)
+				}
+			);
+			if (!response.ok) {
+				if (response.status >= 500) {
+					throw new IdentityApiError(409, 'assignment_uncertain');
+				}
+				throw new IdentityApiError(response.status, error?.code);
+			}
+			if (!isAssignmentResult(data, `${owner}/${repo}`, number)) {
+				throw new IdentityApiError(409, 'assignment_uncertain');
+			}
+			return data;
+		} catch (error) {
+			if (error instanceof IdentityApiError) {
+				throw error;
+			}
+			throw new IdentityApiError(409, 'assignment_uncertain');
 		}
 	}
 

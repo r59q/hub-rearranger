@@ -18,11 +18,15 @@ func newStore() *fakeStore {
 }
 
 func (f *fakeStore) PutIntent(_ context.Context, id string, value Intent) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.intents[id] = value
 	return nil
 }
 
 func (f *fakeStore) TakeIntent(_ context.Context, id, binding string) (Intent, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	value, ok := f.intents[id]
 	delete(f.intents, id)
 	if !ok || value.Binding != binding {

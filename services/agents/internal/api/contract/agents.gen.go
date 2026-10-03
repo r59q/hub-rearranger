@@ -136,6 +136,45 @@ func (e AssignmentPolicySourceKind) Valid() bool {
 	}
 }
 
+// Defines values for AssignmentRequestState.
+const (
+	AssignmentRequestStateBlocked     AssignmentRequestState = "blocked"
+	AssignmentRequestStateCancelled   AssignmentRequestState = "cancelled"
+	AssignmentRequestStateCompleted   AssignmentRequestState = "completed"
+	AssignmentRequestStateFailed      AssignmentRequestState = "failed"
+	AssignmentRequestStateProposal    AssignmentRequestState = "proposal"
+	AssignmentRequestStateQueued      AssignmentRequestState = "queued"
+	AssignmentRequestStateRequested   AssignmentRequestState = "requested"
+	AssignmentRequestStateRunning     AssignmentRequestState = "running"
+	AssignmentRequestStateUnavailable AssignmentRequestState = "unavailable"
+)
+
+// Valid indicates whether the value is a known member of the AssignmentRequestState enum.
+func (e AssignmentRequestState) Valid() bool {
+	switch e {
+	case AssignmentRequestStateBlocked:
+		return true
+	case AssignmentRequestStateCancelled:
+		return true
+	case AssignmentRequestStateCompleted:
+		return true
+	case AssignmentRequestStateFailed:
+		return true
+	case AssignmentRequestStateProposal:
+		return true
+	case AssignmentRequestStateQueued:
+		return true
+	case AssignmentRequestStateRequested:
+		return true
+	case AssignmentRequestStateRunning:
+		return true
+	case AssignmentRequestStateUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BootstrapPreviewState.
 const (
 	BootstrapPreviewStateConflict  BootstrapPreviewState = "conflict"
@@ -466,6 +505,24 @@ const (
 func (e HealthStatus) Valid() bool {
 	switch e {
 	case Ok:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IssueAssignmentIssueState.
+const (
+	Closed IssueAssignmentIssueState = "closed"
+	Open   IssueAssignmentIssueState = "open"
+)
+
+// Valid indicates whether the value is a known member of the IssueAssignmentIssueState enum.
+func (e IssueAssignmentIssueState) Valid() bool {
+	switch e {
+	case Closed:
+		return true
+	case Open:
 		return true
 	default:
 		return false
@@ -826,6 +883,14 @@ func (e RuntimeEvidenceVersion) Valid() bool {
 	}
 }
 
+// AssignmentCheck defines model for AssignmentCheck.
+type AssignmentCheck struct {
+	Conclusion string `json:"conclusion"`
+	Status     string `json:"status"`
+	Summary    string `json:"summary"`
+	Url        string `json:"url"`
+}
+
 // AssignmentConvention defines model for AssignmentConvention.
 type AssignmentConvention struct {
 	Assignment           AssignmentPolicy                         `json:"assignment"`
@@ -867,6 +932,45 @@ type AssignmentPolicyRequiredRoles string
 
 // AssignmentPolicySourceKind defines model for AssignmentPolicy.SourceKind.
 type AssignmentPolicySourceKind string
+
+// AssignmentProposal defines model for AssignmentProposal.
+type AssignmentProposal struct {
+	Branch    string           `json:"branch"`
+	BranchUrl string           `json:"branch_url"`
+	Check     *AssignmentCheck `json:"check"`
+	Draft     bool             `json:"draft"`
+	HeadSha   string           `json:"head_sha"`
+	Number    int64            `json:"number"`
+	State     string           `json:"state"`
+	Url       string           `json:"url"`
+}
+
+// AssignmentRequest defines model for AssignmentRequest.
+type AssignmentRequest struct {
+	CommentId       int64                  `json:"comment_id"`
+	CreatedAt       time.Time              `json:"created_at"`
+	Edited          bool                   `json:"edited"`
+	ProfileRevision string                 `json:"profile_revision"`
+	Proposal        *AssignmentProposal    `json:"proposal"`
+	Requester       string                 `json:"requester"`
+	RequesterId     int64                  `json:"requester_id"`
+	Run             *AssignmentRun         `json:"run"`
+	State           AssignmentRequestState `json:"state"`
+	Summary         string                 `json:"summary"`
+	Url             string                 `json:"url"`
+}
+
+// AssignmentRequestState defines model for AssignmentRequest.State.
+type AssignmentRequestState string
+
+// AssignmentRun defines model for AssignmentRun.
+type AssignmentRun struct {
+	Attempt    int64  `json:"attempt"`
+	Conclusion string `json:"conclusion"`
+	Id         int64  `json:"id"`
+	Status     string `json:"status"`
+	Url        string `json:"url"`
+}
 
 // BootstrapDiagnostic defines model for BootstrapDiagnostic.
 type BootstrapDiagnostic struct {
@@ -1005,6 +1109,26 @@ type Health struct {
 
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
+
+// IssueAssignment defines model for IssueAssignment.
+type IssueAssignment struct {
+	Assignable      bool                      `json:"assignable"`
+	Body            string                    `json:"body"`
+	Command         string                    `json:"command"`
+	IssueState      IssueAssignmentIssueState `json:"issue_state"`
+	LastCommentId   int64                     `json:"last_comment_id"`
+	Number          int64                     `json:"number"`
+	ProfileRevision string                    `json:"profile_revision"`
+	Reason          string                    `json:"reason"`
+	Repository      string                    `json:"repository"`
+	RepositoryId    int64                     `json:"repository_id"`
+	Requests        []AssignmentRequest       `json:"requests"`
+	Title           string                    `json:"title"`
+	Url             string                    `json:"url"`
+}
+
+// IssueAssignmentIssueState defines model for IssueAssignment.IssueState.
+type IssueAssignmentIssueState string
 
 // ProfileDiagnostic defines model for ProfileDiagnostic.
 type ProfileDiagnostic struct {
@@ -1177,6 +1301,9 @@ type ServerInterface interface {
 	// HeadRepositoryBootstrap Check bootstrap preview availability without returning source
 	// (HEAD /v1/repositories/{owner}/{repo}/bootstrap)
 	HeadRepositoryBootstrap(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// GetIssueAssignment Read issue assignment context and GitHub-derived outcomes
+	// (GET /v1/repositories/{owner}/{repo}/issues/{number}/assignment)
+	GetIssueAssignment(w http.ResponseWriter, r *http.Request, owner string, repo string, number int)
 	// GetRepositoryProfileEditor Read editable codex-thorough choices from the current repository
 	// (GET /v1/repositories/{owner}/{repo}/profile-editor)
 	GetRepositoryProfileEditor(w http.ResponseWriter, r *http.Request, owner string, repo string)
@@ -1323,6 +1450,50 @@ func (siw *ServerInterfaceWrapper) HeadRepositoryBootstrap(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.HeadRepositoryBootstrap(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIssueAssignment operation middleware
+func (siw *ServerInterfaceWrapper) GetIssueAssignment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "number" -------------
+	var number int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "number", r.PathValue("number"), &number, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "number", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIssueAssignment(w, r, owner, repo, number)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1674,6 +1845,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/bootstrap", wrapper.HeadRepositoryBootstrap)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profile-editor", wrapper.GetRepositoryProfileEditor)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profile-editor", wrapper.PreviewRepositoryProfile)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/issues/{number}/assignment", wrapper.GetIssueAssignment)
 
 	return m
 }

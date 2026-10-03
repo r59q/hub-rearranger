@@ -145,6 +145,30 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/issues/{number}/assignment': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+				number: number;
+			};
+			cookie?: never;
+		};
+		/**
+		 * Read issue assignment context and GitHub-derived outcomes
+		 * @description Fresh read-only projection. No runner access or durable run state. Links and check outcomes are corroborated with GitHub workflow, request, ref and PR objects; never authorization. Incomplete evidence remains explicit.
+		 */
+		get: operations['getIssueAssignment'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 
 export type webhooks = Record<string, never>;
@@ -295,6 +319,83 @@ export interface components {
 			catalog_state: 'valid' | 'missing' | 'invalid' | 'unsupported';
 			profiles: components['schemas']['ProfileReadiness'][];
 			diagnostics: components['schemas']['ProfileDiagnostic'][];
+		};
+		AssignmentCheck: {
+			/** Format: uri */
+			url: string;
+			status: string;
+			conclusion: string;
+			summary: string;
+		};
+		AssignmentProposal: {
+			/** Format: int64 */
+			number: number;
+			/** Format: uri */
+			url: string;
+			state: string;
+			draft: boolean;
+			branch: string;
+			/** Format: uri */
+			branch_url: string;
+			head_sha: string;
+			check: components['schemas']['AssignmentCheck'] | null;
+		};
+		AssignmentRun: {
+			/** Format: int64 */
+			id: number;
+			/** Format: int64 */
+			attempt: number;
+			/** Format: uri */
+			url: string;
+			status: string;
+			conclusion: string;
+		};
+		AssignmentRequest: {
+			/** Format: int64 */
+			comment_id: number;
+			/** Format: uri */
+			url: string;
+			/** Format: int64 */
+			requester_id: number;
+			requester: string;
+			profile_revision: string;
+			/** Format: date-time */
+			created_at: string;
+			edited: boolean;
+			/** @enum {string} */
+			state:
+				| 'requested'
+				| 'queued'
+				| 'running'
+				| 'blocked'
+				| 'failed'
+				| 'cancelled'
+				| 'completed'
+				| 'proposal'
+				| 'unavailable';
+			run: components['schemas']['AssignmentRun'] | null;
+			proposal: components['schemas']['AssignmentProposal'] | null;
+			summary: string;
+		};
+		IssueAssignment: {
+			repository: string;
+			/** Format: int64 */
+			repository_id: number;
+			/** Format: int64 */
+			number: number;
+			title: string;
+			body: string;
+			/** Format: uri */
+			url: string;
+			/** @enum {string} */
+			issue_state: 'open' | 'closed';
+			profile_revision: string;
+			assignable: boolean;
+			reason: string;
+			command: string;
+			/** Format: int64 */
+			last_comment_id: number;
+			requests: components['schemas']['AssignmentRequest'][];
 		};
 		CatalogProfile: {
 			enabled: boolean;
@@ -1012,6 +1113,85 @@ export interface operations {
 			502: components['responses']['InternalError'];
 		};
 	};
+	getIssueAssignment: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+				number: number;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Issue, current profile and bounded request history. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['IssueAssignment'];
+				};
+			};
+			/** @description Invalid owner or repository name. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Read credentials lack repository Contents permission. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Repository is unavailable or not visible to the read credentials. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			405: components['responses']['MethodNotAllowed'];
+			/** @description GitHub rate limit reached; retry later. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Service failed; retry. */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description GitHub failed or returned an invalid response; retry. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+		};
+	};
 }
 
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
@@ -1101,6 +1281,22 @@ export const profileReadinessStateValues: ReadonlyArray<
 export const repositoryReadinessCatalog_stateValues: ReadonlyArray<
 	components['schemas']['RepositoryReadiness']['catalog_state']
 > = ['valid', 'missing', 'invalid', 'unsupported'];
+export const assignmentRequestStateValues: ReadonlyArray<
+	components['schemas']['AssignmentRequest']['state']
+> = [
+	'requested',
+	'queued',
+	'running',
+	'blocked',
+	'failed',
+	'cancelled',
+	'completed',
+	'proposal',
+	'unavailable'
+];
+export const issueAssignmentIssue_stateValues: ReadonlyArray<
+	components['schemas']['IssueAssignment']['issue_state']
+> = ['open', 'closed'];
 export const catalogProfileRoleValues: ReadonlyArray<
 	components['schemas']['CatalogProfile']['role']
 > = ['implementation'];

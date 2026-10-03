@@ -240,3 +240,9 @@ to generate `RuntimeEvidence` transport shapes and Go/server-only frontend
 snapshots. `make agents-contract-check` verifies both contracts without editing
 files. Profile configuration validation and runtime evidence validation have
 separate semantics; see the [readiness guide](../private-runner/READINESS.md).
+
+AW-014 also exports the canonical [patch-result schema](../private-runner/result.schema.v1.json)
+as a Go-only embedded snapshot for read-side assignment evidence validation.
+It does not copy result policies into frontend code or change the v1 adapter.
+`make generate-agents-contract` rebuilds it; `make agents-contract-check`
+verifies that its bytes still match the canonical source.

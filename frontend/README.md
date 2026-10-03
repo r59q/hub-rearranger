@@ -209,3 +209,34 @@ server-action tests cover native review/publication, required acknowledgment,
 closed/bounded forms, rejected forgery/source fields, safe recovery and escaped
 diffs. Run the existing check/lint/test/build commands. Compose configuration
 and service addresses are unchanged.
+
+## Issue assignment and derived activity (AW-014)
+
+Issue cards link to `/issues/assignment?repository=owner/name&number=N`. This
+opt-in issue view shows GitHub issue context and assignment activity; other
+browsing loads remain independent of Identity. The view explains Codex's model,
+context and branch/draft-PR authority before an explicit review step checks access.
+A second native form requires consent to the displayed exact comment and user.
+Named forms preserve repository and issue selection, work without JavaScript,
+and show pending states when enhanced. Successful submission redirects to fresh
+GitHub data, so browser refresh does not repost the form.
+
+Only the protected server adapter receives Identity cookies. Agents reads omit
+cookies/credentials; typed closed responses validate all source/run/PR/branch/check
+URLs and reject unknown fields. The browser submits only session/review nonces,
+the reviewed revision and consent, never arbitrary source, commands or tokens.
+Signed-out/revoked sessions offer account connection; outages, stale/consumed
+reviews and uncertain POST responses provide safe recovery without automatic retry.
+
+Activity is read from GitHub on load or explicit refresh: source comment, workflow
+attempt/status, proposal PR, branch, check conclusion and safe summary. An existing
+request hides new-assignment controls and directs the operator to its original
+workflow before starting different work on GitHub. Neutral checks, missing or
+changed evidence, closed PRs and edited comments remain explicit. Hub stores no
+assignment queue, run state or transcript and never contacts the runner.
+
+The view uses semantic accessible forms and the shared system light/dark theme.
+Unit/server-rendering tests cover source URLs, selected repository boundaries,
+user identity, native query preservation, consent, pending/recovery and escaped
+content. Run `npm run check`, `npm run lint`, `npm test` and `npm run build`.
+The existing service URLs and Compose configuration remain sufficient.

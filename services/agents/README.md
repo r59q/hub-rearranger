@@ -1,7 +1,7 @@
-# Agents service (AW-004 / AW-005 / AW-006 / AW-008)
+# Agents service (AW-004–AW-014)
 
 The Agents service owns repository profiles, their validation, derived readiness,
-and the GitHub-native assignment convention. It has no queue, runtime, provider
+the GitHub-native assignment convention, and GitHub-derived assignment activity. It has no queue, runtime, provider
 credential store, transcript store, or durable assignment/profile database.
 GitHub remains the source of truth. Runners and their authentication live outside
 Hub and Docker Compose. Readiness derives configuration and trusted diagnostic evidence; profile validation alone
@@ -10,7 +10,8 @@ never proves that a runner, model, or account is ready.
 ## Local setup and configuration
 
 Use Go 1.25. Public catalogs can be read without a token; private repositories
-require a fine-grained token with read-only Metadata and Contents access. Readiness also requires Actions read access:
+require a fine-grained token with read-only Metadata and Contents access. Readiness also requires Actions read access. Assignment views use read-only Issues,
+Pull requests and Checks permissions alongside Metadata, Contents and Actions:
 
 ```sh
 GITHUB_TOKEN=github_pat_... go run ./cmd/server
@@ -42,7 +43,7 @@ exposing private repository data.
 
 ## Public API
 
-[`api/openapi.yaml`](api/openapi.yaml), version 1.2.0, uses OpenAPI 3.0.3.
+[`api/openapi.yaml`](api/openapi.yaml), version 1.4.0, uses OpenAPI 3.0.3.
 The API URL version and catalog schema version are separate contracts.
 
 - `GET /health` returns `{"status":"ok"}` independently of GitHub and runners.
@@ -302,3 +303,43 @@ Run the root contract generators/checks after changes. Unit and API tests cover
 explicit disabling/editing, unchanged/idempotent merges, unrelated-policy
 preservation, schema dependencies, rejected overrides, safe diagnostics and
 fresh-base digests. No additional configuration or Compose dependency is needed.
+
+## Issue assignments and activity (AW-014)
+
+`GET /v1/repositories/{owner}/{repo}/issues/{number}/assignment` projects an
+issue, the current canonical profile, and its ten newest exact v1 assignment
+comments. It excludes PR sources and bot-authored requests. Open, unlocked issues
+with an enabled validated profile can proceed to review. Existing requests keep
+Hub focused on their original workflows; making new work after failure requires
+an explicit new GitHub request, not automatic replay through Hub.
+
+Every load reads GitHub. Comment history is bounded at 2000 objects; incomplete
+history fails closed. Workflow history is bounded at 1000 objects and elects the
+earliest matching repository/comment title, workflow path, event and user actor.
+Current-attempt job state distinguishes skipped execution from workflow success.
+Unavailable evidence remains visible with original request/workflow links.
+
+Linked proposals require matching source/request/profile/user/run provenance,
+GitHub Actions bot ownership, same-repository PR head/base, live assignment ref,
+commit parent/message/attribution, and the original successful hosted/isolated
+jobs. The reader verifies immutable invocation/proposal artifact origin, archive
+digests, canonical AW-012 result schema, and patch/summary digests. Storage downloads
+use a separate unauthenticated HTTPS client without redirects. It reads files in
+memory; no source is executed or applied. The result schema snapshot is generated
+from `ops/private-runner/result.schema.v1.json`, with drift checked by the existing
+contract exporter.
+
+The publication check must belong to the GitHub Actions App, the exact assignment
+and head, with the expected result-derived summary/conclusion. Failed or unavailable
+repository validation stays **neutral**, never validated success. A missing check,
+expired artifact, moved/deleted branch, altered PR or incomplete evidence needs
+GitHub inspection. Displayed context never grants execution/publication authority
+or certifies later PR changes. Summary text is fixed recovery guidance or validated
+check outcome, never a provider transcript or arbitrary artifact prose.
+
+This GET has a 35-second deadline. There is no runner connection, polling loop,
+queue, transcript or durable assignment state. Identity consumes this public
+projection without user credentials and owns the subsequent live-authorized
+comment write. Controlled HTTP/TLS tests cover source/history boundaries,
+canonical ownership, forgery, digest/origin mismatches, neutral validation,
+missing evidence and freshness. Use the existing Go/check commands above.

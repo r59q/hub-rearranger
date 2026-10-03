@@ -26,9 +26,10 @@ type ProfileRevisionPolicy struct {
 // Service owns repository agent semantics, not execution or durable run state.
 // Profile validation is independent of runtime readiness.
 type Service struct {
-	profiles  *ProfileService
-	readiness *ReadinessService
-	bootstrap *BootstrapService
+	profiles    *ProfileService
+	readiness   *ReadinessService
+	bootstrap   *BootstrapService
+	assignments AssignmentReader
 }
 
 func (s *Service) WithBootstrap(bootstrap *BootstrapService) *Service {

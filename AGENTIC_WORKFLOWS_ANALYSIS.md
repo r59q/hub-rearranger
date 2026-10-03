@@ -900,3 +900,46 @@ layouts at 390px/320px and no-JavaScript review/publication. Browser testing cau
 and fixed named forms dropping repository selection; a native-rendering regression
 check now preserves it. Validation used synthetic services/credentials, with no
 live GitHub writes, credentialed diagnostic or runner execution.
+
+
+## AW-014 issue assignment and derived activity
+
+Hub issue cards now open an opt-in assignment view. It reads fresh GitHub context
+and explains the fixed Codex Thorough model, offline workload and branch/draft-PR
+authority. A live Identity review precedes consent to one exact user-attributed
+AW-002 request comment. Existing assignment history focuses the view on the
+original workflow; a different request remains a deliberate GitHub action.
+
+Identity owns the write through `WithAuthorization`, with fresh user/App checks
+and independent user-token source/head/history checks immediately before the
+comment POST. Review intents use the existing encrypted store in a separate
+session-bound namespace and expire after ten minutes. Consuming each intent once
+prevents repeated forms from starting new assignments. Failed/lost responses get
+one read reconciliation and explicit uncertain recovery, never blind POST replay.
+No credentials leave Identity and no bot/read-token fallback exists.
+
+Agents owns the read projection, not a new run database. Bounded complete comment
+history and canonical GitHub workflow identity associate the ten newest requests
+with their earliest runs and latest attempt states. Linked proposals are checked
+against live GitHub PR/ref/commit/check objects, original jobs and immutable
+invocation/proposal artifact origin/digests. Canonical result-schema validation
+and patch/summary digests constrain result-derived summaries; raw provider/source
+output is never displayed. Publication checks preserve failed/unavailable validation
+as neutral. Missing, expired, changed or inaccessible evidence remains uncertain
+with GitHub source links. These reads are context, never authorization or proof
+that later PR edits are safe.
+
+The page refreshes GitHub only when loaded or explicitly refreshed; no Hub path
+invokes or polls the runner. Identity failures affect the account/action view,
+not unrelated browsing. Native named forms preserve issue/repository selection,
+require consent and redirect after posting; enhanced forms show pending state.
+No new service, dependency, configuration or Compose requirement was introduced.
+
+AW-014 completed on 2026-10-03. Final `make check` passed with 255 frontend tests,
+all service suites, canonical contract drift and exported installation checks.
+Agents/Identity race tests, final production builds, controlled Chromium at
+1440px light and 390px/320px dark, native no-JavaScript forms, uncertain/server-error
+recovery, reconnect and outage cases passed. Isolated Compose rebuilt all five
+services with synthetic credentials and external networking disabled; health,
+93-file canonical bundle hashes and independent outage behavior passed. No live
+GitHub write, credentialed diagnostic or source execution was performed.

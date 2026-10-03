@@ -35,21 +35,30 @@ func (e Action) Valid() bool {
 
 // Defines values for ErrorCode.
 const (
-	BootstrapConflict   ErrorCode = "bootstrap_conflict"
-	BootstrapIncomplete ErrorCode = "bootstrap_incomplete"
-	BootstrapStale      ErrorCode = "bootstrap_stale"
-	Forbidden           ErrorCode = "forbidden"
-	ForgeryRejected     ErrorCode = "forgery_rejected"
-	IdentityUnavailable ErrorCode = "identity_unavailable"
-	InvalidRequest      ErrorCode = "invalid_request"
-	MethodNotAllowed    ErrorCode = "method_not_allowed"
-	NotFound            ErrorCode = "not_found"
-	ReconnectRequired   ErrorCode = "reconnect_required"
+	AssignmentReviewUsed ErrorCode = "assignment_review_used"
+	AssignmentStale      ErrorCode = "assignment_stale"
+	AssignmentUncertain  ErrorCode = "assignment_uncertain"
+	BootstrapConflict    ErrorCode = "bootstrap_conflict"
+	BootstrapIncomplete  ErrorCode = "bootstrap_incomplete"
+	BootstrapStale       ErrorCode = "bootstrap_stale"
+	Forbidden            ErrorCode = "forbidden"
+	ForgeryRejected      ErrorCode = "forgery_rejected"
+	IdentityUnavailable  ErrorCode = "identity_unavailable"
+	InvalidRequest       ErrorCode = "invalid_request"
+	MethodNotAllowed     ErrorCode = "method_not_allowed"
+	NotFound             ErrorCode = "not_found"
+	ReconnectRequired    ErrorCode = "reconnect_required"
 )
 
 // Valid indicates whether the value is a known member of the ErrorCode enum.
 func (e ErrorCode) Valid() bool {
 	switch e {
+	case AssignmentReviewUsed:
+		return true
+	case AssignmentStale:
+		return true
+	case AssignmentUncertain:
+		return true
 	case BootstrapConflict:
 		return true
 	case BootstrapIncomplete:
@@ -113,6 +122,38 @@ func (e SessionState) Valid() bool {
 
 // Action defines model for Action.
 type Action string
+
+// AssignmentRequest defines model for AssignmentRequest.
+type AssignmentRequest struct {
+	Csrf        string `json:"csrf"`
+	ReviewToken string `json:"review_token"`
+}
+
+// AssignmentResult defines model for AssignmentResult.
+type AssignmentResult struct {
+	CommentId  int64  `json:"comment_id"`
+	CommentUrl string `json:"comment_url"`
+	Number     int64  `json:"number"`
+	Repository string `json:"repository"`
+}
+
+// AssignmentReview defines model for AssignmentReview.
+type AssignmentReview struct {
+	Command         string    `json:"command"`
+	ExpiresAt       time.Time `json:"expires_at"`
+	Number          int64     `json:"number"`
+	ProfileRevision string    `json:"profile_revision"`
+	Repository      string    `json:"repository"`
+	ReviewToken     string    `json:"review_token"`
+	Title           string    `json:"title"`
+	User            User      `json:"user"`
+}
+
+// AssignmentReviewRequest defines model for AssignmentReviewRequest.
+type AssignmentReviewRequest struct {
+	Csrf            string `json:"csrf"`
+	ProfileRevision string `json:"profile_revision"`
+}
 
 // Authorization defines model for Authorization.
 type Authorization struct {
@@ -206,6 +247,18 @@ type CreateBootstrapPullRequestParams struct {
 	Origin Origin `json:"Origin"`
 }
 
+// CreateIssueAssignmentParams defines parameters for CreateIssueAssignment.
+type CreateIssueAssignmentParams struct {
+	// Origin Exact configured public origin, required for every POST.
+	Origin Origin `json:"Origin"`
+}
+
+// ReviewIssueAssignmentParams defines parameters for ReviewIssueAssignment.
+type ReviewIssueAssignmentParams struct {
+	// Origin Exact configured public origin, required for every POST.
+	Origin Origin `json:"Origin"`
+}
+
 // StartSignInParams defines parameters for StartSignIn.
 type StartSignInParams struct {
 	// Origin Exact configured public origin, required for every POST.
@@ -230,6 +283,12 @@ type AuthorizeRepositoryJSONRequestBody = AuthorizationRequest
 // CreateBootstrapPullRequestJSONRequestBody defines body for CreateBootstrapPullRequest for application/json ContentType.
 type CreateBootstrapPullRequestJSONRequestBody = BootstrapRequest
 
+// CreateIssueAssignmentJSONRequestBody defines body for CreateIssueAssignment for application/json ContentType.
+type CreateIssueAssignmentJSONRequestBody = AssignmentRequest
+
+// ReviewIssueAssignmentJSONRequestBody defines body for ReviewIssueAssignment for application/json ContentType.
+type ReviewIssueAssignmentJSONRequestBody = AssignmentReviewRequest
+
 // SignOutJSONRequestBody defines body for SignOut for application/json ContentType.
 type SignOutJSONRequestBody = ProtectedRequest
 
@@ -247,6 +306,12 @@ type ServerInterface interface {
 
 	// (POST /v1/repositories/{owner}/{repo}/bootstrap-pull-request)
 	CreateBootstrapPullRequest(w http.ResponseWriter, r *http.Request, owner string, repo string, params CreateBootstrapPullRequestParams)
+
+	// (POST /v1/repositories/{owner}/{repo}/issues/{number}/assignment)
+	CreateIssueAssignment(w http.ResponseWriter, r *http.Request, owner string, repo string, number int, params CreateIssueAssignmentParams)
+
+	// (POST /v1/repositories/{owner}/{repo}/issues/{number}/assignment-review)
+	ReviewIssueAssignment(w http.ResponseWriter, r *http.Request, owner string, repo string, number int, params ReviewIssueAssignmentParams)
 
 	// (GET /v1/session)
 	GetSession(w http.ResponseWriter, r *http.Request)
@@ -415,6 +480,150 @@ func (siw *ServerInterfaceWrapper) CreateBootstrapPullRequest(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateBootstrapPullRequest(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateIssueAssignment operation middleware
+func (siw *ServerInterfaceWrapper) CreateIssueAssignment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "number" -------------
+	var number int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "number", r.PathValue("number"), &number, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "number", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateIssueAssignmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin Origin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = Origin
+
+	} else {
+		err := fmt.Errorf("Header parameter Origin is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Origin", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateIssueAssignment(w, r, owner, repo, number, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReviewIssueAssignment operation middleware
+func (siw *ServerInterfaceWrapper) ReviewIssueAssignment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "number" -------------
+	var number int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "number", r.PathValue("number"), &number, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "number", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ReviewIssueAssignmentParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin Origin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = Origin
+
+	} else {
+		err := fmt.Errorf("Header parameter Origin is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Origin", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReviewIssueAssignment(w, r, owner, repo, number, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -702,6 +911,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/sign-out", wrapper.SignOut)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/authorization", wrapper.AuthorizeRepository)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/bootstrap-pull-request", wrapper.CreateBootstrapPullRequest)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/issues/{number}/assignment-review", wrapper.ReviewIssueAssignment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/issues/{number}/assignment", wrapper.CreateIssueAssignment)
 
 	return m
 }
