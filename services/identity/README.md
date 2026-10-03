@@ -143,7 +143,7 @@ and repository selection even for public repositories. Archived/disabled or
 renamed repositories fail closed. Pagination and request deadlines are bounded;
 missing/denied access and transient errors have different safe recovery responses.
 
-The public preflight result is **not a reusable grant**. AW-009 and future AW-014
+The public preflight result is **not a reusable grant**. AW-009 and AW-014
 mutations must call `domain.Service.WithAuthorization` at the actual write
 boundary, executing a typed, repository-bound GitHub operation within the identity
 service with the freshly verified user's token. Other domains prepare their own
@@ -151,7 +151,7 @@ business payloads and call versioned identity APIs for those atomic user writes;
 never export a token or trust an earlier preflight to authorize a later write.
 AW-009 adds the bootstrap endpoint below. AW-019 established this authorization
 boundary and proved comment attribution using a controlled GitHub HTTP server;
-production assignment remains AW-014.
+AW-014 now implements production assignment through the same boundary.
 
 SQLite serializes refresh, sign-out, and authorized operations through a transaction
 on a single connection. Run one identity replica with its own volume. This
@@ -238,3 +238,40 @@ checklist. The publication tests cover edited choices, stale reviews, required
 fields, current access, lost responses and duplicate recovery. Regenerate both
 Agents and Identity contracts when this shared transport input changes. Local
 HTTP tests resolve only the checked-in referenced OpenAPI specification.
+
+## User-attributed assignment comments (AW-014)
+
+- `POST /v1/repositories/{owner}/{repo}/issues/{number}/assignment-review`
+  takes `csrf` and the reviewed full `profile_revision`. It performs fresh
+  user/App/maintain-or-admin authorization, consumes the public Agents context
+  without credentials, and returns the exact command, user and a ten-minute
+  opaque review token. It does not write GitHub.
+- `POST /v1/repositories/{owner}/{repo}/issues/{number}/assignment` takes only
+  `csrf` and `review_token`. Exact Origin, closed bounded JSON and session cookies
+  protect both endpoints. No arbitrary comment, profile ID or authority is accepted.
+
+Reviews are session-bound encrypted one-use intents in the existing store, using
+a separate assignment namespace. They describe a pending consent step, not a Hub
+assignment/run record. The token is consumed before the authorized session
+transaction; replay, refresh, concurrent submissions, process restart or a lost
+response cannot automatically issue another POST for that review.
+
+The actual operation runs within `WithAuthorization`, fetches fresh Agents
+context and checks live user/App access again before writing. GitHub reads with
+the user's token independently verify repository identity/default head, an open
+unlocked issue (not a PR), and complete current comment history. Changed base or
+history requires review. An existing exact, unedited request by the same user is
+reconciled. Another author or ambiguous history fails closed.
+
+The only write is the exact single-line `/agent assign codex-thorough@<full-sha>
+authority=branch-draft-pr` comment using the verified App user token. Missing,
+revoked or unauthorized access never falls back to discovery credentials or a bot.
+A lost/invalid comment response triggers one read reconciliation, never a second
+POST. Uncertain outcomes tell the operator to inspect GitHub before making a new
+request. Intake remains responsible for independent execution authorization.
+
+Tests cover public OpenAPI responses, access loss between review/write, consent
+forgery, one-use/concurrent replay, changed/closed sources, correct user attribution,
+lost responses and incomplete history using synthetic local servers. Run the
+existing `make check` and module test commands. No configuration, database schema
+or Compose change is needed; the one-replica transaction ordering remains required.

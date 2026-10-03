@@ -121,12 +121,75 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/issues/{number}/assignment-review': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** @description Create a ten-minute, session-bound one-use review. No GitHub write. Rechecks live user/App access and fresh Agents context. */
+		post: operations['reviewIssueAssignment'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	'/v1/repositories/{owner}/{repo}/issues/{number}/assignment': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** @description Consume the review once and reauthorize within WithAuthorization. Write only the exact AW-002 comment as the signed-in user. Reconcile existing identical requests; never automatically retry an uncertain POST. A new comment is a new assignment. */
+		post: operations['createIssueAssignment'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
 	schemas: {
+		AssignmentReviewRequest: {
+			csrf: string;
+			profile_revision: string;
+		};
+		AssignmentRequest: {
+			csrf: string;
+			review_token: string;
+		};
+		AssignmentReview: {
+			review_token: string;
+			repository: string;
+			/** Format: int64 */
+			number: number;
+			title: string;
+			profile_revision: string;
+			command: string;
+			user: components['schemas']['User'];
+			/** Format: date-time */
+			expires_at: string;
+		};
+		AssignmentResult: {
+			repository: string;
+			/** Format: int64 */
+			number: number;
+			/** Format: int64 */
+			comment_id: number;
+			/** Format: uri */
+			comment_url: string;
+		};
 		BootstrapRequest: {
 			profile_draft?: components['schemas']['ProfileDraft'];
 			csrf: string;
@@ -192,7 +255,10 @@ export interface components {
 				| 'method_not_allowed'
 				| 'bootstrap_stale'
 				| 'bootstrap_conflict'
-				| 'bootstrap_incomplete';
+				| 'bootstrap_incomplete'
+				| 'assignment_stale'
+				| 'assignment_uncertain'
+				| 'assignment_review_used';
 			message: string;
 		};
 		ProfileDraft: {
@@ -451,6 +517,80 @@ export interface operations {
 			503: components['responses']['Error'];
 		};
 	};
+	reviewIssueAssignment: {
+		parameters: {
+			query?: never;
+			header: {
+				/** @description Exact configured public origin, required for every POST. */
+				Origin: components['parameters']['Origin'];
+			};
+			path: {
+				owner: string;
+				repo: string;
+				number: number;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['AssignmentReviewRequest'];
+			};
+		};
+		responses: {
+			/** @description Reviewed context. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['AssignmentReview'];
+				};
+			};
+			400: components['responses']['Error'];
+			401: components['responses']['Error'];
+			403: components['responses']['Error'];
+			405: components['responses']['Error'];
+			409: components['responses']['Error'];
+			503: components['responses']['Error'];
+		};
+	};
+	createIssueAssignment: {
+		parameters: {
+			query?: never;
+			header: {
+				/** @description Exact configured public origin, required for every POST. */
+				Origin: components['parameters']['Origin'];
+			};
+			path: {
+				owner: string;
+				repo: string;
+				number: number;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['AssignmentRequest'];
+			};
+		};
+		responses: {
+			/** @description GitHub request comment confirmed; execution is independently authorized by intake. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['AssignmentResult'];
+				};
+			};
+			400: components['responses']['Error'];
+			401: components['responses']['Error'];
+			403: components['responses']['Error'];
+			405: components['responses']['Error'];
+			409: components['responses']['Error'];
+			503: components['responses']['Error'];
+		};
+	};
 }
 
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
@@ -476,7 +616,10 @@ export const errorCodeValues: ReadonlyArray<components['schemas']['Error']['code
 	'method_not_allowed',
 	'bootstrap_stale',
 	'bootstrap_conflict',
-	'bootstrap_incomplete'
+	'bootstrap_incomplete',
+	'assignment_stale',
+	'assignment_uncertain',
+	'assignment_review_used'
 ];
 export const profileDraftContext_sourcesValues: ReadonlyArray<
 	components['schemas']['ProfileDraft']['context_sources']

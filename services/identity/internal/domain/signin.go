@@ -14,11 +14,13 @@ const SessionLifetime = 7 * 24 * time.Hour
 const IntentLifetime = 10 * time.Minute
 
 type Service struct {
-	provider         Provider
-	store            Store
-	now              func() time.Time
-	bootstrapPlanner BootstrapPlanner
-	bootstrapWriter  BootstrapWriter
+	provider          Provider
+	store             Store
+	now               func() time.Time
+	bootstrapPlanner  BootstrapPlanner
+	bootstrapWriter   BootstrapWriter
+	assignmentPlanner AssignmentPlanner
+	assignmentWriter  AssignmentWriter
 }
 
 func NewService(provider Provider, store Store, now func() time.Time) *Service {

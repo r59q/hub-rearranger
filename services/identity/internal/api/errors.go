@@ -11,6 +11,12 @@ import (
 func (h *Handler) failure(w http.ResponseWriter, _ *http.Request, err error) {
 	status, code, message := 503, contract.IdentityUnavailable, "GitHub sign-in is unavailable. Check identity service configuration or try again."
 	switch {
+	case errors.Is(err, domain.ErrAssignmentStale):
+		status, code, message = 409, contract.AssignmentStale, "The issue, profile or comment history changed. Refresh and review the existing GitHub request before trying again."
+	case errors.Is(err, domain.ErrAssignmentUncertain):
+		status, code, message = 409, contract.AssignmentUncertain, "GitHub may have posted the request. Inspect the issue comments and original workflow before making another assignment; Hub will not retry this review."
+	case errors.Is(err, domain.ErrAssignmentReviewUsed):
+		status, code, message = 409, contract.AssignmentReviewUsed, "This assignment review expired or was already submitted. Inspect GitHub and refresh before reviewing again."
 	case errors.Is(err, domain.ErrBootstrapStale):
 		status, code, message = 409, contract.BootstrapStale, "The default branch or bootstrap files changed. Review a fresh preview before creating the PR."
 	case errors.Is(err, domain.ErrBootstrapConflict):

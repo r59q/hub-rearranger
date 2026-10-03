@@ -77,6 +77,15 @@ workload access to host authentication/configuration or networking. Other public
 targets remain blocked. Preserve the shared account trust boundary explicitly and
 never blindly retry an attempt that reached the runner.
 
+AW-014 assignments use Identity's encrypted, session-bound one-use review intents
+and `WithAuthorization` for the exact signed-in user's comment. Consume a review
+once, recheck source/head/history and live access, then reconcile a lost response
+with reads; never blindly repeat the POST or fall back to a bot/read token.
+Agents derives activity from GitHub requests, canonical runs/jobs, immutable
+artifacts and current proposal objects. Treat missing/changed evidence as uncertain;
+neutral validation is not success. Keep Identity calls on the opt-in issue/action
+view, and existing assignments focused on the original workflow before new work.
+
 The separate AW-013 publisher lives in `ops/agent-intake/cmd/publish` and runs only
 on GitHub-hosted runners without Codex authentication. It reauthorizes each
 publication phase, verifies immutable origin/result/digests, applies patches only

@@ -50,6 +50,12 @@ func run(logger *slog.Logger) error {
 	provider := bootstrap.Provider{Source: config.BootstrapSource(), Bundle: os.Getenv("AGENTS_BOOTSTRAP_BUNDLE")}
 	service.WithBootstrap(domain.NewBootstrapService(provider, githubinfra.NewProfileReader(client), validator, provider))
 
+	resultDecoder, err := evidence.NewResultDecoder()
+	if err != nil {
+		return errors.New("patch result schema could not be initialized")
+	}
+	service.WithAssignments(githubinfra.NewAssignmentReader(client, resultDecoder))
+
 	server := &http.Server{
 		Addr: config.Address(), Handler: api.NewHandler(service, logger),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,

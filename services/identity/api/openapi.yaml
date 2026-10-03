@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hub Rearranger Identity API
-  version: 1.1.0
+  version: 1.2.0
   description: Private GitHub App user sign-in and repository-scoped authorization,
     reached through the SvelteKit server. Never returns GitHub credentials. Future
     writes must use the live authorized-operation boundary, not a cached preflight.
@@ -200,6 +200,117 @@ paths:
         '405': *id001
         '409': *id001
         '503': *id001
+  /v1/repositories/{owner}/{repo}/issues/{number}/assignment-review:
+    post:
+      operationId: reviewIssueAssignment
+      security:
+        - secureSession: []
+        - localSession: []
+      description:
+        Create a ten-minute, session-bound one-use review. No GitHub write. Rechecks live user/App
+        access and fresh Agents context.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9_.-]{1,100}$
+        - name: number
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentReviewRequest'
+      responses:
+        '200':
+          description: Reviewed context.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentReview'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /v1/repositories/{owner}/{repo}/issues/{number}/assignment:
+    post:
+      operationId: createIssueAssignment
+      security:
+        - secureSession: []
+        - localSession: []
+      description:
+        Consume the review once and reauthorize within WithAuthorization. Write only the exact
+        AW-002 comment as the signed-in user. Reconcile existing identical requests; never automatically
+        retry an uncertain POST. A new comment is a new assignment.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9_.-]{1,100}$
+        - name: number
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+      responses:
+        '200':
+          description: GitHub request comment confirmed; execution is independently authorized by intake.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResult'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     secureSession:
@@ -228,6 +339,99 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    AssignmentReviewRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - csrf
+        - profile_revision
+      properties:
+        csrf:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+          minLength: 43
+          maxLength: 43
+        profile_revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+    AssignmentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - csrf
+        - review_token
+      properties:
+        csrf:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+          minLength: 43
+          maxLength: 43
+        review_token:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+          minLength: 43
+          maxLength: 43
+    AssignmentReview:
+      type: object
+      additionalProperties: false
+      required:
+        - review_token
+        - repository
+        - number
+        - title
+        - profile_revision
+        - command
+        - user
+        - expires_at
+      properties:
+        review_token:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{43}$
+          minLength: 43
+          maxLength: 43
+        repository:
+          type: string
+        number:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        title:
+          type: string
+        profile_revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        command:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+        expires_at:
+          type: string
+          format: date-time
+    AssignmentResult:
+      type: object
+      additionalProperties: false
+      required:
+        - repository
+        - number
+        - comment_id
+        - comment_url
+      properties:
+        repository:
+          type: string
+        number:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        comment_id:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        comment_url:
+          type: string
+          format: uri
     BootstrapRequest:
       type: object
       additionalProperties: false
@@ -389,5 +593,8 @@ components:
             - bootstrap_stale
             - bootstrap_conflict
             - bootstrap_incomplete
+            - assignment_stale
+            - assignment_uncertain
+            - assignment_review_used
         message:
           type: string

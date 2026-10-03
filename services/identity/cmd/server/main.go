@@ -46,6 +46,7 @@ func run(logger *slog.Logger) error {
 		service = domain.NewService(provider, store, nil)
 		service.WithBootstrap(agents.Planner{URL: c.AgentsURL, Client: &http.Client{Timeout: 50 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}},
 			githubinfra.BootstrapPublisher{API: gh.NewClient(&http.Client{Timeout: 8 * time.Second}), Origin: c.Origin})
+		service.WithAssignments(agents.Planner{URL: c.AgentsURL, Client: &http.Client{Timeout: 15 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}}, githubinfra.AssignmentPublisher{API: gh.NewClient(&http.Client{Timeout: 8 * time.Second})})
 	}
 
 	server := &http.Server{Addr: c.Address, Handler: api.NewHandler(service, c.Origin, c.Secure), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 125 * time.Second, IdleTimeout: 60 * time.Second}
