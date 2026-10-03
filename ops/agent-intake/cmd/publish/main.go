@@ -93,9 +93,9 @@ func execute() error {
 
 func main() {
 	if err := execute(); err != nil {
-		code := "GITHUB_UNAVAILABLE"
-		if failure, ok := err.(domain.Failure); ok {
-			code = string(failure)
+		code := failureCode(err)
+		if output := flag.Lookup("output"); output != nil {
+			_ = writeFailure(output.Value.String(), code)
 		}
 		message := code + ": publication incomplete. Review the original run and reconcile its branch, PR and evidence before retrying.\n"
 		_ = appendFile(os.Getenv("GITHUB_STEP_SUMMARY"), message)
