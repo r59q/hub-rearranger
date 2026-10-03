@@ -423,10 +423,18 @@ and check-ID page while retaining exact app, assignment, head, conclusion, and
 summary verification. Tests reproduce the observed response and reject forged
 hosts, repositories, and check IDs.
 
-The implementation has controlled HTTP/TLS and real Git/schema tests. Controlled
-live workflow completion and retry verification remain required before
-AW-013 is marked complete. Native Actions pull-request creation must be enabled
-in repository settings; no extra long-lived publication credential is introduced.
+The implementation has controlled HTTP/TLS and real Git/schema tests. Live
+assignment 37116695777 completed publication of draft PR #12 with the exact
+document patch and matching provenance. Its full rerun lost the original
+artifacts and correctly refused recovery without duplicate execution or writes.
+This matches [reported GitHub support behavior](https://github.com/orgs/community/discussions/17854):
+full reruns replace artifacts; job-specific reruns retain them. Recovery must
+use the individual `authorize` job and dependent jobs, retaining earlier evidence.
+Unique artifact names, retention settings, and downloaded ZIPs cannot restore
+verified origin after deletion. Successful retained-artifact reuse remains to be
+verified live before AW-013 is marked complete. Native Actions pull-request
+creation must be enabled in repository settings; no extra long-lived publication
+credential is introduced.
 
 ## Backlog refinements after AW-005 (2026-10-01)
 

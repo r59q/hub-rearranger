@@ -534,9 +534,22 @@ The same workflow remains operable after Hub is removed.
   verification failed because GitHub replaced the requested check details URL
   with its own check page. The repair accepts only that exact repository/check-ID
   URL or the original producer URL, retaining all other evidence checks; tests
-  reproduce the response and reject forged links. Execution is disabled.
-  Repair review/merge, renewed readiness, successful workflow completion, and
-  live retry verification remain required; this task remains unchecked.
+  reproduce the response and reject forged links. [PR #11](https://github.com/r59q/hub-rearranger/pull/11)
+  merged that repair. [Diagnostic run 37116462081](https://github.com/r59q/hub-rearranger/actions/runs/37116462081)
+  was independently verified for `d03e4283696f130bb8913a229bd049b1738f5de7`,
+  and all 21 runtime digests and the exact-model/isolation preflight passed.
+
+  [Assignment run 37116695777, attempt 1](https://github.com/r59q/hub-rearranger/actions/runs/37116695777/attempts/1)
+  completed every job successfully and created [draft PR #12](https://github.com/r59q/hub-rearranger/pull/12)
+  at `90c546cd96129fe61754b6d79e23feb2aa541aaa`. Its exact document-only patch,
+  provenance, issue update, and neutral app-owned check were verified independently.
+  A full rerun removed the original proposal/invocation artifacts (both IDs return
+  404); attempt 2 refused recovery before source execution/publication. The draft,
+  branch head, issue update, and check remained unique and unchanged, and the
+  private workspace was removed. This verifies safe refusal, not successful reuse.
+  Recovery instructions now specify rerunning the individual `authorize` job and
+  its dependent jobs to retain original artifacts. [Fresh assignment run 37117465286](https://github.com/r59q/hub-rearranger/actions/runs/37117465286)
+  is in progress for that recovery test; this task remains unchecked.
 
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 

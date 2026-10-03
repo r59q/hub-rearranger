@@ -71,7 +71,7 @@ func (c *Client) Accept(ctx context.Context, repo domain.Repository, source doma
 		fmt.Sprintf("Source: [issue #%d](%s); [request comment](%s).\n\n", invocation.IssueNumber, invocation.SourceURL, invocation.RequestURL) +
 		fmt.Sprintf("Profile: `%s@%s`; requester: `%s` (account %d); authority: `branch-draft-pr`.\n\n", invocation.ProfileID, invocation.ProfileRevision, invocation.Requester.Login, invocation.Requester.ID) +
 		fmt.Sprintf("[Workflow attempt](%s). Execution awaits independent live authorization, runtime verification, and prior-attempt reconciliation. Intake acceptance does not prove runner readiness or publication.\n\n", invocation.RunURL) +
-		"Rerun this original workflow after setup. Duplicate deliveries reuse this assignment; a changed profile policy requires a new request. This receipt does not grant authority."
+		"To resume after setup, rerun only the original workflow's authorize job and its dependent jobs. Do not use Re-run all jobs: it can remove the original proposal artifacts needed for recovery. Duplicate deliveries reuse this assignment; a changed profile policy requires a new request. This receipt does not grant authority."
 
 	comment := &gh.IssueComment{Body: gh.Ptr(body)}
 	var result *gh.IssueComment
