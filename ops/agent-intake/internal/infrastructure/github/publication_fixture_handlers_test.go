@@ -112,10 +112,15 @@ func (f *publicationFixture) gitRequest(w http.ResponseWriter, r *http.Request) 
 		for _, sha := range request.Parents {
 			parents = append(parents, &gh.Commit{SHA: gh.Ptr(sha)})
 		}
-		f.commit = &gh.Commit{SHA: gh.Ptr(strings.Repeat("4", 40)), Author: request.Author, Committer: request.Committer, Message: gh.Ptr(request.Message), Tree: &gh.Tree{SHA: gh.Ptr(request.Tree)}, Parents: parents}
+		// GitHub returns commit messages without their final newline.
+		f.commit = &gh.Commit{SHA: gh.Ptr(strings.Repeat("4", 40)), Author: request.Author, Committer: request.Committer, Message: gh.Ptr(strings.TrimRight(request.Message, "\n")), Tree: &gh.Tree{SHA: gh.Ptr(request.Tree)}, Parents: parents}
 		respond(f.commit)
 	case path == "/repos/octo/demo/git/commits/"+strings.Repeat("4", 40):
-		respond(f.commit)
+		stored := *f.commit
+		if f.artifactVariant == "commit-message" {
+			stored.Message = gh.Ptr(f.commit.GetMessage() + " altered")
+		}
+		respond(&stored)
 	case path == "/repos/octo/demo/git/ref/heads/"+domain.PublicationBranch(f.input):
 		if f.ref == nil {
 			w.WriteHeader(404)

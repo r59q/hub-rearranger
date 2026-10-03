@@ -17,7 +17,9 @@ func patchDigest(proposal domain.Proposal) string {
 }
 
 func publicationMessage(input domain.Invocation, proposal domain.Proposal) string {
-	return fmt.Sprintf("Propose issue #%d for agent assignment %s\n\nProfile: %s@%s\nBase: %s\nProposal: %d/%d artifact %d\nPatch-SHA256: %s\n", input.IssueNumber, input.AssignmentID, input.ProfileID, input.ProfileRevision, input.BaseSHA, input.RunID, proposal.Attempt, proposal.ArtifactID, patchDigest(proposal))
+	// GitHub's Git API omits the final newline when returning commit messages.
+	// Use that canonical form so strict object verification remains exact.
+	return fmt.Sprintf("Propose issue #%d for agent assignment %s\n\nProfile: %s@%s\nBase: %s\nProposal: %d/%d artifact %d\nPatch-SHA256: %s", input.IssueNumber, input.AssignmentID, input.ProfileID, input.ProfileRevision, input.BaseSHA, input.RunID, proposal.Attempt, proposal.ArtifactID, patchDigest(proposal))
 }
 
 // CommitProposal creates immutable Git objects only. The original full base tree

@@ -403,7 +403,13 @@ merges, or edits an unrelated PR.
 
 Recovery reconstructs the same commit and verifies GitHub's branch, bot-owned
 open draft PR/provenance, issue comment, and app-owned validation check before
-claiming publication. A missing branch/PR can resume; altered/closed/moved or
+claiming publication. The deterministic commit message omits its final newline
+to match GitHub's Git API response; the message, parents, tree, and author metadata
+are still compared exactly. Live verification found that the original final
+newline caused rejection after immutable commit creation and before any ref/PR.
+Ordinary publication failures retain an allowlisted reason code in their status
+artifact; generic fallback evidence is reserved for missing command output.
+A missing branch/PR can resume; altered/closed/moved or
 ambiguous objects fail closed. Because comment/check POSTs have no idempotency
 key, the verified intake receipt carries optional publication intent before
 those writes. Intake preserves it on rerun. Started intent with a missing object

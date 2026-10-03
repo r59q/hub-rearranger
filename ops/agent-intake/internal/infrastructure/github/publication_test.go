@@ -72,6 +72,15 @@ func TestPublicationReconcilesLostWriteResponsesWithoutRepeatingPOST(t *testing.
 	}
 }
 
+func TestPublicationRejectsAlteredStoredCommitMessage(t *testing.T) {
+	f := publicationSetup(t)
+	f.artifactVariant = "commit-message"
+	_, err := f.publish()
+	if !errors.Is(err, domain.HistoryUnavailable) || f.posts["objects"] != 1 || f.ref != nil || f.pull != nil {
+		t.Fatal("altered immutable commit message was published")
+	}
+}
+
 func TestPublicationResumesAfterBranchCreationAndFailedPRCreation(t *testing.T) {
 	f := publicationSetup(t)
 	f.fail = "pr"

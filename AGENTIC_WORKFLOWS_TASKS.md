@@ -494,7 +494,7 @@ The same workflow remains operable after Hub is removed.
     by reconciling verified GitHub artifacts without force-pushing or claiming
     success before publication completes.
 
-  **Implemented locally and verified (2026-10-03):** Added a separate hosted publisher,
+  **Implementation merged; live verification pending (2026-10-03):** Added a separate hosted publisher,
   independent artifact/result/current-authorization checks, private cached Git
   patch application using the canonical protected paths, deterministic Git-object
   and branch creation, draft provenance, issue link and honest validation check.
@@ -504,9 +504,23 @@ The same workflow remains operable after Hub is removed.
   lost responses, partial branch/PR publication, and an overlapping old attempt.
   Full `make check` passed, including 137 frontend tests, 21 intake Python tests,
   Go integration tests, and workflow/profile/contract checks; Go race tests also
-  passed. Runner execution remains disabled. Merge/review, updated operator verifier,
-  fresh readiness evidence, and controlled live draft-PR/retry verification remain
-  required; this task remains unchecked.
+  passed. The implementation was merged in [PR #8](https://github.com/r59q/hub-rearranger/pull/8).
+  The operator-installed verifier was updated and its 21 pinned runtime files and
+  local isolation/exact-model preflight verified. Independent verification of
+  [diagnostic run 37109570817](https://github.com/r59q/hub-rearranger/actions/runs/37109570817)
+  checked the readiness artifact's origin, archive digest, schema, latest attempt,
+  freshness, exact policy, and current `df8cd0fdc00bca5badd9932017b669635358d112` revision.
+
+  [Controlled assignment run 37110372566](https://github.com/r59q/hub-rearranger/actions/runs/37110372566)
+  passed authorization, dispatch, and patch execution, then publication failed
+  before creating a branch or PR. The expected immutable commit was found at
+  `eb80dc0bd818556c847485319ef31624f7aa837a`; GitHub returned its exact message
+  without the final newline, which the original strict comparison rejected.
+  Private workspaces were removed and execution disabled. The repair uses a
+  canonical message without a final newline, tests GitHub's actual response and
+  rejection of altered messages, and preserves specific safe failure codes in
+  status artifacts. Repair review/merge, renewed readiness, and controlled live
+  draft-PR/retry verification remain required; this task remains unchecked.
 
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 

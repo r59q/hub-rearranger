@@ -197,8 +197,10 @@ requires operator reconciliation of the original run before a new assignment.
 After confirming the branch, draft PR, comment and check, `publication-status.json`
 records version 1, assignment/run/attempt, `published`/`DRAFT_PR_PUBLISHED`, and the
 branch/head/PR identity. It is uploaded as `agent-publication-status-v1-<attempt>`.
-An `always()` step preserves safe `incomplete` evidence after failure, while the
-final hosted execution report links the published PR or reports incomplete/skipped
+Ordinary command failures record `incomplete` with the specific allowlisted reason
+code and Actions run/attempt identity. An `always()` step supplies generic
+`PUBLICATION_INCOMPLETE` evidence if the command could not write its status file.
+The final hosted execution report links the published PR or reports incomplete/skipped
 publication. No raw source, patch, subprocess output, or exception is reported.
 
 For live verification after merging this workflow:
@@ -216,6 +218,13 @@ For live verification after merging this workflow:
 4. Use a new controlled documentation-only assignment. Verify the resulting
    branch, draft provenance, actual diff, validation check and issue link; then
    rerun the original assignment and confirm no duplicate execution/publication.
+
+Workflow-code repairs do not change an old run's immutable checkout revision.
+After merging a repair, renew readiness for the new default-branch revision.
+Use a new assignment only after reconciling the original run's side effects and
+confirming its private workload is gone; stale proposals cannot be rebased by this
+publisher. GitHub's Git API returns commit messages without a final newline, so
+the deterministic message uses that canonical form for exact object verification.
 
 GitHub's documented [token event behavior](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
 can require human approval for PR workflows triggered by `GITHUB_TOKEN`; other
