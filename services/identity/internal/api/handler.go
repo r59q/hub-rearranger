@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/r59q/hub-rearranger/services/identity/internal/api/contract"
@@ -26,7 +27,7 @@ func NewHandler(service *domain.Service, origin string, secure bool) http.Handle
 	mux := http.NewServeMux()
 	contract.HandlerWithOptions(h, contract.StdHTTPServerOptions{BaseRouter: mux, ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, _ error) { h.failure(w, r, domain.ErrInvalid) }})
 
-	for path, method := range map[string]string{"/health": "GET, HEAD", "/v1/session": "GET", "/v1/sign-in": "POST", "/v1/sign-in/callback": "GET", "/v1/sign-out": "POST", "/v1/repositories/{owner}/{repo}/authorization": "POST"} {
+	for path, method := range map[string]string{"/health": "GET, HEAD", "/v1/session": "GET", "/v1/sign-in": "POST", "/v1/sign-in/callback": "GET", "/v1/sign-out": "POST", "/v1/repositories/{owner}/{repo}/authorization": "POST", "/v1/repositories/{owner}/{repo}/bootstrap-pull-request": "POST"} {
 		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Allow", method)
 			writeJSON(w, 405, contract.Error{Code: contract.MethodNotAllowed, Message: "Use the documented method for this endpoint."})
@@ -42,7 +43,11 @@ func NewHandler(service *domain.Service, origin string, secure bool) http.Handle
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 
-		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		timeout := 20 * time.Second
+		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/bootstrap-pull-request") {
+			timeout = 120 * time.Second
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 
 		if r.Method == http.MethodPost && (len(r.Header.Values("Origin")) != 1 || r.Header.Get("Origin") != origin) {

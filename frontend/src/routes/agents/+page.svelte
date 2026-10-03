@@ -67,6 +67,16 @@
 				</div>
 			</form>
 			{#if data.repository}
+				<a
+					href={resolve(
+						`/agents/bootstrap?${new URLSearchParams({ repository: data.repository.full_name })}`
+					)}>Review bootstrap setup</a
+				>
+				<a
+					href={resolve(
+						`/agents/editor?${new URLSearchParams({ repository: data.repository.full_name })}`
+					)}>Edit profile and setup</a
+				>
 				<form method="GET" action={resolve('/agents')} onsubmit={refresh} class="refresh-form">
 					<input type="hidden" name="repository" value={data.repository.full_name} />
 					<button type="submit" class="outline" aria-busy={refreshing} disabled={busy}

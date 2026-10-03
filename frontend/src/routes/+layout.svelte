@@ -20,6 +20,7 @@
 		display: grid;
 		min-height: 100vh;
 		grid-template-rows: auto auto 1fr auto;
+		grid-template-columns: minmax(0, 1fr);
 		background:
 			radial-gradient(
 				circle at 82% 0%,

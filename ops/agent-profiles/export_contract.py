@@ -56,6 +56,29 @@ def exports(schema):
         projected = transport_schema(definition)
         # Keep names stable across the OpenAPI generators.
         result["Catalog" + name.capitalize()] = projected
+    fields = schema["$defs"]["profile"]["properties"]
+    result["ProfileDraft"] = transport_schema(
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "required": [
+                "name",
+                "description",
+                "enabled",
+                "context_sources",
+                "review_comments",
+            ],
+            "properties": {
+                "name": fields["name"],
+                "description": fields["description"],
+                "enabled": fields["enabled"],
+                "context_sources": fields["context"]["properties"]["sources"],
+                "review_comments": fields["continuation"]["properties"][
+                    "review_comments"
+                ],
+            },
+        }
+    )
     return result
 
 
@@ -82,7 +105,7 @@ def main():
     existing = {
         key: value
         for key, value in schemas.items()
-        if key.startswith("Catalog") or key == "RuntimeEvidence"
+        if key.startswith("Catalog") or key in {"RuntimeEvidence", "ProfileDraft"}
     }
 
     if args.check:

@@ -55,6 +55,10 @@ func (p *testProvider) RepositoryAccess(context.Context, string, domain.User, do
 func (p *testProvider) Revoke(context.Context, string) error { return p.revokeFailure }
 
 func setup(t *testing.T) (http.Handler, *testProvider) {
+	return bootstrapSetup(t, nil, nil)
+}
+
+func bootstrapSetup(t *testing.T, planner domain.BootstrapPlanner, writer domain.BootstrapWriter) (http.Handler, *testProvider) {
 	t.Helper()
 	store, err := sqlite.Open(filepath.Join(t.TempDir(), "identity.db"), bytes.Repeat([]byte{9}, 32))
 	if err != nil {
@@ -62,7 +66,7 @@ func setup(t *testing.T) (http.Handler, *testProvider) {
 	}
 	t.Cleanup(func() { _ = store.Close() })
 	provider := &testProvider{access: domain.Access{RepositoryID: 42, FullName: "octo/demo", Role: "maintain", IssuesWrite: true, ContentsWrite: true, PullRequestsWrite: true, WorkflowsWrite: true}}
-	return NewHandler(domain.NewService(provider, store, time.Now), origin, true), provider
+	return NewHandler(domain.NewService(provider, store, time.Now).WithBootstrap(planner, writer), origin, true), provider
 }
 
 func call(handler http.Handler, method, path, body string, cookies ...*http.Cookie) (*http.Request, *httptest.ResponseRecorder) {
@@ -113,7 +117,10 @@ func signIn(t *testing.T, handler http.Handler, provider *testProvider) (*http.C
 
 func assertContract(t *testing.T, request *http.Request, response *httptest.ResponseRecorder) {
 	t.Helper()
-	document, err := openapi3.NewLoader().LoadFromFile("../../api/openapi.yaml")
+	loader := openapi3.NewLoader()
+	// The checked-in Identity contract references Agents' canonical draft DTO.
+	loader.IsExternalRefsAllowed = true
+	document, err := loader.LoadFromFile("../../api/openapi.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -41,16 +41,8 @@ func (s *Service) WithAuthorization(ctx context.Context, id, csrf string, repo R
 		if err != nil {
 			return err
 		}
-		if access.RepositoryID <= 0 || !strings.EqualFold(access.FullName, repo.Owner+"/"+repo.Name) {
-			return ErrForbidden
-		}
-
-		if action == AssignComment {
-			if (access.Role != "maintain" && access.Role != "admin") || !access.IssuesWrite {
-				return ErrForbidden
-			}
-		} else if (access.Role != "write" && access.Role != "maintain" && access.Role != "admin") || !access.ContentsWrite || !access.PullRequestsWrite || !access.WorkflowsWrite {
-			return ErrForbidden
+		if err := checkAccess(access, repo, action); err != nil {
+			return err
 		}
 
 		result = Authorization{User: session.User, RepositoryID: access.RepositoryID, Repository: access.FullName, Action: action, CheckedAt: s.now()}
@@ -64,4 +56,18 @@ func (s *Service) WithAuthorization(ctx context.Context, id, csrf string, repo R
 	})
 
 	return result, err
+}
+
+func checkAccess(access Access, repo Repository, action Action) error {
+	if access.RepositoryID <= 0 || !strings.EqualFold(access.FullName, repo.Owner+"/"+repo.Name) {
+		return ErrForbidden
+	}
+	if action == AssignComment {
+		if (access.Role != "maintain" && access.Role != "admin") || !access.IssuesWrite {
+			return ErrForbidden
+		}
+	} else if (access.Role != "write" && access.Role != "maintain" && access.Role != "admin") || !access.ContentsWrite || !access.PullRequestsWrite || !access.WorkflowsWrite {
+		return ErrForbidden
+	}
+	return nil
 }

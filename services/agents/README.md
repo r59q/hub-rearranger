@@ -1,4 +1,4 @@
-# Agents service (AW-004 / AW-005 / AW-006)
+# Agents service (AW-004 / AW-005 / AW-006 / AW-008)
 
 The Agents service owns repository profiles, their validation, derived readiness,
 and the GitHub-native assignment convention. It has no queue, runtime, provider
@@ -178,3 +178,127 @@ cover all four states, freshness, model/runner/origin mismatches, rerun behavior
 safe producer failures, artifact digest/shape/expiry, token-free downloads,
 Actions access errors, API methods/contracts, and server-only frontend validation.
 The profile/readiness UI remains AW-007.
+
+## Bootstrap package generator (AW-008)
+
+The local `cmd/bootstrap` command prepares reviewable files without contacting
+GitHub, changing a target checkout, or enabling a runner. From this component:
+
+```sh
+go run ./cmd/bootstrap --source ../.. --target /path/to/target --format diff
+go run ./cmd/bootstrap --source ../.. --target /path/to/target --output /tmp/agent-bootstrap-package > /tmp/agent-bootstrap-plan.json
+```
+
+Omit `--target` to plan an empty repository. `--output` must name a new directory
+outside both checkouts whose parent exists. It exports the complete package, including unchanged files,
+for review/staging; it cannot overwrite an existing directory. Apply reviewed
+changes separately. Default JSON output includes version 1, sorted files,
+`create`/`update`/`unchanged`/`conflict` status, SHA-256 and proposed UTF-8 content,
+plus safe diagnostics. `--format diff` uses Git to render an applicable patch,
+including additions and missing final newlines. No timestamps, temporary paths,
+tokens, manifests, virtualenvs or runner authentication enter generated files.
+Review output locally when comparing a private checkout.
+
+`internal/domain` owns the pure plan and bounded managed `AGENTS.md` addition.
+`internal/infrastructure/bootstrap` reads canonical checkout sources and a
+confined target snapshot; the existing schema validator merges the catalog.
+A matching `codex-thorough` policy preserves the entire catalog byte-for-byte.
+A missing profile is added while retaining other entries/comments (YAML formatting
+is normalized only for this insertion). Different or disabled profile policy,
+invalid catalogs, or ambiguous instruction markers require manual resolution;
+they are never silently overwritten or enabled. Existing instructions outside
+the managed block are preserved. Other canonical files are proposed as explicit
+diffs, so upgrades remain reviewable. Exit codes are 0 for a valid plan, 1 for
+I/O/template/usage failure, and 2 for a policy/instruction conflict. Conflicts
+prevent package export. Files and path components must be regular UTF-8 files
+without symlinks, and individual source/target files are bounded to 1 MiB.
+Proposed readiness files, including the merged instructions, also respect the
+reader's 64 KiB limit, so a successful plan remains usable by readiness checks.
+
+The package uses the existing AW-011–AW-013 workflow/helper sources and AW-003 /
+AW-006 schemas, not copied execution templates. The only workflow transformation
+removes the upstream repository's public-runner exception and replaces its
+diagnostic comment with the private installation policy. That exact exception
+does not transfer to targets. `AGENTS.md`, `docs/agent-workflows.md` and workflow
+paths match the readiness contract. Included source/tests, pinned dependencies,
+component docs/ignore rules, and the canonical `Agent bootstrap checks` workflow
+make the exported installation independently buildable and verifiable.
+
+Use a reviewed Hub Rearranger source checkout to run the generator; operating the
+installed flow requires neither the generator nor Hub. The generator alone adds
+no server API or Compose dependencies. AW-009 below adds the separate review and
+Identity-authorized PR action. The CLI needs no runtime configuration.
+[The installation guide](../../docs/agent-workflows.md) explains manual dedicated
+runner provisioning, exact model/isolation verification, fresh origin-verified
+diagnostics, both disabled-by-default gates, recovery and revocation.
+
+Go tests cover deterministic plans, catalog preservation/conflicts, instruction
+merges, symlink/binary/size rejection, checksum binding, CLI export, idempotence
+and applicable Git diffs. `make bootstrap-check` uses the pinned Python tools to
+export into a disposable directory, prove an empty repeat diff, and run the
+generated installation's own canonical hosted checks without the upstream source
+tree or Hub. This includes Go compilation/tests, Python/Node/schema checks and
+actionlint. It is included in `make check`; all tests are offline and use no
+Codex authentication. This local tool's Python check is development-only.
+
+## Hub bootstrap review (AW-009)
+
+`GET /v1/repositories/{owner}/{repo}/bootstrap` returns a fresh, commit-pinned
+canonical plan, original blob IDs, proposed hashes and an applicable Git diff.
+`HEAD` checks availability without returning source. The review digest binds the
+repository, default branch, base and every original/proposed file; it is context,
+not a write grant. Conflicting policy/instructions and already matching setups
+have explicit states. No preview, draft or competing repository configuration is
+persisted. Missing/uninitialized/archived repositories, unsafe files, truncated
+trees and unbound blobs fail closed with safe recovery guidance.
+
+Local development from this module reads the reviewed source checkout at `../..`;
+set `AGENTS_BOOTSTRAP_SOURCE` to use another reviewed root. Production uses
+`AGENTS_BOOTSTRAP_BUNDLE`: the root-context Docker build runs the AW-008 generator
+against the canonical sources and packages its verified JSON output. Rebuild the
+image after changing those sources. The runtime includes Git for isolated diff
+rendering; it never executes proposal source. The root Docker ignore rules exclude
+credentials, local environments and generated work directories from that context.
+
+The server-only frontend adapter maps the generated public contract to review
+fields. Identity consumes a separately generated, narrow copy of this same public
+contract; Agents receives no user token or session. Identity independently obtains
+the fresh preview and authorizes/publishes the reviewed GitHub changes. Discovery's
+read-only `GITHUB_TOKEN` can never authorize that publication.
+
+Run `make generate-agents-contract` after contract changes and
+`make agents-contract-check` to verify all consumers. Tests exercise digest binding,
+container bundle integrity, commit-pinned reads, unsafe snapshots, contract states
+and failures. The portable package smoke check remains `make bootstrap-check`.
+
+## Profile authoring (AW-010)
+
+`GET /v1/repositories/{owner}/{repo}/profile-editor` returns current/default
+editable choices and the fresh base revision, or safe catalog/policy diagnostics
+with a null draft. `POST` to that endpoint accepts the closed `ProfileDraft` DTO
+and returns the same commit-pinned preview contract used by bootstrap. Both are
+private-network planning operations; neither writes GitHub nor persists drafts.
+
+The installed adapter supports only `codex-thorough`, `hub-agent-codex` and exact
+`gpt-6.1-sol/high`. Name, description, enabled state, permitted context sources
+and trusted review-continuation policy can change explicitly. Role, adapter,
+model, trigger, authority, validation, image and pipeline policy stay fixed.
+Unsupported existing fixed policy and malformed catalogs require review on
+GitHub; the editor cannot silently repair or replace them. Image context and
+pipeline execution remain disabled; review-continuation execution remains AW-016.
+
+The infrastructure adapter builds the complete profile from canonical templates,
+validates it with the canonical AW-003 schema, and merges only selected editable
+fields. Other profiles and surrounding comments/instructions remain intact.
+Unchanged catalogs retain their bytes; context order is normalized for stable
+reviews. Catalog bounds and instruction conflicts still apply. Editing and
+canonical bootstrap use distinct digest domains so retries cannot confuse their
+publication intent. Identity reconstructs each edited preview from structured
+choices and checks the reviewed digest/base inside its authorization boundary.
+
+The `ProfileDraft` transport field shapes are exported from the canonical profile
+schema; Identity's contract references this DTO and uses generated transport code.
+Run the root contract generators/checks after changes. Unit and API tests cover
+explicit disabling/editing, unchanged/idempotent merges, unrelated-policy
+preservation, schema dependencies, rejected overrides, safe diagnostics and
+fresh-base digests. No additional configuration or Compose dependency is needed.

@@ -24,7 +24,10 @@ export class IssuesApiClient {
 		url.searchParams.set('page', String(page));
 		url.searchParams.set('per_page', String(perPage));
 
-		const response = await this.request(url, { headers: { accept: 'application/json' } });
+		const response = await this.request(url, {
+			headers: { accept: 'application/json' },
+			credentials: 'omit'
+		});
 		return this.read(response);
 	}
 

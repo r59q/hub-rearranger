@@ -6,13 +6,20 @@ import type { IdentityState } from '$lib/identity/types';
 type Session = components['schemas']['Session'];
 
 export class IdentityApiError extends Error {
-	constructor(readonly status: number) {
+	constructor(
+		readonly status: number,
+		code?: string
+	) {
 		super(
-			status === 401
-				? 'Your GitHub connection expired or was revoked. Sign in again.'
-				: status === 403
-					? 'The request could not be verified or repository access is unavailable. Reload and check your GitHub access.'
-					: 'GitHub sign-in is unavailable. Try again.'
+			status === 409
+				? code === 'bootstrap_incomplete'
+					? 'Publication could not be confirmed. Reload and review again; Hub will reconcile the existing GitHub branch and PR before retrying.'
+					: 'The reviewed base or bootstrap branch changed. Reload and review the current changes before trying again.'
+				: status === 401
+					? 'Your GitHub connection expired or was revoked. Sign in again.'
+					: status === 403
+						? 'The request could not be verified or repository access is unavailable. Reload and check your GitHub access.'
+						: 'GitHub sign-in is unavailable. Try again.'
 		);
 	}
 }
@@ -61,7 +68,8 @@ export class IdentityApiClient {
 			baseUrl,
 			fetch: request,
 			headers: { cookie, Origin: origin },
-			redirect: 'manual'
+			redirect: 'manual',
+			credentials: 'omit'
 		});
 	}
 
@@ -83,6 +91,63 @@ export class IdentityApiClient {
 		}
 	}
 
+	async createBootstrap(
+		owner: string,
+		repo: string,
+		csrf: string,
+		baseRevision: string,
+		digest: string,
+		profileDraft?: components['schemas']['BootstrapRequest']['profile_draft']
+	) {
+		try {
+			const { data, error, response } = await this.api.POST(
+				'/v1/repositories/{owner}/{repo}/bootstrap-pull-request',
+				{
+					params: { path: { owner, repo }, header: { Origin: this.origin } },
+					body: {
+						csrf,
+						base_revision: baseRevision,
+						digest,
+						...(profileDraft ? { profile_draft: profileDraft } : {})
+					},
+					signal: AbortSignal.timeout(125_000)
+				}
+			);
+			if (!response.ok) {
+				throw new IdentityApiError(response.status, error?.code);
+			}
+			if (
+				!data ||
+				Object.keys(data).some(
+					(key) =>
+						![
+							'repository',
+							'branch',
+							'head_sha',
+							'pull_request_number',
+							'pull_request_url'
+						].includes(key)
+				) ||
+				data.repository !== `${owner}/${repo}` ||
+				!data.branch.endsWith(`-${baseRevision.slice(0, 12)}-${digest}`) ||
+				!/^hub-bootstrap\/codex-thorough-[0-9]+-[0-9a-f]{12}-[0-9a-f]{64}$/.test(data.branch) ||
+				!/^[0-9a-f]{40}$/.test(data.head_sha) ||
+				!Number.isSafeInteger(data.pull_request_number) ||
+				data.pull_request_number <= 0 ||
+				data.pull_request_url !==
+					`https://github.com/${owner}/${repo}/pull/${data.pull_request_number}`
+			) {
+				throw new IdentityApiError(502);
+			}
+			return data;
+		} catch (error) {
+			if (error instanceof IdentityApiError) {
+				throw error;
+			}
+			throw new IdentityApiError(503);
+		}
+	}
+
 	async start(): Promise<Response> {
 		return this.redirect('/v1/sign-in', { method: 'POST' });
 	}
@@ -99,6 +164,7 @@ export class IdentityApiClient {
 				...options,
 				headers: { cookie: this.cookie, Origin: this.origin },
 				redirect: 'manual',
+				credentials: 'omit',
 				signal: AbortSignal.timeout(25_000)
 			});
 			if (response.status !== 303) {

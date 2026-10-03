@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IdentityApiClient, IdentityApiError } from './identity-api';
+import { base, digest, publication } from '../../test/bootstrap-fixtures';
 
 const session = {
 	state: 'authenticated',
@@ -29,6 +30,7 @@ describe('identity server adapter', () => {
 		});
 		const outgoing = request.mock.calls[0][0] as Request;
 		expect(outgoing.headers.get('cookie')).toBe('hub_session=' + 's'.repeat(43));
+		expect(outgoing.credentials).toBe('omit');
 		expect(outgoing.headers.has('authorization')).toBe(false);
 		expect(JSON.stringify(result)).not.toContain('hub_session');
 	});
@@ -114,5 +116,33 @@ describe('identity server adapter', () => {
 		expect(await outgoing.json()).toEqual({ csrf: session.csrf });
 		expect(result.message).toContain('GitHub account settings');
 		expect(result.message).not.toContain('private-sentinel');
+	});
+});
+
+describe('bootstrap write adapter', () => {
+	it('uses authenticated Origin/session and validates the reviewed result', async () => {
+		const request = vi.fn<typeof fetch>().mockResolvedValue(Response.json(publication));
+		expect(
+			await client(request).createBootstrap('octo', 'demo', session.csrf, base, digest)
+		).toEqual(publication);
+		const outgoing = request.mock.calls[0][0] as Request;
+		expect(outgoing.headers.get('origin')).toBe('https://hub.example.com');
+		expect(await outgoing.json()).toEqual({ csrf: session.csrf, base_revision: base, digest });
+	});
+	it.each([
+		{ ...publication, pull_request_url: 'https://attacker.example' },
+		{ ...publication, branch: 'main' },
+		{ ...publication, repository: 'other/repo' },
+		{ ...publication, access_token: 'synthetic-never-live' }
+	])('rejects forged result fields', async (data) => {
+		await expect(
+			client(vi.fn<typeof fetch>().mockResolvedValue(Response.json(data))).createBootstrap(
+				'octo',
+				'demo',
+				session.csrf,
+				base,
+				digest
+			)
+		).rejects.toBeInstanceOf(IdentityApiError);
 	});
 });

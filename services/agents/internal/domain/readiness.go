@@ -10,6 +10,7 @@ import (
 const AssignmentWorkflowPath = ".github/workflows/agent-assignment.yml"
 const DiagnosticWorkflowPath = ".github/workflows/agent-profile-diagnostic.yml"
 const EvidenceMaxAge = 24 * time.Hour
+const ReadinessFileMaxBytes = 65536
 
 var ReadinessFiles = []string{"AGENTS.md", "docs/agent-workflows.md", AssignmentWorkflowPath, DiagnosticWorkflowPath}
 

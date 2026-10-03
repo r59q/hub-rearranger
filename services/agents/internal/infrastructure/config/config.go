@@ -12,3 +12,10 @@ func Address() string {
 
 // GitHubToken is optional for public repositories and stays server-side.
 func GitHubToken() string { return os.Getenv("GITHUB_TOKEN") }
+
+func BootstrapSource() string {
+	if path := os.Getenv("AGENTS_BOOTSTRAP_SOURCE"); path != "" {
+		return path
+	}
+	return "../.."
+}

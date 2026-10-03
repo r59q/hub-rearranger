@@ -1,5 +1,10 @@
 /agents-service
+/agent-bootstrap
+/bootstrap
 .env
 .env.*
 !.env.example
 /coverage.out
+__pycache__/
+*.py[cod]
+.ruff_cache/

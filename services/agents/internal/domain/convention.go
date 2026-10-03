@@ -28,6 +28,19 @@ type ProfileRevisionPolicy struct {
 type Service struct {
 	profiles  *ProfileService
 	readiness *ReadinessService
+	bootstrap *BootstrapService
+}
+
+func (s *Service) WithBootstrap(bootstrap *BootstrapService) *Service {
+	s.bootstrap = bootstrap
+	return s
+}
+
+func (s *Service) RepositoryBootstrap(ctx context.Context, repository Repository) (BootstrapPreview, error) {
+	if s.bootstrap == nil {
+		return BootstrapPreview{}, ErrGitHubUnavailable
+	}
+	return s.bootstrap.Preview(ctx, repository)
 }
 
 func NewService(profiles *ProfileService, readiness ...*ReadinessService) *Service {

@@ -44,6 +44,11 @@ func NewHandler(service conventionUseCases, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("/v1/assignment-convention", methodNotAllowed)
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/profiles", methodNotAllowed)
 	mux.HandleFunc("/v1/repositories/{owner}/{repo}/readiness", methodNotAllowed)
+	mux.HandleFunc("/v1/repositories/{owner}/{repo}/bootstrap", methodNotAllowed)
+	mux.HandleFunc("/v1/repositories/{owner}/{repo}/profile-editor", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Allow", "GET, POST")
+		writeJSON(w, 405, contract.Error{Code: contract.ErrorCodeMethodNotAllowed, Message: "Use GET or POST for profile authoring."})
+	})
 	mux.HandleFunc("/", func(response http.ResponseWriter, _ *http.Request) {
 		writeJSON(response, http.StatusNotFound, contract.Error{
 			Code: contract.ErrorCodeNotFound, Message: "The Agents endpoint was not found.",

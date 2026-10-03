@@ -295,7 +295,7 @@ The same workflow remains operable after Hub is removed.
   forms. No live GitHub sign-in or writes were performed; those require a real
   App/installation configured using the [setup guide](services/identity/README.md).
 
-- [ ] **AW-008 — Define bootstrap PR contents and generator**
+- [x] **AW-008 — Define bootstrap PR contents and generator**
 
   **Domain:** agents  
   **Depends on:** AW-003, AW-006, AW-011, AW-013
@@ -317,7 +317,32 @@ The same workflow remains operable after Hub is removed.
   - Generated files use AW-006’s canonical bootstrap paths and include the
     pinned validator/authorization helpers needed by the working workflows.
 
-- [ ] **AW-009 — Create a bootstrap PR from Hub**
+  **Completed (2026-10-03):** Added the Agents-owned pure file planner and local
+  [`cmd/bootstrap`](services/agents/README.md#bootstrap-package-generator-aw-008)
+  generator. It reads reviewed canonical workflow/helper/schema sources, emits
+  sorted versioned JSON with hashes or an applicable Git diff, and exports only
+  to a new staging directory outside both checkouts. Matching catalogs remain
+  byte-for-byte intact; missing profiles merge without losing other policies,
+  while changed/disabled/invalid policy and ambiguous instruction markers fail
+  closed. Managed instruction updates preserve surrounding rules. Symlink,
+  binary, path-escape and size checks protect snapshots/exports, including the
+  shared 64 KiB readiness-file bound.
+
+  Generated workflows retain the implemented AW-011–AW-013 flow, concurrency,
+  permissions, fixed runner label, checksum pins and AW-006 evidence contract;
+  the upstream named public-runner exception is removed. Added the canonical
+  [installation guide](docs/agent-workflows.md) and portable hosted offline-check
+  workflow with all required Go/Python helpers, tests and pinned dependencies.
+  `make bootstrap-check`, included in `make check`, independently built/tested
+  the exported **93-file** installation without Hub or the upstream source tree
+  and proved an empty repeat diff. Full `make check` passed, including generator
+  behavior/CLI tests, 137 frontend tests, Go/Python/Node/workflow/contract checks.
+  Stable decisions and component/operator guidance are updated. Runner setup,
+  exact-policy/isolation preflight, fresh origin-verified readiness and both
+  enablement gates remain explicit manual steps. Hub PR creation remains AW-009;
+  this task performed no GitHub writes or credentialed execution.
+
+- [x] **AW-009 — Create a bootstrap PR from Hub**
 
   **Domain:** agents / GitHub integration  
   **Depends on:** AW-008, AW-007, AW-019
@@ -335,7 +360,38 @@ The same workflow remains operable after Hub is removed.
   - The action uses AW-019's authenticated identity and repository write
     authorization, and requires reconnecting when that access is unavailable.
 
-- [ ] **AW-010 — Profile editor and setup tutorial**
+  **Completed (2026-10-03):** Added the selected-repository bootstrap review page,
+  fresh commit/tree-pinned Agents plan/digest/diff API and production canonical
+  bundle. The page explains Git object, user-attributed commit, dedicated branch
+  and draft PR writes, requires explicit consent, and displays connection,
+  conflict, unchanged, stale, pending, error and verified success states.
+  Native forms, keyboard disclosures/scrolling and dark mobile layouts work.
+
+  Identity fetches the fresh generated public plan without user credentials,
+  compares the reviewed base/digest, and publishes entirely within AW-019's
+  `WithAuthorization` boundary, rechecking current App-bound user and repository
+  permissions before every write and completion. It independently verifies the
+  full proposed tree, parent/author/message, actual ref and exact user-owned draft
+  PR. Deterministic branches and GitHub reconciliation handle concurrent retries,
+  lost responses and partial publication; altered/stale/closed results fail closed.
+  The PR links to the selected repository/profile setup and includes the manual
+  runner/isolation/exact-policy/readiness/enablement/recovery checklist. No hidden
+  bootstrap configuration or durable Hub draft is retained. Service adapters
+  prevent implicit authentication-cookie forwarding to other domains.
+
+  Full `make check` passed, including **174 frontend tests**, Go/Python/Node/workflow,
+  portable 93-file bootstrap and generated-contract checks. Agents and Identity
+  race tests passed. Controlled Chromium verified consent/pending/success, escaped
+  diffs, stale recovery, missing/unavailable identity, conflicts/unchanged state,
+  keyboard access, dark 390px/320px layouts and no-JavaScript submission. Final
+  isolated Compose builds/smoke checks passed with all five services healthy,
+  packaged hashes verified and Identity/frontend health unaffected by Agents
+  stopping. Tests used synthetic credentials with external networking disabled
+  for Compose. No live GitHub sign-in, write or execution was performed; live use
+  requires a configured real App/installation and the documented manual runner
+  setup. AW-010 is now ready to pick.
+
+- [x] **AW-010 — Profile editor and setup tutorial**
 
   **Domain:** frontend / agents  
   **Depends on:** AW-008, AW-009
@@ -351,6 +407,39 @@ The same workflow remains operable after Hub is removed.
     before creating changes.
   - Draft state is browser-local or a GitHub draft PR, never Hub-only durable
     state.
+
+  **Completed (2026-10-03):** Added the selected-repository `/agents/editor`
+  guided form and manual runner tutorial. The UI exposes all requested profile
+  settings within the implemented v1 adapter: display text, enabled state,
+  permitted context and trusted review-continuation policy are editable; role,
+  adapter, exact `gpt-6.1-sol/high` model, runner, trigger, authority and validation
+  remain fixed. Images and pipelines stay disabled; review-continuation execution
+  remains AW-016. The tutorial requires acknowledgment before review and covers
+  pinned installation, private/dedicated runner setup, subscription authentication,
+  isolation/exact-policy checks, offline validation, fresh AW-006 evidence, both
+  manual enablement gates and recovery.
+
+  Agents derives the closed authoring DTO from the canonical schema, reconstructs
+  and validates the complete profile, preserves unrelated policies/instructions
+  and produces stable commit-pinned previews. Unsupported existing fixed policy,
+  invalid choices and instruction conflicts fail safely. Identity regenerates
+  the edited plan without user credentials, compares the reviewed base/digest,
+  and publishes through the existing authorization/tree/attribution/retry boundary.
+  Configuration PRs link to the editor and retain the manual setup checklist.
+
+  Drafts save only as repository-scoped browser choices/revision hints or a
+  GitHub draft PR. Changed choices invalidate review/consent; stale publication
+  preserves authoring choices and requires a fresh review. Native named forms
+  preserve repository selection and work without JavaScript. Full `make check`
+  passed, including **214 frontend tests**, Go/Python/Node/workflow/portable-package
+  and generated-contract checks; Agents/Identity race tests and production frontend
+  builds passed. Controlled Chromium verified restored drafts, pending/consent,
+  edited/stale review recovery, conflicts/outages/sign-in requirements, escaped
+  diffs, keyboard access, dark 390px/320px layouts and native review/publication.
+  Isolated Compose builds/smoke checks passed with all five services healthy and
+  canonical bundle hashes verified, using synthetic credentials and disabled
+  external container networking. No live GitHub writes or runner execution were
+  performed. Component and architecture documentation are updated; AW-014 is next.
 
 ## Phase 3 — Execute one `codex-thorough` assignment
 

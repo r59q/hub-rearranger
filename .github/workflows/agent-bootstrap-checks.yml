@@ -1,0 +1,44 @@
+name: Agent bootstrap checks
+
+on:
+  push:
+    paths: ['.github/agent-profiles.yml', '.github/workflows/agent-*.yml', 'ops/**']
+  pull_request:
+    paths: ['.github/agent-profiles.yml', '.github/workflows/agent-*.yml', 'ops/**']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # The portable installation's offline checks never need Codex authentication.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: Install pinned offline validation tools
+        run: |
+          python3 -m venv ops/private-runner/.venv
+          ops/private-runner/.venv/bin/pip install -r ops/agent-profiles/requirements-dev.txt
+      - name: Check the canonical profiles, runtime and publication helpers
+        env:
+          INTAKE_PYTHON: ${{ github.workspace }}/ops/private-runner/.venv/bin/python
+        run: |
+          test -z "$(find ops/agent-intake -type f -name '*.go' -exec gofmt -l {} +)"
+          (cd ops/agent-intake && go vet ./... && go test ./...)
+          ops/private-runner/.venv/bin/python -m ruff format --check --config ops/private-runner/pyproject.toml ops/agent-profiles ops/agent-intake
+          ops/private-runner/.venv/bin/python -m ruff check --config ops/private-runner/pyproject.toml ops/agent-profiles ops/agent-intake
+          ops/private-runner/.venv/bin/python -m ruff format --check ops/private-runner
+          ops/private-runner/.venv/bin/python -m ruff check ops/private-runner
+          ops/private-runner/.venv/bin/python ops/agent-profiles/validate.py
+          ops/private-runner/.venv/bin/python -m unittest discover -s ops/agent-profiles -v
+          ops/private-runner/.venv/bin/python -m unittest discover -s ops/agent-intake -v
+          ops/private-runner/.venv/bin/python -m unittest discover -s ops/private-runner -p 'test_[ep]*.py' -v
+          node --test ops/private-runner/test_authorize.mjs
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -config-file .github/actionlint.yaml .github/workflows/agent-assignment.yml .github/workflows/agent-profile-diagnostic.yml .github/workflows/agent-bootstrap-checks.yml

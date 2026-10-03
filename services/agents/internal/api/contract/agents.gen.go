@@ -136,6 +136,51 @@ func (e AssignmentPolicySourceKind) Valid() bool {
 	}
 }
 
+// Defines values for BootstrapPreviewState.
+const (
+	BootstrapPreviewStateConflict  BootstrapPreviewState = "conflict"
+	BootstrapPreviewStateReady     BootstrapPreviewState = "ready"
+	BootstrapPreviewStateUnchanged BootstrapPreviewState = "unchanged"
+)
+
+// Valid indicates whether the value is a known member of the BootstrapPreviewState enum.
+func (e BootstrapPreviewState) Valid() bool {
+	switch e {
+	case BootstrapPreviewStateConflict:
+		return true
+	case BootstrapPreviewStateReady:
+		return true
+	case BootstrapPreviewStateUnchanged:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BootstrapPreviewFileStatus.
+const (
+	BootstrapPreviewFileStatusConflict  BootstrapPreviewFileStatus = "conflict"
+	BootstrapPreviewFileStatusCreate    BootstrapPreviewFileStatus = "create"
+	BootstrapPreviewFileStatusUnchanged BootstrapPreviewFileStatus = "unchanged"
+	BootstrapPreviewFileStatusUpdate    BootstrapPreviewFileStatus = "update"
+)
+
+// Valid indicates whether the value is a known member of the BootstrapPreviewFileStatus enum.
+func (e BootstrapPreviewFileStatus) Valid() bool {
+	switch e {
+	case BootstrapPreviewFileStatusConflict:
+		return true
+	case BootstrapPreviewFileStatusCreate:
+		return true
+	case BootstrapPreviewFileStatusUnchanged:
+		return true
+	case BootstrapPreviewFileStatusUpdate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CatalogAdapterContractVersion.
 const (
 	CatalogAdapterContractVersionN1 CatalogAdapterContractVersion = 1
@@ -478,6 +523,39 @@ func (e ProfileDiagnosticCode) Valid() bool {
 	}
 }
 
+// Defines values for ProfileDraftContextSources.
+const (
+	ProfileDraftContextSourcesChecks        ProfileDraftContextSources = "checks"
+	ProfileDraftContextSourcesInstructions  ProfileDraftContextSources = "instructions"
+	ProfileDraftContextSourcesIssue         ProfileDraftContextSources = "issue"
+	ProfileDraftContextSourcesIssueComments ProfileDraftContextSources = "issue_comments"
+	ProfileDraftContextSourcesPullRequest   ProfileDraftContextSources = "pull_request"
+	ProfileDraftContextSourcesRepository    ProfileDraftContextSources = "repository"
+	ProfileDraftContextSourcesReviewThread  ProfileDraftContextSources = "review_thread"
+)
+
+// Valid indicates whether the value is a known member of the ProfileDraftContextSources enum.
+func (e ProfileDraftContextSources) Valid() bool {
+	switch e {
+	case ProfileDraftContextSourcesChecks:
+		return true
+	case ProfileDraftContextSourcesInstructions:
+		return true
+	case ProfileDraftContextSourcesIssue:
+		return true
+	case ProfileDraftContextSourcesIssueComments:
+		return true
+	case ProfileDraftContextSourcesPullRequest:
+		return true
+	case ProfileDraftContextSourcesRepository:
+		return true
+	case ProfileDraftContextSourcesReviewThread:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProfileReadinessState.
 const (
 	ConfigurationMissing ProfileReadinessState = "configuration_missing"
@@ -790,6 +868,41 @@ type AssignmentPolicyRequiredRoles string
 // AssignmentPolicySourceKind defines model for AssignmentPolicy.SourceKind.
 type AssignmentPolicySourceKind string
 
+// BootstrapDiagnostic defines model for BootstrapDiagnostic.
+type BootstrapDiagnostic struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Path    string `json:"path"`
+}
+
+// BootstrapPreview defines model for BootstrapPreview.
+type BootstrapPreview struct {
+	BaseRevision  string                 `json:"base_revision"`
+	DefaultBranch string                 `json:"default_branch"`
+	Diagnostics   []BootstrapDiagnostic  `json:"diagnostics"`
+	Diff          string                 `json:"diff"`
+	Digest        string                 `json:"digest"`
+	Files         []BootstrapPreviewFile `json:"files"`
+	Private       bool                   `json:"private"`
+	Repository    string                 `json:"repository"`
+	State         BootstrapPreviewState  `json:"state"`
+}
+
+// BootstrapPreviewState defines model for BootstrapPreview.State.
+type BootstrapPreviewState string
+
+// BootstrapPreviewFile defines model for BootstrapPreviewFile.
+type BootstrapPreviewFile struct {
+	BaseSha *string                    `json:"base_sha"`
+	Content string                     `json:"content"`
+	Path    string                     `json:"path"`
+	Sha256  *string                    `json:"sha256"`
+	Status  BootstrapPreviewFileStatus `json:"status"`
+}
+
+// BootstrapPreviewFileStatus defines model for BootstrapPreviewFile.Status.
+type BootstrapPreviewFileStatus string
+
 // CatalogAdapter defines model for CatalogAdapter.
 type CatalogAdapter struct {
 	ContractVersion CatalogAdapterContractVersion `json:"contract_version"`
@@ -902,6 +1015,25 @@ type ProfileDiagnostic struct {
 
 // ProfileDiagnosticCode defines model for ProfileDiagnostic.Code.
 type ProfileDiagnosticCode string
+
+// ProfileDraft defines model for ProfileDraft.
+type ProfileDraft struct {
+	ContextSources []ProfileDraftContextSources `json:"context_sources"`
+	Description    string                       `json:"description"`
+	Enabled        bool                         `json:"enabled"`
+	Name           string                       `json:"name"`
+	ReviewComments bool                         `json:"review_comments"`
+}
+
+// ProfileDraftContextSources defines model for ProfileDraft.ContextSources.
+type ProfileDraftContextSources string
+
+// ProfileEditor defines model for ProfileEditor.
+type ProfileEditor struct {
+	BaseRevision string                `json:"base_revision"`
+	Diagnostics  []BootstrapDiagnostic `json:"diagnostics"`
+	Draft        *ProfileDraft         `json:"draft"`
+}
 
 // ProfileReadiness defines model for ProfileReadiness.
 type ProfileReadiness struct {
@@ -1022,6 +1154,9 @@ type InternalError = Error
 // MethodNotAllowed defines model for MethodNotAllowed.
 type MethodNotAllowed = Error
 
+// PreviewRepositoryProfileJSONRequestBody defines body for PreviewRepositoryProfile for application/json ContentType.
+type PreviewRepositoryProfileJSONRequestBody = ProfileDraft
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetHealth Check process liveness
@@ -1036,6 +1171,18 @@ type ServerInterface interface {
 	// HeadAssignmentConvention Check convention availability without a response body
 	// (HEAD /v1/assignment-convention)
 	HeadAssignmentConvention(w http.ResponseWriter, r *http.Request)
+	// GetRepositoryBootstrap Review the canonical codex-thorough bootstrap changes
+	// (GET /v1/repositories/{owner}/{repo}/bootstrap)
+	GetRepositoryBootstrap(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// HeadRepositoryBootstrap Check bootstrap preview availability without returning source
+	// (HEAD /v1/repositories/{owner}/{repo}/bootstrap)
+	HeadRepositoryBootstrap(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// GetRepositoryProfileEditor Read editable codex-thorough choices from the current repository
+	// (GET /v1/repositories/{owner}/{repo}/profile-editor)
+	GetRepositoryProfileEditor(w http.ResponseWriter, r *http.Request, owner string, repo string)
+	// PreviewRepositoryProfile Generate a fresh profile configuration and bootstrap review
+	// (POST /v1/repositories/{owner}/{repo}/profile-editor)
+	PreviewRepositoryProfile(w http.ResponseWriter, r *http.Request, owner string, repo string)
 	// GetRepositoryProfiles Read profiles at the current default-branch commit
 	// (GET /v1/repositories/{owner}/{repo}/profiles)
 	GetRepositoryProfiles(w http.ResponseWriter, r *http.Request, owner string, repo string)
@@ -1106,6 +1253,146 @@ func (siw *ServerInterfaceWrapper) HeadAssignmentConvention(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.HeadAssignmentConvention(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryBootstrap operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryBootstrap(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryBootstrap(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// HeadRepositoryBootstrap operation middleware
+func (siw *ServerInterfaceWrapper) HeadRepositoryBootstrap(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.HeadRepositoryBootstrap(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryProfileEditor operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryProfileEditor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryProfileEditor(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewRepositoryProfile operation middleware
+func (siw *ServerInterfaceWrapper) PreviewRepositoryProfile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewRepositoryProfile(w, r, owner, repo)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1383,6 +1670,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profiles", wrapper.HeadRepositoryProfiles)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/readiness", wrapper.GetRepositoryReadiness)
 	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/readiness", wrapper.HeadRepositoryReadiness)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/bootstrap", wrapper.GetRepositoryBootstrap)
+	m.HandleFunc(http.MethodHead+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/bootstrap", wrapper.HeadRepositoryBootstrap)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profile-editor", wrapper.GetRepositoryProfileEditor)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/profile-editor", wrapper.PreviewRepositoryProfile)
 
 	return m
 }
