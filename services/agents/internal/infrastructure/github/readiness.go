@@ -78,12 +78,12 @@ func (r *ReadinessReader) readFile(ctx context.Context, repo domain.Repository, 
 		}
 		return nil, false, classify(err, response)
 	}
-	if content == nil || directory != nil || content.GetType() != "file" || content.GetTarget() != "" || content.GetSubmoduleGitURL() != "" || content.GetSize() <= 0 || content.GetSize() > profiles.MaxBytes {
+	if content == nil || directory != nil || content.GetType() != "file" || content.GetTarget() != "" || content.GetSubmoduleGitURL() != "" || content.GetSize() <= 0 || content.GetSize() > domain.ReadinessFileMaxBytes {
 		return nil, false, nil
 	}
 
 	decoded, err := content.GetContent()
-	if err != nil || content.GetEncoding() != "base64" || len(decoded) > profiles.MaxBytes {
+	if err != nil || content.GetEncoding() != "base64" || len(decoded) > domain.ReadinessFileMaxBytes {
 		return nil, false, nil
 	}
 	return []byte(decoded), true, nil

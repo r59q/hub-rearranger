@@ -19,7 +19,7 @@ export class AgentsApiClient {
 	private readonly api;
 
 	constructor(baseUrl: string, request: typeof fetch) {
-		this.api = createClient<paths>({ baseUrl, fetch: request });
+		this.api = createClient<paths>({ baseUrl, fetch: request, credentials: 'omit' });
 	}
 
 	async getRepositoryProfiles(owner: string, repo: string): Promise<RepositoryProfiles> {

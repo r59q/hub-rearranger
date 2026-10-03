@@ -347,10 +347,28 @@ class WorkflowTests(unittest.TestCase):
             job["permissions"],
             {"contents": "read", "actions": "read", "issues": "read"},
         )
-        self.assertIn("needs.dispatch.outputs.execute == 'true'", job["if"])
-        self.assertIn("github.event.repository.private == true", job["if"])
-        self.assertIn("github.repository == 'r59q/hub-rearranger'", job["if"])
-        self.assertIn("vars.HUB_AGENT_EXECUTION_ENABLED == 'verified'", job["if"])
+        prefix = (
+            "needs.authorize.outputs.dispatch == 'true' && "
+            "needs.dispatch.outputs.execute == 'true' && "
+        )
+        suffix = (
+            " && github.event.repository.fork == false && "
+            "vars.HUB_AGENT_EXECUTION_ENABLED == 'verified' && "
+            "github.ref == format('refs/heads/{0}', "
+            "github.event.repository.default_branch)"
+        )
+        private = "github.event.repository.private == true"
+        # Portable bootstrap narrows the exact upstream operator exception.
+        # Both forms retain every authority/default-branch/no-fork/enablement gate.
+        self.assertIn(
+            job["if"],
+            {
+                prefix + private + suffix,
+                prefix
+                + f"({private} || github.repository == 'r59q/hub-rearranger')"
+                + suffix,
+            },
+        )
         for step in job["steps"]:
             if "uses" in step:
                 self.assertEqual(len(step["uses"].split("@")[1]), 40)

@@ -441,6 +441,62 @@ validation under `draft-with-evidence`. Native Actions pull-request creation mus
 be enabled in repository settings; no extra long-lived publication credential is
 introduced. Readiness must be renewed after default-branch revision changes.
 
+## AW-008 deterministic bootstrap packaging
+
+The Agents domain owns the pure bootstrap file plan and managed instruction block;
+`services/agents/cmd/bootstrap` exposes them as an offline local command. This
+task introduces no public service endpoint, GitHub write, frontend flow or new
+Compose dependency. AW-009 will consume bootstrap planning when implementing its
+separately authorized draft-PR action through Identity.
+
+Canonical templates are read directly from a reviewed Hub Rearranger checkout:
+the implemented AW-011–AW-013 workflows and Go/Python helpers, AW-003 validator,
+AW-006 evidence contract, operator scripts, component docs/ignore rules and the
+portable `agent-bootstrap-checks.yml` workflow. There is no copied execution
+template tree or generated source snapshot to maintain. Source helper content,
+dependency pins, concurrency, protected paths, artifact origin checks, recovery
+rules and permission boundaries are retained. Only workflow expressions for
+the exact upstream public-runner exception are narrowed to private repositories;
+that operator exception does not transfer to installations. Unknown exception
+template shapes fail closed. Required readiness paths include the new canonical
+`docs/agent-workflows.md` installation/convention guide.
+
+The versioned JSON file plan sorts paths, carries proposed content and SHA-256,
+and classifies creations, updates, unchanged files and conflicts. Git renders
+an applicable diff with external diff/text conversion disabled. The generator
+reads only packaged target paths, rejects symlink/binary/oversized inputs, and
+exports only to a new staging directory outside both checkouts. A matching
+profile catalog stays byte-for-byte unchanged; adding the missing profile
+preserves other entries and comments, with explicit catalog formatting changes.
+Existing different/disabled policy and malformed catalogs require review, never
+silent replacement or enablement. Instructions outside the one managed marker
+pair remain intact; ambiguous markers and oversized merged files fail closed.
+Repeated generation against the applied output yields an empty diff.
+
+Runner registration, subscription authentication, pinned operator installation,
+source-free isolation/exact-model preflight, fresh origin-verified AW-006 evidence
+and both execution gates remain manual. The installation owns its root `make
+check` validation and offline dependencies; bootstrap does not replace its
+Makefile or claim that a published draft passed validation. GitHub-native issue
+assignment/publication works independently of Hub; PR review continuation remains
+AW-016. Historical upstream operator approvals in component documentation are
+context, never installation authorization.
+
+`make bootstrap-check` exports into a disposable directory, verifies repeat JSON
+statuses/diff, and runs the exported installation's canonical offline workflow
+checks without Hub or the upstream source tree. It reuses only the pinned local
+development environment for testing; exported files contain no virtualenv,
+manifest, credentials or authentication. The check is included in `make check`,
+so adding a helper dependency or changing workflow pins must continue to produce
+an independently buildable installation. Credentialed diagnostics and source
+execution are excluded from this validation.
+
+AW-008 completed on 2026-10-03. Full `make check` passed, including the generator
+behavior/CLI tests, 137 frontend tests and the exported 93-file installation's
+Go/Python/Node/schema/workflow checks. Repeat generation produced only unchanged
+files and an empty diff. No GitHub writes, runner provisioning or credentialed
+diagnostics/execution were needed to complete bootstrap generation.
+
 ## Backlog refinements after AW-005 (2026-10-01)
 
 The post-AW-005 recommendation made AW-006 the next implementation task,
@@ -764,3 +820,41 @@ The disabled installation on `addons` passed the source-free local preflight on
 native code-mode helper is also pinned and installed. Full repository checks
 passed. This local proof is separate from the remaining origin-verified AW-006
 GitHub diagnostic artifact and controlled Actions patch-job acceptance run.
+
+## AW-009 — Hub bootstrap publication boundary
+
+Agents owns fresh default-branch, commit-pinned canonical bootstrap planning and
+review digests. The production image packages AW-008 generator output from the
+reviewed root checkout rather than maintaining another template tree. Snapshot
+reads reject truncated trees, unsafe path parents/modes and blobs not bound to
+their Git IDs. Preview state/diff are context; no durable Hub draft exists.
+
+The opt-in setup page explains every GitHub write and requires explicit consent.
+Its bounded same-origin form carries only a base/digest and Identity's session
+nonce. Discovery cannot authorize publication. Identity fetches the current public
+Agents plan without credentials, compares the review, and performs writes within
+AW-019 `WithAuthorization`; it rechecks the App-bound user and current repository
+permissions at every write and completion. Account browsing and unrelated views
+have no synchronous dependency on bootstrap planning.
+
+The branch is deterministic for user ID/base/digest. Only reviewed canonical paths
+may change. Before exposing a ref, Identity verifies the actual full tree, parent,
+message and user author/committer. It creates only a dedicated branch and draft PR;
+there are no ref updates, merges or source execution. Lost responses and concurrent
+attempts reconcile the actual GitHub branch/commit/tree/PR. Changed bases, foreign
+or altered branches/PRs, closed PRs and unconfirmed publication fail closed. The
+PR body links back to the selected repository/profile setup and contains the
+manual dedicated-runner, pinned-runtime, subscription auth, isolation, exact-policy,
+offline checks, fresh AW-006 evidence, both gates and artifact-preserving recovery
+checklist. Removing Hub leaves GitHub as the saved setup/source of truth.
+
+Validation completed with full `make check` (174 frontend tests plus Go/Python/
+Node/workflow/portable-package/contract checks), Agents and Identity race tests,
+controlled Chromium desktop/keyboard/dark 390px/320px/native-form checks, and final
+isolated Compose builds/health/bundle hashes/outage checks for all five services.
+The browser check found and fixed implicit same-host cookie forwarding and a
+shared grid minimum-width overflow; read adapters omit implicit credentials,
+Identity forwards only the explicit filtered cookie set, and the shared grid
+uses a constrained responsive column. No live GitHub sign-in/write or credentialed
+runtime was invoked. Real App configuration and manual runner installation remain
+operator setup, not hidden Hub state.

@@ -43,7 +43,8 @@ services:
 
   agents:
     build:
-      context: ./services/agents
+      context: .
+      dockerfile: services/agents/Dockerfile
     environment:
       # Read-only Metadata/Contents for profiles; Actions read access for readiness evidence.
       GITHUB_TOKEN: ${GITHUB_TOKEN:?Set GITHUB_TOKEN in the environment or root .env file}
@@ -66,6 +67,7 @@ services:
       IDENTITY_ADDR: :8083
       IDENTITY_DB_PATH: /app/data/identity.db
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+      AGENTS_API_URL: http://agents:8082
       # Optional as a group: sign-in stays disabled until the App is configured.
       GITHUB_APP_ID: ${GITHUB_APP_ID:-}
       GITHUB_APP_CLIENT_ID: ${GITHUB_APP_CLIENT_ID:-}

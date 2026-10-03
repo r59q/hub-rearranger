@@ -34,6 +34,9 @@ func (e Action) Valid() bool {
 
 // Defines values for ErrorCode.
 const (
+	BootstrapConflict   ErrorCode = "bootstrap_conflict"
+	BootstrapIncomplete ErrorCode = "bootstrap_incomplete"
+	BootstrapStale      ErrorCode = "bootstrap_stale"
 	Forbidden           ErrorCode = "forbidden"
 	ForgeryRejected     ErrorCode = "forgery_rejected"
 	IdentityUnavailable ErrorCode = "identity_unavailable"
@@ -46,6 +49,12 @@ const (
 // Valid indicates whether the value is a known member of the ErrorCode enum.
 func (e ErrorCode) Valid() bool {
 	switch e {
+	case BootstrapConflict:
+		return true
+	case BootstrapIncomplete:
+		return true
+	case BootstrapStale:
+		return true
 	case Forbidden:
 		return true
 	case ForgeryRejected:
@@ -119,6 +128,22 @@ type AuthorizationRequest struct {
 	Csrf   string `json:"csrf"`
 }
 
+// BootstrapRequest defines model for BootstrapRequest.
+type BootstrapRequest struct {
+	BaseRevision string `json:"base_revision"`
+	Csrf         string `json:"csrf"`
+	Digest       string `json:"digest"`
+}
+
+// BootstrapResult defines model for BootstrapResult.
+type BootstrapResult struct {
+	Branch            string `json:"branch"`
+	HeadSha           string `json:"head_sha"`
+	PullRequestNumber int    `json:"pull_request_number"`
+	PullRequestUrl    string `json:"pull_request_url"`
+	Repository        string `json:"repository"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Code    ErrorCode `json:"code"`
@@ -173,6 +198,12 @@ type AuthorizeRepositoryParams struct {
 	Origin Origin `json:"Origin"`
 }
 
+// CreateBootstrapPullRequestParams defines parameters for CreateBootstrapPullRequest.
+type CreateBootstrapPullRequestParams struct {
+	// Origin Exact configured public origin, required for every POST.
+	Origin Origin `json:"Origin"`
+}
+
 // StartSignInParams defines parameters for StartSignIn.
 type StartSignInParams struct {
 	// Origin Exact configured public origin, required for every POST.
@@ -194,6 +225,9 @@ type SignOutParams struct {
 // AuthorizeRepositoryJSONRequestBody defines body for AuthorizeRepository for application/json ContentType.
 type AuthorizeRepositoryJSONRequestBody = AuthorizationRequest
 
+// CreateBootstrapPullRequestJSONRequestBody defines body for CreateBootstrapPullRequest for application/json ContentType.
+type CreateBootstrapPullRequestJSONRequestBody = BootstrapRequest
+
 // SignOutJSONRequestBody defines body for SignOut for application/json ContentType.
 type SignOutJSONRequestBody = ProtectedRequest
 
@@ -208,6 +242,9 @@ type ServerInterface interface {
 
 	// (POST /v1/repositories/{owner}/{repo}/authorization)
 	AuthorizeRepository(w http.ResponseWriter, r *http.Request, owner string, repo string, params AuthorizeRepositoryParams)
+
+	// (POST /v1/repositories/{owner}/{repo}/bootstrap-pull-request)
+	CreateBootstrapPullRequest(w http.ResponseWriter, r *http.Request, owner string, repo string, params CreateBootstrapPullRequestParams)
 
 	// (GET /v1/session)
 	GetSession(w http.ResponseWriter, r *http.Request)
@@ -313,6 +350,69 @@ func (siw *ServerInterfaceWrapper) AuthorizeRepository(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AuthorizeRepository(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBootstrapPullRequest operation middleware
+func (siw *ServerInterfaceWrapper) CreateBootstrapPullRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateBootstrapPullRequestParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin Origin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = Origin
+
+	} else {
+		err := fmt.Errorf("Header parameter Origin is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Origin", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBootstrapPullRequest(w, r, owner, repo, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -599,6 +699,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/v1/sign-in/callback", wrapper.CompleteSignIn)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/sign-out", wrapper.SignOut)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/authorization", wrapper.AuthorizeRepository)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/v1/repositories/{owner}/{repo}/bootstrap-pull-request", wrapper.CreateBootstrapPullRequest)
 
 	return m
 }

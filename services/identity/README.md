@@ -23,6 +23,7 @@ working. To enable sign-in, configure all four App/vault settings together:
 
 | Setting | Purpose / default |
 | --- | --- |
+| `AGENTS_API_URL` | Private Agents base URL; `http://127.0.0.1:8082`, `http://agents:8082` in Compose. Used only for bootstrap. |
 | `IDENTITY_ADDR` | Listener; `127.0.0.1:8083`. |
 | `APP_ORIGIN` | Exact public origin; `http://localhost:3000`. No path/query/userinfo. |
 | `IDENTITY_DB_PATH` | Private SQLite database; `data/identity.db`. |
@@ -142,15 +143,15 @@ and repository selection even for public repositories. Archived/disabled or
 renamed repositories fail closed. Pagination and request deadlines are bounded;
 missing/denied access and transient errors have different safe recovery responses.
 
-The public preflight result is **not a reusable grant**. Future AW-009/AW-014
+The public preflight result is **not a reusable grant**. AW-009 and future AW-014
 mutations must call `domain.Service.WithAuthorization` at the actual write
 boundary, executing a typed, repository-bound GitHub operation within the identity
 service with the freshly verified user's token. Other domains prepare their own
 business payloads and call versioned identity APIs for those atomic user writes;
 never export a token or trust an earlier preflight to authorize a later write.
-Those mutation endpoints/payloads are added with their feature tasks. This task
-provides the authorization boundary and proves comment attribution using a
-controlled GitHub HTTP server; it adds no production assignment/bootstrap action.
+AW-009 adds the bootstrap endpoint below. AW-019 established this authorization
+boundary and proved comment attribution using a controlled GitHub HTTP server;
+production assignment remains AW-014.
 
 SQLite serializes refresh, sign-out, and authorized operations through a transaction
 on a single connection. Run one identity replica with its own volume. This
@@ -180,3 +181,41 @@ Tests exercise forgery/replay, session rotation/expiry/revocation, exact roles a
 App permissions, safe errors and DTOs, encrypted restart persistence, concurrent
 refresh ordering, public API responses, and user-attributed controlled comment
 writes. No test requires live GitHub or runner/provider authentication.
+
+## Bootstrap draft PR publication (AW-009)
+
+`POST /v1/repositories/{owner}/{repo}/bootstrap-pull-request` accepts only the
+session anti-forgery nonce, reviewed `base_revision` and `digest`. It requires the
+exact configured Origin and opaque session cookie. It executes entirely within
+`WithAuthorization`, obtains the current canonical file plan from Agents without
+forwarding credentials/cookies, and rechecks App-bound user identity, repository
+role and Contents/Pull requests/Workflows write access before each GitHub write
+and completion. Sessions remain locked across the operation so sign-out/token
+refresh cannot race a write. Tokens stay in this service.
+
+Publication creates file/tree objects, one user-attributed commit, a deterministic
+`hub-bootstrap/codex-thorough-<user-id>-<base-prefix>-<digest>` branch and an open
+draft PR. Only canonical bootstrap paths may change. The publisher independently
+verifies the entire proposed tree, including unchanged unrelated files, commit
+parent/author/message, actual ref and exact user-owned PR metadata. It cannot
+update/delete refs or merge. The PR links to the selected Hub setup and contains
+the manual runner/isolation/exact-policy/readiness/enablement checklist.
+
+Retries reconcile actual GitHub refs, commits, trees and PRs, including lost HTTP
+responses or a branch whose PR was not created. Concurrent attempts converge on
+that same result; no hidden publication state is saved. Changed default branches,
+altered branches/PRs, closed PRs and ambiguous results fail closed. HTTP 409
+`bootstrap_stale`/`bootstrap_conflict` asks for a fresh review;
+`bootstrap_incomplete` asks the user to reload and reconcile. An unreachable GitHub
+response is never proof of success. If only an unreachable Git object was created,
+a retry may create another unreachable object before publishing the one branch.
+The request is bounded to 120 seconds and propagates cancellation; the normal
+identity request deadline stays 20 seconds. Agents outages affect bootstrap only.
+
+Controlled API/GitHub tests cover user authority, forgery, malformed plans, stale
+bases, unsafe changes, exact tree preservation, phase-specific revocation,
+concurrent duplicate attempts, lost responses and partial publication. Run
+`go test -race ./...` for the session/publication concurrency checks. The public
+Identity contract and the consumed Agents DTOs are generated using the root pinned
+tooling; `make check` checks drift. Live use requires the configured real App and
+installation described above, and operator runner setup remains manual.

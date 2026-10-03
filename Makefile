@@ -4,7 +4,14 @@ RUNTIME_PYTHON ?= ops/private-runner/.venv/bin/python
 PROFILE_PYTHON ?= $(RUNTIME_PYTHON)
 OAPI_CODEGEN_VERSION := v2.8.0
 
-check: format-check lint test runtime-check profiles-check intake-check agents-contract-check identity-contract-check
+check: format-check lint test runtime-check profiles-check intake-check bootstrap-check agents-contract-check identity-contract-check
+
+.PHONY: bootstrap-check
+
+bootstrap-check:
+	$(PROFILE_PYTHON) -m ruff format --check --config ops/private-runner/pyproject.toml services/agents/scripts
+	$(PROFILE_PYTHON) -m ruff check --config ops/private-runner/pyproject.toml services/agents/scripts
+	$(PROFILE_PYTHON) services/agents/scripts/check_bootstrap.py
 
 .PHONY: intake-check
 
@@ -37,14 +44,17 @@ generate-agents-contract:
 	$(PROFILE_PYTHON) ops/agent-profiles/export_contract.py
 	cd frontend && npm exec prettier -- --config .prettierrc --write ../services/agents/api/openapi.yaml src/lib/server/profile-schema.gen.json src/lib/server/evidence-schema.gen.json
 	cd services/agents && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o internal/api/contract/agents.gen.go api/openapi.yaml
+	cd services/identity && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/agents-codegen.yaml -o internal/infrastructure/agents/contract/agents.gen.go ../agents/api/openapi.yaml
 	cd frontend && npm run generate:agents-api
 
 agents-contract-check:
 	$(PROFILE_PYTHON) ops/agent-profiles/export_contract.py --check
 	@set -eu; task_tmp=$$(mktemp -d /tmp/hub-agents-contract.XXXXXX); \
-	trap 'rm -f "$$task_tmp/agents.gen.go" "$$task_tmp/agents-contract.gen.ts"; rmdir "$$task_tmp"' EXIT; \
+	trap 'rm -f "$$task_tmp/agents.gen.go" "$$task_tmp/identity-agents.gen.go" "$$task_tmp/agents-contract.gen.ts"; rmdir "$$task_tmp"' EXIT; \
 	(cd services/agents && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/codegen.yaml -o "$$task_tmp/agents.gen.go" api/openapi.yaml); \
 	cmp services/agents/internal/api/contract/agents.gen.go "$$task_tmp/agents.gen.go" || { echo 'Agents Go contract is stale; run make generate-agents-contract.'; exit 1; }; \
+	(cd services/identity && go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION) -config api/agents-codegen.yaml -o "$$task_tmp/identity-agents.gen.go" ../agents/api/openapi.yaml); \
+	cmp services/identity/internal/infrastructure/agents/contract/agents.gen.go "$$task_tmp/identity-agents.gen.go" || { echo 'Identity Agents transport is stale; run make generate-agents-contract.'; exit 1; }; \
 	(cd frontend && npm exec openapi-typescript -- ../services/agents/api/openapi.yaml --enum-values -o "$$task_tmp/agents-contract.gen.ts" && node scripts/format-contract.mjs "$$task_tmp/agents-contract.gen.ts" && npm exec prettier -- --config .prettierrc --write "$$task_tmp/agents-contract.gen.ts"); \
 	cmp frontend/src/lib/server/agents-contract.gen.ts "$$task_tmp/agents-contract.gen.ts" || { echo 'Agents frontend contract is stale; run make generate-agents-contract.'; exit 1; }
 	cd frontend && npm exec prettier -- --config .prettierrc --check ../services/agents/api/*.yaml ../compose.yaml ../.github/workflows/application-checks.yml
@@ -60,7 +70,7 @@ runtime-check:
 	$(RUNTIME_PYTHON) -m ruff format --check ops/private-runner
 	$(RUNTIME_PYTHON) -m ruff check ops/private-runner
 	$(RUNTIME_PYTHON) -m unittest discover -s ops/private-runner -v
-	cd frontend && npm exec prettier -- --config .prettierrc --check ../ops/private-runner/readiness.schema.v1.json ../ops/private-runner/result.schema.v1.json ../.github/workflows/agent-profile-diagnostic.yml ../.github/actionlint.yaml
+	cd frontend && npm exec prettier -- --config .prettierrc --check ../ops/private-runner/readiness.schema.v1.json ../ops/private-runner/result.schema.v1.json ../.github/workflows/agent-profile-diagnostic.yml ../.github/workflows/agent-bootstrap-checks.yml ../.github/actionlint.yaml
 	node --test ops/private-runner/test_authorize.mjs
 	go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/*.yml
 

@@ -10,15 +10,18 @@ agents. GitHub remains the source of truth; Hub Rearranger stores only applicati
   service.
 - [`services/issues`](services/issues/README.md) — recently active GitHub issues and relationship
   discovery service.
-- [`services/agents`](services/agents/README.md) — repository profiles, readiness diagnostics, and agent convention read API.
+- [`services/agents`](services/agents/README.md) — repository profiles, readiness diagnostics, agent convention read API, and local bootstrap generator.
 - [`services/identity`](services/identity/README.md) — GitHub App user sign-in, encrypted sessions, and repository write authorization.
 
 The planned GitHub-native agent workflow, its [assignment comment
 convention](AGENTIC_WORKFLOWS_ANALYSIS.md#aw-002-assignment-convention-v1), and the
 [v1 profile/adapter contract](ops/agent-profiles/README.md) are documented separately.
 The repository declares `codex-thorough` in `.github/agent-profiles.yml`.
-The [trusted assignment intake](ops/agent-intake/README.md) is implemented;
-dedicated patch execution and publication remain disabled until AW-012/AW-013.
+The [trusted assignment intake](ops/agent-intake/README.md), isolated patch job
+and separate draft-PR publisher are implemented. Execution requires fresh verified
+readiness and both operator gates. The [bootstrap generator](services/agents/README.md#bootstrap-package-generator-aw-008)
+packages this canonical flow for review; [installation](docs/agent-workflows.md)
+requires manual dedicated-runner provisioning and verification.
 
 ## Local development
 
@@ -99,3 +102,17 @@ contract check is also included in `make check`.
 The GitHub-hosted Application checks workflow runs the same full suite without runner authentication.
 `make intake-check` verifies the assignment intake and controlled GitHub boundaries
 without contacting GitHub or starting a credentialed runner.
+`make bootstrap-check` exports the portable installation and runs its canonical
+offline checks independently of Hub; it is also part of `make check`.
+
+### Bootstrap a selected repository from Hub
+
+Open **Agents → Review bootstrap setup**, inspect the canonical diff and GitHub
+writes, and connect your GitHub account before confirming **Create bootstrap draft
+PR**. Identity uses that user's current repository/App permissions; the discovery
+token remains read-only. The draft PR links to this setup and includes the manual
+runner checklist. Follow `docs/agent-workflows.md` in the PR after reviewing and
+merging the files. Hub retains no setup draft, and the installed GitHub flow works
+without Hub. Runner provisioning, fresh diagnostic evidence and execution
+enablement remain manual. Local Identity uses `AGENTS_API_URL`; Compose wires it
+without making account availability depend on Agents health.

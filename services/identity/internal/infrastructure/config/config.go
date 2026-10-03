@@ -13,6 +13,7 @@ import (
 
 type Config struct {
 	Address, Origin, DBPath, ClientID, ClientSecret string
+	AgentsURL                                       string
 	AppID                                           int64
 	Key                                             []byte
 	Secure, Enabled                                 bool
@@ -20,6 +21,11 @@ type Config struct {
 
 func Load() (Config, error) {
 	c := Config{Address: value("IDENTITY_ADDR", "127.0.0.1:8083"), Origin: value("APP_ORIGIN", "http://localhost:3000"), DBPath: value("IDENTITY_DB_PATH", "data/identity.db"), ClientID: os.Getenv("GITHUB_APP_CLIENT_ID"), ClientSecret: os.Getenv("GITHUB_APP_CLIENT_SECRET")}
+	c.AgentsURL = value("AGENTS_API_URL", "http://127.0.0.1:8082")
+	agents, err := url.Parse(c.AgentsURL)
+	if err != nil || agents.Host == "" || agents.User != nil || agents.RawQuery != "" || agents.Fragment != "" || (agents.Scheme != "http" && agents.Scheme != "https") {
+		return Config{}, errors.New("AGENTS_API_URL must be a private HTTP(S) service address without credentials or query parameters")
+	}
 	origin, err := url.Parse(c.Origin)
 	if err != nil || origin.Host == "" || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "http" && origin.Scheme != "https") {
 		return Config{}, errors.New("APP_ORIGIN must be an HTTP(S) origin without a path")

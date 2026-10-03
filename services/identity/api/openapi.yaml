@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hub Rearranger Identity API
-  version: 1.0.0
+  version: 1.1.0
   description: Private GitHub App user sign-in and repository-scoped authorization,
     reached through the SvelteKit server. Never returns GitHub credentials. Future
     writes must use the live authorized-operation boundary, not a cached preflight.
@@ -157,6 +157,48 @@ paths:
         '401': *id001
         '403': *id001
         '503': *id001
+  /v1/repositories/{owner}/{repo}/bootstrap-pull-request:
+    post:
+      operationId: createBootstrapPullRequest
+      security: *id004
+      description: Creates or reconciles a user-attributed canonical bootstrap branch and draft PR.
+        Requires the reviewed Agents digest and base, exact Origin and session nonce.
+        Identity obtains the fresh typed file plan server-side, checks current user/App
+        permissions at every write, and verifies GitHub state. It never exports tokens,
+        updates refs, merges, executes proposal source, or stores a competing draft.
+      parameters:
+        - *id003
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^[A-Za-z0-9_.-]{1,100}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapRequest'
+      responses:
+        '200':
+          description: The exact verified branch and draft PR exist; may recover a prior submission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapResult'
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '405': *id001
+        '409': *id001
+        '503': *id001
 components:
   securitySchemes:
     secureSession:
@@ -185,6 +227,36 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    BootstrapRequest:
+      type: object
+      additionalProperties: false
+      required: [csrf, base_revision, digest]
+      properties:
+        csrf: *id005
+        base_revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        digest:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+    BootstrapResult:
+      type: object
+      additionalProperties: false
+      required: [repository, branch, head_sha, pull_request_number, pull_request_url]
+      properties:
+        repository:
+          type: string
+        branch:
+          type: string
+        head_sha:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        pull_request_number:
+          type: integer
+          minimum: 1
+        pull_request_url:
+          type: string
+          format: uri
     Health:
       type: object
       additionalProperties: false
@@ -311,5 +383,8 @@ components:
             - identity_unavailable
             - not_found
             - method_not_allowed
+            - bootstrap_stale
+            - bootstrap_conflict
+            - bootstrap_incomplete
         message:
           type: string

@@ -29,6 +29,7 @@ export class RepositoriesApiClient {
 	async replaceSelection(repositoryIds: number[]): Promise<Repository[]> {
 		const response = await this.request(this.url('/v1/repository-selection'), {
 			method: 'PUT',
+			credentials: 'omit',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ repository_ids: repositoryIds })
 		});
@@ -37,7 +38,8 @@ export class RepositoriesApiClient {
 
 	private async get(path: string): Promise<RepositoryList> {
 		const response = await this.request(this.url(path), {
-			headers: { accept: 'application/json' }
+			headers: { accept: 'application/json' },
+			credentials: 'omit'
 		});
 		return this.read(response);
 	}

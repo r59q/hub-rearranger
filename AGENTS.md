@@ -37,6 +37,15 @@ that component's README for the combined pinned development tools. Profile
 validation proves configuration shape, not runtime readiness. New consumers
 must use the same schema; never add credentials or arbitrary command fields.
 
+AW-009 bootstrap previews are fresh commit-pinned Agents projections. The root-context
+Agents image packages canonical AW-008 output at build time; rebuild after canonical
+source changes. Identity consumes the generated public Agents contract without user
+credentials and publishes only a fresh matching base/digest inside `WithAuthorization`.
+Each GitHub write/completion rechecks live user/App access. Reconcile actual refs,
+full trees, commit attribution and user-owned draft PRs before retrying; never update
+refs, persist a competing bootstrap draft, or accept browser-authored source files.
+Keep Identity checks confined to account/setup/action routes.
+
 The identity service owns GitHub App user credentials, encrypted sessions, and
 live repository write authorization. `GITHUB_TOKEN` is discovery-only. Never
 export user/refresh tokens through a public API or into another service. Future
@@ -69,6 +78,17 @@ assignment refs with `go-github`; never add ref updates or proposal-source execu
 Verified intake receipts preserve optional publication intent across reruns.
 Started comment/check intent with missing GitHub state is ambiguous and must fail
 closed; receipts and PR bodies alone are never authorization or completion proof.
+
+The AW-008 bootstrap generator lives in `services/agents/cmd/bootstrap`, with a
+pure domain plan and canonical-checkout filesystem adapters. It proposes files
+and diffs locally; it never writes GitHub or enables runners. Package existing
+AW-011–AW-013 sources and AW-003/AW-006 schemas rather than maintaining copied
+execution templates. Generated workflows remove this repository's named public
+runner exception and require private targets. Preserve matching profile policy
+and unrelated instructions; policy conflicts require review, never silent
+replacement. `make bootstrap-check` verifies an exported installation's own
+offline workflow without Hub and is included in `make check`. Runner setup,
+checksums, exact-policy/isolation proof and both enablement gates remain manual.
 
 ## Product principles
 

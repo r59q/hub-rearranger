@@ -104,12 +104,42 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/bootstrap-pull-request': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** @description Creates or reconciles a user-attributed canonical bootstrap branch and draft PR. Requires the reviewed Agents digest and base, exact Origin and session nonce. Identity obtains the fresh typed file plan server-side, checks current user/App permissions at every write, and verifies GitHub state. It never exports tokens, updates refs, merges, executes proposal source, or stores a competing draft. */
+		post: operations['createBootstrapPullRequest'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
 	schemas: {
+		BootstrapRequest: {
+			csrf: string;
+			base_revision: string;
+			digest: string;
+		};
+		BootstrapResult: {
+			repository: string;
+			branch: string;
+			head_sha: string;
+			pull_request_number: number;
+			/** Format: uri */
+			pull_request_url: string;
+		};
 		Health: {
 			/** @enum {string} */
 			status: 'ok';
@@ -158,7 +188,10 @@ export interface components {
 				| 'forgery_rejected'
 				| 'identity_unavailable'
 				| 'not_found'
-				| 'method_not_allowed';
+				| 'method_not_allowed'
+				| 'bootstrap_stale'
+				| 'bootstrap_conflict'
+				| 'bootstrap_incomplete';
 			message: string;
 		};
 	};
@@ -366,6 +399,42 @@ export interface operations {
 			503: components['responses']['Error'];
 		};
 	};
+	createBootstrapPullRequest: {
+		parameters: {
+			query?: never;
+			header: {
+				/** @description Exact configured public origin, required for every POST. */
+				Origin: components['parameters']['Origin'];
+			};
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['BootstrapRequest'];
+			};
+		};
+		responses: {
+			/** @description The exact verified branch and draft PR exist; may recover a prior submission. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['BootstrapResult'];
+				};
+			};
+			400: components['responses']['Error'];
+			401: components['responses']['Error'];
+			403: components['responses']['Error'];
+			405: components['responses']['Error'];
+			409: components['responses']['Error'];
+			503: components['responses']['Error'];
+		};
+	};
 }
 
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
@@ -388,5 +457,8 @@ export const errorCodeValues: ReadonlyArray<components['schemas']['Error']['code
 	'forgery_rejected',
 	'identity_unavailable',
 	'not_found',
-	'method_not_allowed'
+	'method_not_allowed',
+	'bootstrap_stale',
+	'bootstrap_conflict',
+	'bootstrap_incomplete'
 ];

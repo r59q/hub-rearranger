@@ -61,3 +61,20 @@ func TestConfiguredIdentityRequiresCompleteSecretsAndSafeOrigin(t *testing.T) {
 		})
 	}
 }
+
+func TestBootstrapPlannerAddressRejectsCredentialsAndUnexpectedSchemes(t *testing.T) {
+	for _, address := range []string{"http://agents:8082", "https://agents.example", "file:///tmp/plan", "http://private-sentinel@agents", "http://agents?token=private-sentinel", "http://agents#fragment"} {
+		t.Run(address, func(t *testing.T) {
+			clear(t)
+			t.Setenv("AGENTS_API_URL", address)
+			config, err := Load()
+			valid := address == "http://agents:8082" || address == "https://agents.example"
+			if valid && (err != nil || config.AgentsURL != address) || !valid && err == nil {
+				t.Fatal("planner address incorrectly validated")
+			}
+			if err != nil && strings.Contains(err.Error(), "private-sentinel") {
+				t.Fatal("configuration error exposed credentials")
+			}
+		})
+	}
+}

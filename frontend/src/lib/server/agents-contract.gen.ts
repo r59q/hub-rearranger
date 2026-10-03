@@ -94,12 +94,61 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/bootstrap': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		/**
+		 * Review the canonical codex-thorough bootstrap changes
+		 * @description Fresh commit-pinned file plan and applicable diff. No GitHub writes, runner provisioning, credentials, persisted draft, or authorization grant. The digest binds the target base and every proposed file. Private network only.
+		 */
+		get: operations['getRepositoryBootstrap'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		/** Check bootstrap preview availability without returning source */
+		head: operations['headRepositoryBootstrap'];
+		patch?: never;
+		trace?: never;
+	};
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
 	schemas: {
+		BootstrapPreview: {
+			repository: string;
+			default_branch: string;
+			base_revision: string;
+			digest: string;
+			/** @enum {string} */
+			state: 'ready' | 'unchanged' | 'conflict';
+			private: boolean;
+			files: components['schemas']['BootstrapPreviewFile'][];
+			diagnostics: components['schemas']['BootstrapDiagnostic'][];
+			diff: string;
+		};
+		BootstrapDiagnostic: {
+			code: string;
+			path: string;
+			message: string;
+		};
+		BootstrapPreviewFile: {
+			path: string;
+			/** @enum {string} */
+			status: 'create' | 'update' | 'unchanged' | 'conflict';
+			base_sha: string | null;
+			sha256: string | null;
+			content: string;
+		};
 		Health: {
 			/** @enum {string} */
 			status: 'ok';
@@ -716,11 +765,157 @@ export interface operations {
 			};
 		};
 	};
+	getRepositoryBootstrap: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Reviewable plan; conflicts and unchanged configurations cannot be published. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['BootstrapPreview'];
+				};
+			};
+			/** @description Invalid repository. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Discovery credentials cannot read the repository. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			/** @description Repository, initialized default branch, or supported regular files unavailable. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			405: components['responses']['MethodNotAllowed'];
+			/** @description Rate limited; retry later. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+			500: components['responses']['InternalError'];
+			/** @description Canonical templates or complete GitHub snapshot unavailable. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['Error'];
+				};
+			};
+		};
+	};
+	headRepositoryBootstrap: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Preview available. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Invalid repository. */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Discovery credentials cannot read the repository. */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Repository or supported snapshot unavailable. */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description This endpoint accepts GET and HEAD. */
+			405: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Rate limited. */
+			429: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Bootstrap planning unavailable. */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Complete snapshot or templates unavailable. */
+			502: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
 }
 
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
 	? Readonly<Exclude<T, undefined>>
 	: Readonly<Exclude<T, undefined>[]>;
+export const bootstrapPreviewStateValues: ReadonlyArray<
+	components['schemas']['BootstrapPreview']['state']
+> = ['ready', 'unchanged', 'conflict'];
+export const bootstrapPreviewFileStatusValues: ReadonlyArray<
+	components['schemas']['BootstrapPreviewFile']['status']
+> = ['create', 'update', 'unchanged', 'conflict'];
 export const healthStatusValues: ReadonlyArray<components['schemas']['Health']['status']> = ['ok'];
 export const assignmentConventionVersionValues: ReadonlyArray<
 	components['schemas']['AssignmentConvention']['version']

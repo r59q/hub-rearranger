@@ -76,9 +76,13 @@ SHA-256 against the reviewed workflow's pinned value as well.
 
 Generate the **disabled** manifest from the installed reviewed files:
 
+Replace `owner/repository` and `hub-agent-codex-01` below with the approved
+repository and actual dedicated runner name. The shared `addons` name is allowed
+only for the explicitly approved upstream repository described above.
+
 ```sh
 python3 -I "$HOME/.local/lib/hub-agent-execution/execution_setup.py" \
-  r59q/hub-rearranger addons > "$HOME/.local/lib/hub-agent-execution/operator.json"
+  owner/repository hub-agent-codex-01 > "$HOME/.local/lib/hub-agent-execution/operator.json"
 chmod 0600 "$HOME/.local/lib/hub-agent-execution/operator.json"
 ```
 
@@ -90,7 +94,7 @@ Run the fixed source-free local preflight:
 
 ```sh
 python3 -I "$HOME/.local/lib/hub-agent-execution/execution_setup.py" \
-  r59q/hub-rearranger addons --preflight
+  owner/repository hub-agent-codex-01 --preflight
 ```
 
 It verifies installation permissions/digests, then checks the same restricted

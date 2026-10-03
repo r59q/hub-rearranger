@@ -14,6 +14,7 @@ import (
 
 	"github.com/r59q/hub-rearranger/services/agents/internal/api"
 	"github.com/r59q/hub-rearranger/services/agents/internal/domain"
+	"github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/bootstrap"
 	"github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/config"
 	"github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/evidence"
 	githubinfra "github.com/r59q/hub-rearranger/services/agents/internal/infrastructure/github"
@@ -46,11 +47,13 @@ func run(logger *slog.Logger) error {
 
 	profileService := domain.NewProfileService(githubinfra.NewProfileReader(client), validator)
 	service := domain.NewService(profileService, domain.NewReadinessService(profileService, githubinfra.NewReadinessReader(client, decoder), nil))
+	provider := bootstrap.Provider{Source: config.BootstrapSource(), Bundle: os.Getenv("AGENTS_BOOTSTRAP_BUNDLE")}
+	service.WithBootstrap(domain.NewBootstrapService(provider, githubinfra.NewProfileReader(client), validator, provider))
 
 	server := &http.Server{
 		Addr: config.Address(), Handler: api.NewHandler(service, logger),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
-		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second,
+		WriteTimeout: 50 * time.Second, IdleTimeout: 60 * time.Second,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

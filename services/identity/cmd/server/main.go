@@ -10,8 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	gh "github.com/google/go-github/v74/github"
+
 	"github.com/r59q/hub-rearranger/services/identity/internal/api"
 	"github.com/r59q/hub-rearranger/services/identity/internal/domain"
+	"github.com/r59q/hub-rearranger/services/identity/internal/infrastructure/agents"
 	"github.com/r59q/hub-rearranger/services/identity/internal/infrastructure/config"
 	githubinfra "github.com/r59q/hub-rearranger/services/identity/internal/infrastructure/github"
 	"github.com/r59q/hub-rearranger/services/identity/internal/infrastructure/sqlite"
@@ -41,9 +44,11 @@ func run(logger *slog.Logger) error {
 
 		provider := githubinfra.New(c.AppID, c.ClientID, c.ClientSecret, c.Origin+"/auth/callback", &http.Client{Timeout: 8 * time.Second})
 		service = domain.NewService(provider, store, nil)
+		service.WithBootstrap(agents.Planner{URL: c.AgentsURL, Client: &http.Client{Timeout: 50 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}},
+			githubinfra.BootstrapPublisher{API: gh.NewClient(&http.Client{Timeout: 8 * time.Second}), Origin: c.Origin})
 	}
 
-	server := &http.Server{Addr: c.Address, Handler: api.NewHandler(service, c.Origin, c.Secure), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 25 * time.Second, IdleTimeout: 60 * time.Second}
+	server := &http.Server{Addr: c.Address, Handler: api.NewHandler(service, c.Origin, c.Secure), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 125 * time.Second, IdleTimeout: 60 * time.Second}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
