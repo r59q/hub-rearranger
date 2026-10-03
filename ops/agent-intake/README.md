@@ -1,32 +1,36 @@
-# Trusted assignment intake (AW-011)
+# Trusted assignment intake and publication (AW-011–AW-013)
 
-This Agents-domain operations component implements the GitHub-hosted intake for
-new issue assignments. It lives outside Docker Compose and owns no service,
-queue, database, Codex authentication, checkout execution, branch, or PR. The
-workflow and GitHub objects remain usable without Hub.
+This Agents-domain operations component runs the GitHub-hosted assignment intake,
+read-only execution verification, and separate branch/draft-PR publisher. It lives
+outside Docker Compose and owns no service, queue, database, or Codex authentication.
+The workflow and GitHub objects remain usable without Hub.
 
-The [assignment workflow](../../.github/workflows/agent-assignment.yml) is
-implemented locally. Publishing it to a repository's protected default branch
-enables intake; no live workflow was installed or triggered during this task.
-AW-012 adds a read-only execution verifier and an operator-installed patch job;
-see [the execution guide](../private-runner/EXECUTION.md). Execution remains gated
-on matching runtime evidence, isolation, and explicit operator enablement.
-The hosted `dispatch` job reports `RUNNER_NOT_READY`
-on a GitHub-hosted runner and never invokes Codex or a self-hosted runner.
-AW-013 adds the separate branch/draft-PR publisher.
+The [assignment workflow](../../.github/workflows/agent-assignment.yml) uses hosted
+`authorize` and `dispatch` jobs, an operator-installed read-only `patch` job, a
+hosted `publish` job, and hosted safe reporting. See the
+[execution guide](../private-runner/EXECUTION.md) for runner setup. Source execution
+requires matching runtime evidence, isolation, and both operator gates. Publication
+independently reconstructs authorization and verifies the resulting artifact; no
+job output, receipt, or earlier authorization becomes a write grant.
 
 ## Ownership and dependencies
 
-- `cmd/intake` composes the trusted command and safe Actions output handling.
+- `cmd/intake`, `cmd/patch`, and `cmd/publish` compose the reviewed commands and safe Actions output handling.
 - `internal/domain` owns assignment validation, live authorization, policy
-  matching, canonical-run selection, and retry identity rules. It depends only
+  matching, canonical-run selection, publication sequencing, and retry identity rules. It depends only
   on ports and plain models.
 - `internal/infrastructure/github` uses pinned `go-github` for REST, pagination,
-  current source/roles/revisions, workflow history, and receipt reconciliation.
+  current source/roles/revisions, workflow/artifact verification, Git objects, and publication reconciliation.
 - `profile_policy.py` calls the existing AW-003 bounded parser and Draft 2020-12
   validator. It compares all execution fields, treating context/check lists as
   sets; it contains no independent profile schema. Go invokes it with `-I`, a
   fixed reviewed script path, bounded structured stdin, and no workflow token.
+- `publication_policy.py` validates the canonical AW-012 result schema, originating
+  invocation, exact policy/identity, patch digest, and structured summary digest.
+- `internal/infrastructure/patch` calls `publication_patch.py` with a minimal
+  environment and no workflow token. It shares AW-012's canonical source limits
+  and protected paths, and uses Git's cached index application without executing
+  or checking out patched code.
 - `internal/report` emits fixed reason codes and recovery guidance. Raw GitHub,
   parser, subprocess, source-comment, and credential text never becomes a report.
 
@@ -128,13 +132,96 @@ Acceptance updates the source issue with verified identity/profile/authority and
 links to the request and exact workflow attempt. It explicitly reports that
 execution is gated independently by AW-012; a green intake indicates accepted input only.
 
-The hosted authorization job has only Contents read, Actions read, and Issues
-write for this receipt. The dispatcher gate has no GitHub permissions. There is
-no Contents write, model credential, App secret, discovery token, or repository
-workflow-variable switch that enables source execution. Protect the default
+The hosted authorization job has Contents read, Actions read, and Issues write
+for its receipt. Dispatch and patch execution have Contents/Actions/Issues read.
+Only the separate hosted publisher has Contents, Pull requests, Issues, and
+Checks write plus Actions read; it has no model credential, App secret, or
+Hub discovery token. Protect the default
 branch and intake/validator/workflow code with maintainer review. The workflow
 checks out its immutable `github.workflow_sha`, never the request's profile SHA,
 and does not persist GitHub credentials in checkout configuration.
+
+## Separate publication (AW-013)
+
+The hosted publisher checks out only `github.workflow_sha` with persisted
+credentials disabled. It builds the reviewed Go command and installs pinned
+validation tools before the credentialed publication step. It never runs Codex,
+repository recipes, package hooks from the proposal, or `git push`.
+
+`cmd/publish` verifies the exact successful intake and patch job/attempt, immutable
+artifact origin and archive digest, and the originating invocation. It verifies
+current source/maintainer roles, canonical run ownership, revision ancestry, and
+pinned/current profiles independently. A recovered patch must come from the one
+verified prior successful attempt; skipped execution on the current attempt is
+not itself proof that a proposal exists. The default branch must still equal the
+accepted base. A moved base fails as `STALE_HEAD`; v1 never rebases or force-pushes.
+
+The canonical AW-012 result schema and adapter-owned proposal/summary digests are
+checked again. Source collection is pinned to the accepted commit. The patch is
+applied only to a private Git index with explicit environment/config, hooks and
+filters disabled. The adapter rejects protected paths, escapes, malformed/stale
+patches, unsafe modes, symlinks, and submodules. Binary content, executable modes,
+and deletions are supported. Limits remain 32 MiB compressed source, 128 MiB
+expanded source, 8 MiB patch, 16 MiB per file, and at most 100 changed paths.
+The original full base tree preserves untouched protected/omitted files.
+
+Publication uses `go-github` Git-object APIs to create a deterministic commit and
+then **create**, never update, `agent/codex-thorough/<repository-id>-<comment-id>`.
+The commit binds the verified parent/tree, fixed author/date, assignment, original
+proposal attempt/artifact, and patch digest. An existing ref must equal this
+independently reconstructed commit. Current authorization/head is rechecked
+between patch preparation, immutable object creation, branch creation, draft PR,
+comment, check, and final confirmation.
+
+One draft PR carries AW-002 `agent-assignment:v1` provenance plus
+`agent-publication:v1` base/head/artifact/digest metadata, source/request/run links,
+and explicit validation evidence. Recovery verifies the bot author, repository,
+branch and immutable commit, exact metadata/body, draft/open state, and base.
+An edited, closed, merged, moved, forked, or ambiguous PR fails closed; the
+publisher cannot merge or update an unrelated branch or PR. The issue receives
+one concise proposal link. `Agent proposal / repository-check` is successful only
+when validation passed; failed/unavailable validation publishes a **neutral** check
+and remains explicit on the draft under `draft-with-evidence`.
+
+The concurrency group remains the original repository/comment identity across
+all jobs and attempts. The existing verified intake receipt gains optional,
+closed `publication` intent (artifact ID, attempt, head, comment/check started
+flags), preserved by intake on reruns. Before non-idempotent comment/check POSTs,
+the publisher records intent. It always reconciles actual bot/app-owned objects
+by identity and content; a started stage with a missing/mismatched object is
+`REPLAY_STATE_UNAVAILABLE`, never permission to repeat that POST. A lost response
+can be recovered by verified GitHub state. Missing branch/PR creation can resume;
+existing objects cannot be overwritten. Force cancellation or ambiguous history
+requires operator reconciliation of the original run before a new assignment.
+
+After confirming the branch, draft PR, comment and check, `publication-status.json`
+records version 1, assignment/run/attempt, `published`/`DRAFT_PR_PUBLISHED`, and the
+branch/head/PR identity. It is uploaded as `agent-publication-status-v1-<attempt>`.
+An `always()` step preserves safe `incomplete` evidence after failure, while the
+final hosted execution report links the published PR or reports incomplete/skipped
+publication. No raw source, patch, subprocess output, or exception is reported.
+
+For live verification after merging this workflow:
+
+1. Permit GitHub Actions to create pull requests in the approved repository's
+   [Actions settings](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-your-repository).
+   Keep default workflow permissions minimal; the publisher declares its scopes.
+   No extra long-lived write credential or automatic PR approval is needed.
+2. Rebuild/reinstall the reviewed `agent-patch` binary and pin its new digest in
+   the operator manifest: the optional receipt intent must be understood by both
+   hosted and operator-installed verifiers. Keep execution disabled while updating.
+3. Run the exact installation guard and source-free preflight, obtain fresh
+   origin-verified AW-006 evidence for the merged default-branch revision, and
+   re-enable both execution gates. Old artifacts cannot authorize a stale base.
+4. Use a new controlled documentation-only assignment. Verify the resulting
+   branch, draft provenance, actual diff, validation check and issue link; then
+   rerun the original assignment and confirm no duplicate execution/publication.
+
+GitHub's documented [token event behavior](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+can require human approval for PR workflows triggered by `GITHUB_TOKEN`; other
+ordinary token-triggered events do not start new workflows. Do not treat missing
+or approval-pending repository CI as passed. The publisher's check reports only
+the recorded offline validation and does not approve workflows or merge the PR.
 
 ## Development and verification
 

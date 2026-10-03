@@ -72,15 +72,27 @@ type Run struct {
 	RepositoryID                int64
 }
 
+// PublicationIntent prevents blind retries of non-idempotent comment/check POSTs.
+// It is recovery context only; live authorization and artifact verification remain
+// required. Started with a missing object means an operator must reconcile.
+type PublicationIntent struct {
+	ArtifactID     int64  `json:"artifact_id"`
+	Attempt        int    `json:"attempt"`
+	HeadSHA        string `json:"head_sha"`
+	CommentStarted bool   `json:"comment_started"`
+	CheckStarted   bool   `json:"check_started"`
+}
+
 type Receipt struct {
-	CommentID       int64  `json:"-"`
-	AssignmentID    string `json:"assignment_id"`
-	RunID           int64  `json:"run_id"`
-	RunAttempt      int    `json:"run_attempt"`
-	BaseSHA         string `json:"base_sha"`
-	ProfileID       string `json:"profile_id"`
-	ProfileRevision string `json:"profile_revision"`
-	RequesterID     int64  `json:"requester_id"`
+	CommentID       int64              `json:"-"`
+	Publication     *PublicationIntent `json:"publication,omitempty"`
+	AssignmentID    string             `json:"assignment_id"`
+	RunID           int64              `json:"run_id"`
+	RunAttempt      int                `json:"run_attempt"`
+	BaseSHA         string             `json:"base_sha"`
+	ProfileID       string             `json:"profile_id"`
+	ProfileRevision string             `json:"profile_revision"`
+	RequesterID     int64              `json:"requester_id"`
 }
 
 type Invocation struct {

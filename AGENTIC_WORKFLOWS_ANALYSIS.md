@@ -380,6 +380,42 @@ and PRs. Receipts and invocation metadata never grant authority. No source execu
 or self-hosted runner is enabled by AW-011, and the workflow is not yet published
 to a live repository by this local implementation.
 
+## AW-012 runtime and AW-013 publication
+
+AW-012 now has published, origin-verified exact-policy runtime evidence and an
+independently verified live patch proposal. The operator's 2026-10-02 approval
+explicitly extends the shared `addons` account/runner exception to source execution
+for public `r59q/hub-rearranger` only. Workload authentication/configuration access
+and networking remain denied. Current readiness is tied to the exact default-branch
+revision; historical completion never grants a future execution or publication.
+
+AW-013 adds a separate GitHub-hosted publisher with job-scoped
+Contents/Pull requests/Issues/Checks write and Actions read. It has no Codex
+credential and executes no proposal source. The same repository/comment
+concurrency group covers intake, dispatch, execution, publication, and reporting.
+It independently verifies actual artifact origin/archive digest, original
+invocation/result/schema/patch/summary identity, current source/roles/policy, and
+expected base/head. A private Git index applies the patch using the canonical
+AW-012 source limits/protected paths; the original full Git tree preserves
+untouched protected files. `go-github` creates immutable Git objects and only
+creates a deterministic assignment ref. It never updates a ref, force-pushes,
+merges, or edits an unrelated PR.
+
+Recovery reconstructs the same commit and verifies GitHub's branch, bot-owned
+open draft PR/provenance, issue comment, and app-owned validation check before
+claiming publication. A missing branch/PR can resume; altered/closed/moved or
+ambiguous objects fail closed. Because comment/check POSTs have no idempotency
+key, the verified intake receipt carries optional publication intent before
+those writes. Intake preserves it on rerun. Started intent with a missing object
+requires operator reconciliation; intent and receipts never grant authority.
+Failed/unavailable offline validation remains explicit and produces a neutral
+proposal check, not a claim that repository validation passed.
+
+The implementation has controlled HTTP/TLS and real Git/schema tests. Deployment
+and a controlled live publication/retry verification remain required before
+AW-013 is marked complete. Native Actions pull-request creation must be enabled
+in repository settings; no extra long-lived publication credential is introduced.
+
 ## Backlog refinements after AW-005 (2026-10-01)
 
 The post-AW-005 recommendation made AW-006 the next implementation task,

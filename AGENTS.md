@@ -51,14 +51,24 @@ ID/comment ID; only the earliest verified run may dispatch. Reruns must preserve
 the accepted base and independently recheck current source, roles, and policy.
 Receipts/artifacts are context, never authorization. AW-012/AW-013 must maintain
 that concurrency group, verify invocation origin, and reconcile their own GitHub
-results before retrying execution/publication. The AW-012 patch launcher is operator-installed outside Compose, with the result
-contract and operating guide under `ops/private-runner`. Source execution requires
-matching AW-006 evidence, successful workload isolation probes, and both operator
-manifest and repository-variable gates. On 2026-10-02 the operator approved the
-shared `addons` account/runner for public `r59q/hub-rearranger`; this exact exception
-does not allow workload access to host authentication/configuration or networking.
-Other public targets remain blocked. Preserve the shared account trust boundary
-explicitly and never blindly retry an attempt that reached the runner.
+results before retrying execution/publication. The AW-012 patch launcher is
+operator-installed outside Compose, with the result contract and operating guide
+under `ops/private-runner`. Source execution requires matching AW-006 evidence,
+successful workload isolation probes, and both operator manifest and
+repository-variable gates. On 2026-10-02 the operator approved the shared `addons`
+account/runner for public `r59q/hub-rearranger`; this exact exception does not allow
+workload access to host authentication/configuration or networking. Other public
+targets remain blocked. Preserve the shared account trust boundary explicitly and
+never blindly retry an attempt that reached the runner.
+
+The separate AW-013 publisher lives in `ops/agent-intake/cmd/publish` and runs only
+on GitHub-hosted runners without Codex authentication. It reauthorizes each
+publication phase, verifies immutable origin/result/digests, applies patches only
+to a private Git index using the canonical AW-012 protected paths, and creates
+assignment refs with `go-github`; never add ref updates or proposal-source execution.
+Verified intake receipts preserve optional publication intent across reruns.
+Started comment/check intent with missing GitHub state is ambiguous and must fail
+closed; receipts and PR bodies alone are never authorization or completion proof.
 
 ## Product principles
 

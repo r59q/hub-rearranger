@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../ops/agent-profiles/schema.v1.json
 # Patch execution requires matching AW-006 evidence and both operator gates.
-# Branch and draft-PR publication remains the separate AW-013 task.
+# Branch and draft-PR publication uses the separate AW-013 hosted write job.
 schema_version: 1
 profiles:
   codex-thorough:

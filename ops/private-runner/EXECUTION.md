@@ -4,7 +4,9 @@ This operator-installed runtime proposes a patch for an AW-011 assignment. It is
 external to Hub and Docker Compose. The Go `ops/agent-intake/cmd/patch` verifier
 owns GitHub reads through `go-github`; the Python launcher owns bounded source
 materialization, Codex execution, validation, patch capture, and safe results.
-Neither component writes branches, PRs, comments, or checks. AW-013 owns publication.
+Neither component writes branches, PRs, comments, or checks. The separate
+[AW-013 hosted publisher](../agent-intake/README.md#separate-publication-aw-013)
+owns publication and independently verifies current authorization and artifacts.
 
 ## Operator exception and trust boundary
 

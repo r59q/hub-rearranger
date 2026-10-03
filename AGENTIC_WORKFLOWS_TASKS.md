@@ -494,6 +494,20 @@ The same workflow remains operable after Hub is removed.
     by reconciling verified GitHub artifacts without force-pushing or claiming
     success before publication completes.
 
+  **Implemented locally and verified (2026-10-03):** Added a separate hosted publisher,
+  independent artifact/result/current-authorization checks, private cached Git
+  patch application using the canonical protected paths, deterministic Git-object
+  and branch creation, draft provenance, issue link and honest validation check.
+  Receipt intent survives reruns and prevents blind comment/check POST retries;
+  recovery verifies actual GitHub objects before claiming completion. Tests cover
+  forged artifacts, protected/unsafe patches, revoked roles/policy, stale heads,
+  lost responses, partial branch/PR publication, and an overlapping old attempt.
+  Full `make check` passed, including 137 frontend tests, 21 intake Python tests,
+  Go integration tests, and workflow/profile/contract checks; Go race tests also
+  passed. Runner execution remains disabled. Merge/review, updated operator verifier,
+  fresh readiness evidence, and controlled live draft-PR/retry verification remain
+  required; this task remains unchecked.
+
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 
   **Domain:** frontend / agents  
