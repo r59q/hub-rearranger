@@ -178,3 +178,34 @@ Hub stores no setup draft. Retrying reconciles that existing result. Tests cover
 review mapping/hashes, authorization/recovery, forged forms, native rendering and
 safe result links. `npm run check`, `npm run lint`, `npm test` and `npm run build`
 validate this component.
+
+## Profile editor and setup tutorial (AW-010)
+
+From a selected repository in `/agents`, open **Edit profile and setup** at
+`/agents/editor?repository=owner/name`. The guided form exposes role, adapter,
+exact model policy, assignment trigger, live context, authority, validation,
+image and pipeline limitations. Editable v1 choices are display text, enabled
+state, context and trusted review-continuation policy. The installed adapter fixes
+other settings; it does not yet execute review continuation (AW-016).
+
+The runner tutorial precedes the review action and requires acknowledgment. It
+covers private/dedicated setup, subscription authentication, pinned runtime,
+isolation/exact-policy preflight, offline validation, fresh diagnostic evidence,
+both manual enablement gates and recovery. Publication requires a separate
+explicit consent to the displayed GitHub writes.
+
+With JavaScript, drafts save in repository-scoped browser localStorage with no
+session nonce, credentials or review digest. The page restores drafts, flags a
+changed GitHub revision, invalidates review/consent when choices change, and clears
+the browser draft after verified publication. Storage failures remain visible;
+Hub has no durable draft store. Native named forms preserve repository selection
+and support reviewing/publishing without JavaScript. Unchanged/conflicting plans,
+missing Identity, outages, pending requests and stale publication are explicit.
+
+`agents-editor-api.ts` maps application choices to generated transport DTOs and
+validates authoring/read responses. Agents generates file content; Identity
+recreates the reviewed plan and reauthorizes each GitHub write. Component and
+server-action tests cover native review/publication, required acknowledgment,
+closed/bounded forms, rejected forgery/source fields, safe recovery and escaped
+diffs. Run the existing check/lint/test/build commands. Compose configuration
+and service addresses are unchanged.

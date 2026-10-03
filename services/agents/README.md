@@ -270,3 +270,35 @@ Run `make generate-agents-contract` after contract changes and
 `make agents-contract-check` to verify all consumers. Tests exercise digest binding,
 container bundle integrity, commit-pinned reads, unsafe snapshots, contract states
 and failures. The portable package smoke check remains `make bootstrap-check`.
+
+## Profile authoring (AW-010)
+
+`GET /v1/repositories/{owner}/{repo}/profile-editor` returns current/default
+editable choices and the fresh base revision, or safe catalog/policy diagnostics
+with a null draft. `POST` to that endpoint accepts the closed `ProfileDraft` DTO
+and returns the same commit-pinned preview contract used by bootstrap. Both are
+private-network planning operations; neither writes GitHub nor persists drafts.
+
+The installed adapter supports only `codex-thorough`, `hub-agent-codex` and exact
+`gpt-6.1-sol/high`. Name, description, enabled state, permitted context sources
+and trusted review-continuation policy can change explicitly. Role, adapter,
+model, trigger, authority, validation, image and pipeline policy stay fixed.
+Unsupported existing fixed policy and malformed catalogs require review on
+GitHub; the editor cannot silently repair or replace them. Image context and
+pipeline execution remain disabled; review-continuation execution remains AW-016.
+
+The infrastructure adapter builds the complete profile from canonical templates,
+validates it with the canonical AW-003 schema, and merges only selected editable
+fields. Other profiles and surrounding comments/instructions remain intact.
+Unchanged catalogs retain their bytes; context order is normalized for stable
+reviews. Catalog bounds and instruction conflicts still apply. Editing and
+canonical bootstrap use distinct digest domains so retries cannot confuse their
+publication intent. Identity reconstructs each edited preview from structured
+choices and checks the reviewed digest/base inside its authorization boundary.
+
+The `ProfileDraft` transport field shapes are exported from the canonical profile
+schema; Identity's contract references this DTO and uses generated transport code.
+Run the root contract generators/checks after changes. Unit and API tests cover
+explicit disabling/editing, unchanged/idempotent merges, unrelated-policy
+preservation, schema dependencies, rejected overrides, safe diagnostics and
+fresh-base digests. No additional configuration or Compose dependency is needed.

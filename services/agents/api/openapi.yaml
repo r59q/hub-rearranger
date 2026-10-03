@@ -316,6 +316,72 @@ paths:
           description: Bootstrap planning unavailable.
         '405':
           description: This endpoint accepts GET and HEAD.
+  /v1/repositories/{owner}/{repo}/profile-editor:
+    parameters:
+      - name: owner
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$
+      - name: repo
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_.-]{1,100}$
+    get:
+      operationId: getRepositoryProfileEditor
+      summary: Read editable codex-thorough choices from the current repository
+      description: Private-network authoring context. No persistence, credentials or write authorization.
+      responses:
+        '200':
+          description: Current choices or actionable policy/catalog conflicts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileEditor'
+        '400':
+          $ref: '#/components/responses/InternalError'
+        '403':
+          $ref: '#/components/responses/InternalError'
+        '404':
+          $ref: '#/components/responses/InternalError'
+        '429':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/InternalError'
+    post:
+      operationId: previewRepositoryProfile
+      summary: Generate a fresh profile configuration and bootstrap review
+      description:
+        Accepts only structured choices. Canonical schema validation and fixed adapter policy
+        apply. Existing unrelated profiles are preserved. No GitHub writes or durable draft.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileDraft'
+      responses:
+        '200':
+          description:
+            Commit-pinned preview; invalid choices produce conflict diagnostics and cannot
+            publish.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapPreview'
+        '400':
+          $ref: '#/components/responses/InternalError'
+        '403':
+          $ref: '#/components/responses/InternalError'
+        '404':
+          $ref: '#/components/responses/InternalError'
+        '429':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/InternalError'
 components:
   responses:
     MethodNotAllowed:
@@ -337,6 +403,25 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    ProfileEditor:
+      type: object
+      additionalProperties: false
+      required:
+        - base_revision
+        - draft
+        - diagnostics
+      properties:
+        base_revision:
+          type: string
+          pattern: ^[0-9a-f]{40}$
+        draft:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ProfileDraft'
+        diagnostics:
+          type: array
+          items:
+            $ref: '#/components/schemas/BootstrapDiagnostic'
     BootstrapPreview:
       type: object
       additionalProperties: false
@@ -870,6 +955,43 @@ components:
           type: string
           enum:
             - none
+    ProfileDraft:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - description
+        - enabled
+        - context_sources
+        - review_comments
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+        enabled:
+          type: boolean
+        context_sources:
+          type: array
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - issue
+              - issue_comments
+              - repository
+              - instructions
+              - pull_request
+              - review_thread
+              - checks
+        review_comments:
+          type: boolean
     RuntimeEvidence:
       type: object
       additionalProperties: false

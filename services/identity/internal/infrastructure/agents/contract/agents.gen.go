@@ -84,6 +84,39 @@ func (e ErrorCode) Valid() bool {
 	}
 }
 
+// Defines values for ProfileDraftContextSources.
+const (
+	Checks        ProfileDraftContextSources = "checks"
+	Instructions  ProfileDraftContextSources = "instructions"
+	Issue         ProfileDraftContextSources = "issue"
+	IssueComments ProfileDraftContextSources = "issue_comments"
+	PullRequest   ProfileDraftContextSources = "pull_request"
+	Repository    ProfileDraftContextSources = "repository"
+	ReviewThread  ProfileDraftContextSources = "review_thread"
+)
+
+// Valid indicates whether the value is a known member of the ProfileDraftContextSources enum.
+func (e ProfileDraftContextSources) Valid() bool {
+	switch e {
+	case Checks:
+		return true
+	case Instructions:
+		return true
+	case Issue:
+		return true
+	case IssueComments:
+		return true
+	case PullRequest:
+		return true
+	case Repository:
+		return true
+	case ReviewThread:
+		return true
+	default:
+		return false
+	}
+}
+
 // BootstrapDiagnostic defines model for BootstrapDiagnostic.
 type BootstrapDiagnostic struct {
 	Code    string `json:"code"`
@@ -128,8 +161,23 @@ type Error struct {
 // ErrorCode defines model for Error.Code.
 type ErrorCode string
 
+// ProfileDraft defines model for ProfileDraft.
+type ProfileDraft struct {
+	ContextSources []ProfileDraftContextSources `json:"context_sources"`
+	Description    string                       `json:"description"`
+	Enabled        bool                         `json:"enabled"`
+	Name           string                       `json:"name"`
+	ReviewComments bool                         `json:"review_comments"`
+}
+
+// ProfileDraftContextSources defines model for ProfileDraft.ContextSources.
+type ProfileDraftContextSources string
+
 // InternalError defines model for InternalError.
 type InternalError = Error
 
 // MethodNotAllowed defines model for MethodNotAllowed.
 type MethodNotAllowed = Error
+
+// PreviewRepositoryProfileJSONRequestBody defines body for PreviewRepositoryProfile for application/json ContentType.
+type PreviewRepositoryProfileJSONRequestBody = ProfileDraft

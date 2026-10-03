@@ -134,10 +134,17 @@ export async function bootstrapPreview(
 		}
 		// Source bytes are needed only by Identity's fresh server-side plan. The
 		// browser receives the review diff and filenames, never a write payload.
-		return { ...data, files: data.files.map(({ path, status }) => ({ path, status })) };
+		return bootstrapView(data, `${owner}/${repo}`);
 	} catch {
 		throw new Error(
 			'Bootstrap changes could not be read. Check repository access and the Agents service, then reload.'
 		);
 	}
+}
+
+export function bootstrapView(value: unknown, repository: string): BootstrapView {
+	if (!validPreview(value, repository)) {
+		throw new Error('The Agents service returned an invalid review. Reload before continuing.');
+	}
+	return { ...value, files: value.files.map(({ path, status }) => ({ path, status })) };
 }

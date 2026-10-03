@@ -117,7 +117,10 @@ func signIn(t *testing.T, handler http.Handler, provider *testProvider) (*http.C
 
 func assertContract(t *testing.T, request *http.Request, response *httptest.ResponseRecorder) {
 	t.Helper()
-	document, err := openapi3.NewLoader().LoadFromFile("../../api/openapi.yaml")
+	loader := openapi3.NewLoader()
+	// The checked-in Identity contract references Agents' canonical draft DTO.
+	loader.IsExternalRefsAllowed = true
+	document, err := loader.LoadFromFile("../../api/openapi.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

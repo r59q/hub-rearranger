@@ -45,6 +45,13 @@ Each GitHub write/completion rechecks live user/App access. Reconcile actual ref
 full trees, commit attribution and user-owned draft PRs before retrying; never update
 refs, persist a competing bootstrap draft, or accept browser-authored source files.
 Keep Identity checks confined to account/setup/action routes.
+AW-010 profile authoring accepts only structured editable choices. Agents derives
+ProfileDraft transport fields from the canonical schema, reconstructs and validates
+the complete profile, and preserves unrelated policy. The installed adapter fixes
+codex-thorough, hub-agent-codex and gpt-6.1-sol/high; images and pipelines remain
+disabled. Identity regenerates edited plans without forwarding credentials and
+publishes through the same authorization/reconciliation boundary. Browser drafts
+contain choices and revision hints only, never nonces or review grants.
 
 The identity service owns GitHub App user credentials, encrypted sessions, and
 live repository write authorization. `GITHUB_TOKEN` is discovery-only. Never

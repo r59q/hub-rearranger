@@ -50,6 +50,10 @@ func NewBootstrapService(templates BootstrapTemplates, reader BootstrapRepositor
 }
 
 func (s *BootstrapService) Preview(ctx context.Context, repository Repository) (BootstrapPreview, error) {
+	return s.preview(ctx, repository, nil)
+}
+
+func (s *BootstrapService) preview(ctx context.Context, repository Repository, draft *ProfileDraft) (BootstrapPreview, error) {
 	templates, err := s.templates.ReadTemplates(ctx)
 	if err != nil {
 		return BootstrapPreview{}, ErrGitHubUnavailable
@@ -59,6 +63,13 @@ func (s *BootstrapService) Preview(ctx context.Context, repository Repository) (
 		return BootstrapPreview{}, err
 	}
 	plan := PlanBootstrap(templates, snapshot.Files, s.merger)
+	if draft != nil {
+		plan, err = s.editPlan(plan, snapshot, templates, *draft)
+		if err != nil {
+			return BootstrapPreview{}, err
+		}
+	}
+
 	preview := BootstrapPreview{Repository: repository.FullName(), DefaultBranch: snapshot.DefaultBranch,
 		BaseRevision: snapshot.Revision, Private: snapshot.Private, State: "unchanged", Files: []BootstrapPreviewFile{}, Diagnostics: plan.Diagnostics}
 	for _, file := range plan.Files {
@@ -78,6 +89,9 @@ func (s *BootstrapService) Preview(ctx context.Context, repository Repository) (
 	}{preview.Repository, preview.DefaultBranch, preview.BaseRevision, preview.Files})
 	if err != nil {
 		return BootstrapPreview{}, ErrGitHubUnavailable
+	}
+	if draft != nil {
+		encoded = append([]byte("profile-edit:v1\n"), encoded...)
 	}
 	digest := sha256.Sum256(encoded)
 	preview.Digest = hex.EncodeToString(digest[:])

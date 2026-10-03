@@ -96,14 +96,20 @@ export class IdentityApiClient {
 		repo: string,
 		csrf: string,
 		baseRevision: string,
-		digest: string
+		digest: string,
+		profileDraft?: components['schemas']['BootstrapRequest']['profile_draft']
 	) {
 		try {
 			const { data, error, response } = await this.api.POST(
 				'/v1/repositories/{owner}/{repo}/bootstrap-pull-request',
 				{
 					params: { path: { owner, repo }, header: { Origin: this.origin } },
-					body: { csrf, base_revision: baseRevision, digest },
+					body: {
+						csrf,
+						base_revision: baseRevision,
+						digest,
+						...(profileDraft ? { profile_draft: profileDraft } : {})
+					},
 					signal: AbortSignal.timeout(125_000)
 				}
 			);

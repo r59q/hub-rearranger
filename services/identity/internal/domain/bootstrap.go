@@ -15,7 +15,18 @@ var (
 var bootstrapBase = regexp.MustCompile(`^[0-9a-f]{40}$`)
 var bootstrapDigest = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
-type BootstrapReview struct{ BaseRevision, Digest string }
+type ProfileDraft struct {
+	Name           string   `json:"name"`
+	Description    string   `json:"description"`
+	Enabled        bool     `json:"enabled"`
+	ContextSources []string `json:"context_sources"`
+	ReviewComments bool     `json:"review_comments"`
+}
+
+type BootstrapReview struct {
+	BaseRevision, Digest string
+	Draft                *ProfileDraft
+}
 
 type BootstrapChange struct{ Path, BaseSHA, Content string }
 
@@ -24,6 +35,7 @@ type BootstrapChange struct{ Path, BaseSHA, Content string }
 type BootstrapProposal struct {
 	Repository, DefaultBranch, BaseRevision, Digest string
 	Changes                                         []BootstrapChange
+	ProfileEdit                                     bool
 }
 
 type BootstrapResult struct {

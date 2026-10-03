@@ -22,11 +22,24 @@ type Planner struct {
 }
 
 func (p Planner) Proposal(ctx context.Context, repo domain.Repository, review domain.BootstrapReview) (domain.BootstrapProposal, error) {
-	request, err := http.NewRequestWithContext(ctx, "GET", strings.TrimRight(p.URL, "/")+"/v1/repositories/"+url.PathEscape(repo.Owner)+"/"+url.PathEscape(repo.Name)+"/bootstrap", nil)
+	method, endpoint := "GET", "/bootstrap"
+	var payload io.Reader
+	if review.Draft != nil {
+		method, endpoint = "POST", "/profile-editor"
+		encoded, err := json.Marshal(review.Draft)
+		if err != nil || len(encoded) > 4096 {
+			return domain.BootstrapProposal{}, domain.ErrInvalid
+		}
+		payload = bytes.NewReader(encoded)
+	}
+	request, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(p.URL, "/")+"/v1/repositories/"+url.PathEscape(repo.Owner)+"/"+url.PathEscape(repo.Name)+endpoint, payload)
 	if err != nil {
 		return domain.BootstrapProposal{}, domain.ErrUnavailable
 	}
 	request.Header.Set("Accept", "application/json")
+	if review.Draft != nil {
+		request.Header.Set("Content-Type", "application/json")
+	}
 	response, err := p.Client.Do(request)
 	if err != nil {
 		return domain.BootstrapProposal{}, domain.ErrUnavailable
@@ -48,7 +61,7 @@ func (p Planner) Proposal(ctx context.Context, repo domain.Repository, review do
 	if string(preview.State) != "ready" || len(preview.Diagnostics) != 0 || preview.BaseRevision != review.BaseRevision || preview.Digest != review.Digest || preview.DefaultBranch == "" {
 		return domain.BootstrapProposal{}, domain.ErrBootstrapStale
 	}
-	proposal := domain.BootstrapProposal{Repository: preview.Repository, DefaultBranch: preview.DefaultBranch, BaseRevision: preview.BaseRevision, Digest: preview.Digest}
+	proposal := domain.BootstrapProposal{Repository: preview.Repository, DefaultBranch: preview.DefaultBranch, BaseRevision: preview.BaseRevision, Digest: preview.Digest, ProfileEdit: review.Draft != nil}
 	paths := map[string]bool{}
 	for _, file := range preview.Files {
 		digest := sha256.Sum256([]byte(file.Content))

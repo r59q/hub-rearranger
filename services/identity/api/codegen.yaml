@@ -3,3 +3,6 @@ package: contract
 generate:
   models: true
   std-http-server: true
+
+import-mapping:
+  ../../agents/api/openapi.yaml: github.com/r59q/hub-rearranger/services/identity/internal/infrastructure/agents/contract

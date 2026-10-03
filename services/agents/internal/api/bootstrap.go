@@ -52,6 +52,10 @@ func (h *Handler) repositoryBootstrap(w http.ResponseWriter, r *http.Request, ow
 		respond(status, problem)
 		return
 	}
+	respond(200, bootstrapDTO(preview))
+}
+
+func bootstrapDTO(preview domain.BootstrapPreview) contract.BootstrapPreview {
 	dto := contract.BootstrapPreview{Repository: preview.Repository, DefaultBranch: preview.DefaultBranch,
 		BaseRevision: preview.BaseRevision, Digest: preview.Digest, State: contract.BootstrapPreviewState(preview.State),
 		Private: preview.Private, Diff: preview.Diff, Files: []contract.BootstrapPreviewFile{}, Diagnostics: []contract.BootstrapDiagnostic{}}
@@ -68,5 +72,5 @@ func (h *Handler) repositoryBootstrap(w http.ResponseWriter, r *http.Request, ow
 	for _, issue := range preview.Diagnostics {
 		dto.Diagnostics = append(dto.Diagnostics, contract.BootstrapDiagnostic{Code: issue.Code, Path: issue.Path, Message: issue.Message})
 	}
-	respond(200, dto)
+	return dto
 }

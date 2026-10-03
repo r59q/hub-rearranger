@@ -1,24 +1,9 @@
-import { env } from '$env/dynamic/private';
 import { fail } from '@sveltejs/kit';
 import { bootstrapPreview } from '$lib/server/agents-bootstrap-api';
 import { identityFor, sameOrigin } from '$lib/server/identity-http';
 import { IdentityApiError } from '$lib/server/identity-api';
-import { RepositoriesApiClient } from '$lib/server/repositories-api';
+import { selectedRepository, boundedForm } from '$lib/server/agents-setup-http';
 import type { Actions, PageServerLoad } from './$types';
-import type { RequestEvent } from '@sveltejs/kit';
-
-async function selectedRepository(event: Pick<RequestEvent, 'fetch' | 'url'>) {
-	const repositories = await new RepositoriesApiClient(
-		env.REPOSITORIES_API_URL ?? 'http://127.0.0.1:8080',
-		event.fetch
-	).listSelected();
-	const name = event.url.searchParams.get('repository');
-	return (
-		repositories.find(
-			(repo) => repo.selected && repo.full_name.toLowerCase() === name?.toLowerCase()
-		) ?? null
-	);
-}
 
 export const load: PageServerLoad = async (event) => {
 	event.setHeaders({ 'cache-control': 'no-store' });
@@ -45,32 +30,6 @@ export const load: PageServerLoad = async (event) => {
 		};
 	}
 };
-
-async function boundedForm(request: Request): Promise<string> {
-	const reader = request.body?.getReader();
-	if (!reader) {
-		throw new Error('Missing review');
-	}
-	const chunks: Uint8Array[] = [];
-	let length = 0;
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) {
-				break;
-			}
-			length += value.length;
-			if (length > 4096) {
-				await reader.cancel();
-				throw new IdentityApiError(400);
-			}
-			chunks.push(value);
-		}
-	} finally {
-		reader.releaseLock();
-	}
-	return new TextDecoder().decode(Buffer.concat(chunks));
-}
 
 export const actions: Actions = {
 	default: async (event) => {

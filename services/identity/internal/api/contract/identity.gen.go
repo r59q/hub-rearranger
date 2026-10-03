@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime"
+	externalRef0 "github.com/r59q/hub-rearranger/services/identity/internal/infrastructure/agents/contract"
 )
 
 // Defines values for Action.
@@ -130,9 +131,10 @@ type AuthorizationRequest struct {
 
 // BootstrapRequest defines model for BootstrapRequest.
 type BootstrapRequest struct {
-	BaseRevision string `json:"base_revision"`
-	Csrf         string `json:"csrf"`
-	Digest       string `json:"digest"`
+	BaseRevision string                     `json:"base_revision"`
+	Csrf         string                     `json:"csrf"`
+	Digest       string                     `json:"digest"`
+	ProfileDraft *externalRef0.ProfileDraft `json:"profile_draft,omitempty"`
 }
 
 // BootstrapResult defines model for BootstrapResult.

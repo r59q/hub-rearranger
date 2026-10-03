@@ -391,7 +391,7 @@ The same workflow remains operable after Hub is removed.
   requires a configured real App/installation and the documented manual runner
   setup. AW-010 is now ready to pick.
 
-- [ ] **AW-010 — Profile editor and setup tutorial**
+- [x] **AW-010 — Profile editor and setup tutorial**
 
   **Domain:** frontend / agents  
   **Depends on:** AW-008, AW-009
@@ -407,6 +407,39 @@ The same workflow remains operable after Hub is removed.
     before creating changes.
   - Draft state is browser-local or a GitHub draft PR, never Hub-only durable
     state.
+
+  **Completed (2026-10-03):** Added the selected-repository `/agents/editor`
+  guided form and manual runner tutorial. The UI exposes all requested profile
+  settings within the implemented v1 adapter: display text, enabled state,
+  permitted context and trusted review-continuation policy are editable; role,
+  adapter, exact `gpt-6.1-sol/high` model, runner, trigger, authority and validation
+  remain fixed. Images and pipelines stay disabled; review-continuation execution
+  remains AW-016. The tutorial requires acknowledgment before review and covers
+  pinned installation, private/dedicated runner setup, subscription authentication,
+  isolation/exact-policy checks, offline validation, fresh AW-006 evidence, both
+  manual enablement gates and recovery.
+
+  Agents derives the closed authoring DTO from the canonical schema, reconstructs
+  and validates the complete profile, preserves unrelated policies/instructions
+  and produces stable commit-pinned previews. Unsupported existing fixed policy,
+  invalid choices and instruction conflicts fail safely. Identity regenerates
+  the edited plan without user credentials, compares the reviewed base/digest,
+  and publishes through the existing authorization/tree/attribution/retry boundary.
+  Configuration PRs link to the editor and retain the manual setup checklist.
+
+  Drafts save only as repository-scoped browser choices/revision hints or a
+  GitHub draft PR. Changed choices invalidate review/consent; stale publication
+  preserves authoring choices and requires a fresh review. Native named forms
+  preserve repository selection and work without JavaScript. Full `make check`
+  passed, including **214 frontend tests**, Go/Python/Node/workflow/portable-package
+  and generated-contract checks; Agents/Identity race tests and production frontend
+  builds passed. Controlled Chromium verified restored drafts, pending/consent,
+  edited/stale review recovery, conflicts/outages/sign-in requirements, escaped
+  diffs, keyboard access, dark 390px/320px layouts and native review/publication.
+  Isolated Compose builds/smoke checks passed with all five services healthy and
+  canonical bundle hashes verified, using synthetic credentials and disabled
+  external container networking. No live GitHub writes or runner execution were
+  performed. Component and architecture documentation are updated; AW-014 is next.
 
 ## Phase 3 — Execute one `codex-thorough` assignment
 

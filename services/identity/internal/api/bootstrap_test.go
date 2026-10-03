@@ -13,10 +13,12 @@ import (
 
 type apiBootstrap struct {
 	called int
+	draft  *domain.ProfileDraft
 	err    error
 }
 
 func (p *apiBootstrap) Proposal(_ context.Context, repo domain.Repository, review domain.BootstrapReview) (domain.BootstrapProposal, error) {
+	p.draft = review.Draft
 	return domain.BootstrapProposal{Repository: repo.Owner + "/" + repo.Name, BaseRevision: review.BaseRevision, Digest: review.Digest, DefaultBranch: "main", Changes: []domain.BootstrapChange{{Path: "AGENTS.md", Content: "setup"}}}, p.err
 }
 
@@ -29,14 +31,29 @@ func (p *apiBootstrap) Publish(ctx context.Context, token string, repo domain.Re
 }
 
 func TestBootstrapEndpointHonorsContractAndWriteBoundary(t *testing.T) {
-	for _, variant := range []string{"success", "csrf", "origin", "session", "role", "stale", "conflict", "incomplete", "extra-field", "malformed", "method"} {
+	for _, variant := range []string{"success", "profile-edit", "missing-draft-field", "null-draft", "draft-extra", "csrf", "origin", "session", "role", "stale", "conflict", "incomplete", "extra-field", "malformed", "method"} {
 		t.Run(variant, func(t *testing.T) {
 			bootstrap := &apiBootstrap{}
 			handler, provider := bootstrapSetup(t, bootstrap, bootstrap)
 			session, csrf := signIn(t, handler, provider)
-			body := map[string]string{"csrf": csrf, "base_revision": strings.Repeat("a", 40), "digest": strings.Repeat("d", 64)}
+			body := map[string]any{"csrf": csrf, "base_revision": strings.Repeat("a", 40), "digest": strings.Repeat("d", 64)}
 			status := 200
 			switch variant {
+			case "profile-edit", "missing-draft-field", "draft-extra", "null-draft":
+				draft := map[string]any{"name": "Reviewed", "description": "Display", "enabled": false, "context_sources": []string{"issue", "repository"}, "review_comments": false}
+				body["profile_draft"] = draft
+				if variant == "missing-draft-field" {
+					delete(draft, "enabled")
+					status = 400
+				}
+				if variant == "draft-extra" {
+					draft["content"] = "arbitrary"
+					status = 400
+				}
+				if variant == "null-draft" {
+					body["profile_draft"] = nil
+					status = 400
+				}
 			case "csrf":
 				body["csrf"] = strings.Repeat("x", 43)
 				status = 403
@@ -80,6 +97,9 @@ func TestBootstrapEndpointHonorsContractAndWriteBoundary(t *testing.T) {
 			}
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, request)
+			if variant == "profile-edit" && (bootstrap.draft == nil || bootstrap.draft.Enabled || bootstrap.draft.Name != "Reviewed") {
+				t.Fatal("structured choices lost before planning")
+			}
 			if response.Code != status {
 				t.Fatalf("status %d: %s", response.Code, response.Body.String())
 			}
@@ -88,7 +108,7 @@ func TestBootstrapEndpointHonorsContractAndWriteBoundary(t *testing.T) {
 				contractRequest = httptest.NewRequest(http.MethodPost, request.URL.String(), nil)
 			}
 			assertContract(t, contractRequest, response)
-			if variant != "success" && bootstrap.called != 0 {
+			if variant != "success" && variant != "profile-edit" && bootstrap.called != 0 {
 				t.Fatal("rejected request reached writer")
 			}
 			if strings.Contains(response.Body.String(), "synthetic-access") {

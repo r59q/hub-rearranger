@@ -15,13 +15,16 @@ import (
 )
 
 func TestPlannerUsesFreshPublicContractWithoutUserCredentials(t *testing.T) {
-	for _, variant := range []string{"valid", "stale", "hash", "extra-field", "conflict", "duplicate", "unknown-status", "error"} {
+	for _, variant := range []string{"valid", "profile-edit", "edited-stale", "stale", "hash", "extra-field", "conflict", "duplicate", "unknown-status", "error"} {
 		t.Run(variant, func(t *testing.T) {
 			review := domain.BootstrapReview{BaseRevision: strings.Repeat("a", 40), Digest: strings.Repeat("d", 64)}
+			if variant == "profile-edit" || variant == "edited-stale" {
+				review.Draft = &domain.ProfileDraft{Name: "Reviewed", Description: "Display", Enabled: false, ContextSources: []string{"issue", "repository"}, ReviewComments: false}
+			}
 			file := map[string]any{"path": "AGENTS.md", "status": "create", "base_sha": nil, "sha256": fmt.Sprintf("%x", sha256.Sum256([]byte("setup"))), "content": "setup"}
 			body := map[string]any{"repository": "octo/demo", "default_branch": "main", "base_revision": review.BaseRevision, "digest": review.Digest, "state": "ready", "private": true, "diff": "safe diff", "files": []any{file}, "diagnostics": []any{}}
 			switch variant {
-			case "stale":
+			case "stale", "edited-stale":
 				body["base_revision"] = strings.Repeat("b", 40)
 			case "hash":
 				file["sha256"] = strings.Repeat("f", 64)
@@ -35,7 +38,15 @@ func TestPlannerUsesFreshPublicContractWithoutUserCredentials(t *testing.T) {
 				file["status"] = "delete"
 			}
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != "GET" || r.URL.Path != "/v1/repositories/octo/demo/bootstrap" || r.Header.Get("Cookie") != "" || r.Header.Get("Authorization") != "" {
+				method, path := "GET", "/v1/repositories/octo/demo/bootstrap"
+				if review.Draft != nil {
+					method, path = "POST", "/v1/repositories/octo/demo/profile-editor"
+					var draft domain.ProfileDraft
+					if json.NewDecoder(r.Body).Decode(&draft) != nil || draft.Name != "Reviewed" || draft.Enabled {
+						t.Error("structured choices changed")
+					}
+				}
+				if r.Method != method || r.URL.Path != path || r.Header.Get("Cookie") != "" || r.Header.Get("Authorization") != "" {
 					t.Error("private identity escaped planner boundary")
 				}
 				if variant == "error" {
@@ -45,14 +56,14 @@ func TestPlannerUsesFreshPublicContractWithoutUserCredentials(t *testing.T) {
 			}))
 			defer server.Close()
 			proposal, err := (Planner{URL: server.URL, Client: server.Client()}).Proposal(context.Background(), domain.Repository{Owner: "octo", Name: "demo"}, review)
-			if variant == "valid" {
+			if variant == "valid" || variant == "profile-edit" {
 				if err != nil || len(proposal.Changes) != 1 || proposal.Changes[0].Content != "setup" {
 					t.Fatal(proposal, err)
 				}
 			} else if err == nil {
 				t.Fatal("invalid/stale source authorized publication")
 			}
-			if variant == "stale" && !errors.Is(err, domain.ErrBootstrapStale) {
+			if (variant == "stale" || variant == "edited-stale") && !errors.Is(err, domain.ErrBootstrapStale) {
 				t.Fatal("stale recovery lost")
 			}
 		})

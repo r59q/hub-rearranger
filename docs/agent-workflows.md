@@ -30,6 +30,23 @@ validation, with required tools and dependencies already available offline.
 The bootstrap does not overwrite the repository's Makefile or provision tooling.
 Missing or failed checks are reported honestly under `draft-with-evidence`.
 
+## Optional Hub profile editor
+
+Hub's selected-repository Agents view offers **Edit profile and setup**. The v1
+editor authors `codex-thorough` display text, enabled state, live context and
+trusted review-continuation policy, then generates a reviewable configuration PR.
+It preserves unrelated profiles and fixed adapter policy. The installed workflows
+fix the profile ID, runner label and exact `gpt-6.1-sol/high` model policy; other
+settings require a reviewed adapter change. Image and pipeline workflows are
+disabled. Review continuation still requires the AW-016 workflow implementation.
+
+Read and acknowledge the tutorial, review the full diff and GitHub writes, then
+create the draft PR using your connected GitHub identity. Browser drafts are
+local to that browser; the GitHub PR is the durable saved configuration. Editing
+choices or a changed default branch requires a fresh review. Merge on GitHub and
+renew runtime evidence before assignments; publishing never enables execution.
+The same profile file can be reviewed and edited directly on GitHub without Hub.
+
 ## Manual runner installation checklist
 
 1. Provision a dedicated, non-root Linux runner host and service account,

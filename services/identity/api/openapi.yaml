@@ -161,7 +161,8 @@ paths:
     post:
       operationId: createBootstrapPullRequest
       security: *id004
-      description: Creates or reconciles a user-attributed canonical bootstrap branch and draft PR.
+      description:
+        Creates or reconciles a user-attributed bootstrap or profile-configuration branch and draft PR.
         Requires the reviewed Agents digest and base, exact Origin and session nonce.
         Identity obtains the fresh typed file plan server-side, checks current user/App
         permissions at every write, and verifies GitHub state. It never exports tokens,
@@ -232,6 +233,8 @@ components:
       additionalProperties: false
       required: [csrf, base_revision, digest]
       properties:
+        profile_draft:
+          $ref: '../../agents/api/openapi.yaml#/components/schemas/ProfileDraft'
         csrf: *id005
         base_revision:
           type: string

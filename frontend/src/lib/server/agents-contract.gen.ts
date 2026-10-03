@@ -118,12 +118,44 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	'/v1/repositories/{owner}/{repo}/profile-editor': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		/**
+		 * Read editable codex-thorough choices from the current repository
+		 * @description Private-network authoring context. No persistence, credentials or write authorization.
+		 */
+		get: operations['getRepositoryProfileEditor'];
+		put?: never;
+		/**
+		 * Generate a fresh profile configuration and bootstrap review
+		 * @description Accepts only structured choices. Canonical schema validation and fixed adapter policy apply. Existing unrelated profiles are preserved. No GitHub writes or durable draft.
+		 */
+		post: operations['previewRepositoryProfile'];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 
 export type webhooks = Record<string, never>;
 
 export interface components {
 	schemas: {
+		ProfileEditor: {
+			base_revision: string;
+			draft: components['schemas']['ProfileDraft'] | null;
+			diagnostics: components['schemas']['BootstrapDiagnostic'][];
+		};
 		BootstrapPreview: {
 			repository: string;
 			default_branch: string;
@@ -321,6 +353,21 @@ export interface components {
 			reasoning_effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 			/** @enum {string} */
 			fallback: 'none';
+		};
+		ProfileDraft: {
+			name: string;
+			description: string;
+			enabled: boolean;
+			context_sources: (
+				| 'issue'
+				| 'issue_comments'
+				| 'repository'
+				| 'instructions'
+				| 'pull_request'
+				| 'review_thread'
+				| 'checks'
+			)[];
+			review_comments: boolean;
 		};
 		RuntimeEvidence: {
 			/** @enum {integer} */
@@ -905,6 +952,66 @@ export interface operations {
 			};
 		};
 	};
+	getRepositoryProfileEditor: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Current choices or actionable policy/catalog conflicts. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ProfileEditor'];
+				};
+			};
+			400: components['responses']['InternalError'];
+			403: components['responses']['InternalError'];
+			404: components['responses']['InternalError'];
+			429: components['responses']['InternalError'];
+			502: components['responses']['InternalError'];
+		};
+	};
+	previewRepositoryProfile: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				owner: string;
+				repo: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['ProfileDraft'];
+			};
+		};
+		responses: {
+			/** @description Commit-pinned preview; invalid choices produce conflict diagnostics and cannot publish. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['BootstrapPreview'];
+				};
+			};
+			400: components['responses']['InternalError'];
+			403: components['responses']['InternalError'];
+			404: components['responses']['InternalError'];
+			429: components['responses']['InternalError'];
+			502: components['responses']['InternalError'];
+		};
+	};
 }
 
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
@@ -1037,6 +1144,17 @@ export const catalogModelReasoning_effortValues: ReadonlyArray<
 export const catalogModelFallbackValues: ReadonlyArray<
 	components['schemas']['CatalogModel']['fallback']
 > = ['none'];
+export const profileDraftContext_sourcesValues: ReadonlyArray<
+	components['schemas']['ProfileDraft']['context_sources']
+> = [
+	'issue',
+	'issue_comments',
+	'repository',
+	'instructions',
+	'pull_request',
+	'review_thread',
+	'checks'
+];
 export const runtimeEvidenceVersionValues: ReadonlyArray<
 	components['schemas']['RuntimeEvidence']['version']
 > = [1];

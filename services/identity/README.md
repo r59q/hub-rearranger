@@ -219,3 +219,22 @@ concurrent duplicate attempts, lost responses and partial publication. Run
 Identity contract and the consumed Agents DTOs are generated using the root pinned
 tooling; `make check` checks drift. Live use requires the configured real App and
 installation described above, and operator runner setup remains manual.
+
+## Profile configuration publication (AW-010)
+
+The existing `bootstrap-pull-request` endpoint optionally accepts `profile_draft`,
+a structured authoring DTO referenced from Agents' public OpenAPI contract. It
+accepts no browser-authored files or runtime overrides. Missing/null/unknown draft
+fields fail before publication. Identity carries the choices to Agents using a
+credential-free POST, independently obtains the fresh generated plan, and requires
+its exact reviewed base/digest. Agents owns schema and fixed adapter policy;
+Identity owns authorization, user attribution and GitHub reconciliation.
+
+Profile edits use the same `WithAuthorization`, per-phase live user/App checks,
+full-tree verification, deterministic branch, draft PR and no-ref-update rules
+as bootstrap. Their review digests distinguish the authoring intent; the draft
+PR links to `/agents/editor` and explains policy changes plus the manual runner
+checklist. The publication tests cover edited choices, stale reviews, required
+fields, current access, lost responses and duplicate recovery. Regenerate both
+Agents and Identity contracts when this shared transport input changes. Local
+HTTP tests resolve only the checked-in referenced OpenAPI specification.

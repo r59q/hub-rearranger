@@ -858,3 +858,45 @@ Identity forwards only the explicit filtered cookie set, and the shared grid
 uses a constrained responsive column. No live GitHub sign-in/write or credentialed
 runtime was invoked. Real App configuration and manual runner installation remain
 operator setup, not hidden Hub state.
+
+## AW-010 — Guided profile authoring
+
+The first editor is scoped to the implemented `codex-thorough` adapter. Its
+workflow/diagnostic/operator contract fixes profile ID, runner label and exact
+model policy. The UI exposes those settings and role/trigger/authority/validation
+with their limitations; it permits explicit display text, enabled-state, context
+and review-continuation edits. Images and pipeline workflows stay disabled under
+AW-003, and permitted review continuation does not claim AW-016 is implemented.
+A broader adapter or model choice requires a coordinated reviewed adapter change.
+
+Agents owns current/default choices and a no-write preview POST. `ProfileDraft`
+field shapes derive from the canonical schema, which validates the reconstructed
+complete profile. Invalid choices and existing unsupported policy fail safely;
+selected mutable fields can change explicitly without overwriting unrelated
+profiles or instructions. Repeat plans are stable and no-op catalogs retain their
+bytes. Profile-edit digests are distinct from canonical bootstrap intent.
+
+Identity's generated public contract references the Agents draft DTO. It forwards
+structured choices without user credentials, obtains a fresh plan, matches the
+reviewed base/digest and publishes through `WithAuthorization`, preserving all
+AW-009 reauthorization/tree/attribution/ref/PR/retry rules. Authoring PRs link to
+the editor, explain changed-policy assignment behavior and retain the manual
+runner checklist. The browser supplies no source-file content.
+
+Drafts persist only in repository-scoped browser localStorage or a GitHub draft PR.
+Local storage contains authoring choices and a base-revision hint, never session
+nonces, credentials or review digests. Changed choices clear review consent;
+changed revisions require fresh review. Native forms retain repository selection
+and authoring choices on their review page. The tutorial and acknowledgment
+precede review; separate explicit consent precedes GitHub publication. No new
+service, dependency, environment variable or Compose requirement was introduced.
+
+AW-010 completed on 2026-10-03. Full `make check` passed with 214 frontend tests,
+canonical contracts and the portable installation checks; Agents/Identity race
+tests, production frontend builds and isolated five-service Compose smoke checks
+passed. Controlled Chromium verified browser draft restoration, changed/stale
+review recovery, consent/pending/success, failures, keyboard focus, dark mobile
+layouts at 390px/320px and no-JavaScript review/publication. Browser testing caught
+and fixed named forms dropping repository selection; a native-rendering regression
+check now preserves it. Validation used synthetic services/credentials, with no
+live GitHub writes, credentialed diagnostic or runner execution.

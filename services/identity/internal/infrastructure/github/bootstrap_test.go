@@ -164,9 +164,10 @@ func publishFixture(p BootstrapPublisher, f *bootstrapFixture, guard func(contex
 }
 
 func TestBootstrapPublicationReconcilesExactGitHubState(t *testing.T) {
-	for _, variant := range []string{"success", "lost-ref", "lost-pr", "partial-pr"} {
+	for _, variant := range []string{"success", "profile-edit", "lost-ref", "lost-pr", "partial-pr"} {
 		t.Run(variant, func(t *testing.T) {
 			publisher, f := newBootstrapFixture(t)
+			f.proposal.ProfileEdit = variant == "profile-edit"
 			f.loseRef, f.losePR, f.failPR = variant == "lost-ref", variant == "lost-pr", variant == "partial-pr"
 			guard := func(context.Context) error { return nil }
 			result, err := publishFixture(publisher, f, guard)
@@ -180,7 +181,14 @@ func TestBootstrapPublicationReconcilesExactGitHubState(t *testing.T) {
 			if err != nil || result.PullRequestNumber != 3 {
 				t.Fatalf("result %+v, error %v", result, err)
 			}
-			if !strings.Contains(f.pr.GetBody(), "https://hub.example.com/agents/bootstrap?repository=octo%2Fdemo") || !strings.Contains(f.pr.GetBody(), "- [ ] Provision a dedicated") {
+			route := "bootstrap"
+			if variant == "profile-edit" {
+				route = "editor"
+				if f.pr.GetTitle() != "Configure codex-thorough GitHub workflows" {
+					t.Fatal("wrong profile PR title")
+				}
+			}
+			if !strings.Contains(f.pr.GetBody(), "https://hub.example.com/agents/"+route+"?repository=octo%2Fdemo") || !strings.Contains(f.pr.GetBody(), "- [ ] Provision a dedicated") {
 				t.Fatal("setup/checklist missing")
 			}
 			for range 3 {

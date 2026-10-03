@@ -31,7 +31,7 @@ func TestBootstrapUsesAuthorizedUserAndRejectsForgedOrRevokedReviews(t *testing.
 	for _, variant := range []string{"success", "csrf", "revoked", "role", "stale", "phase-role", "phase-user", "phase-token"} {
 		t.Run(variant, func(t *testing.T) {
 			service, _, provider, id, session := setup()
-			review := BootstrapReview{strings.Repeat("a", 40), strings.Repeat("d", 64)}
+			review := BootstrapReview{BaseRevision: strings.Repeat("a", 40), Digest: strings.Repeat("d", 64)}
 			planner := &testBootstrapPlanner{proposal: BootstrapProposal{Repository: "octo/demo", BaseRevision: review.BaseRevision, Digest: review.Digest, Changes: []BootstrapChange{{Path: "AGENTS.md", Content: "setup"}}}}
 			writer := &testBootstrapWriter{operation: func(ctx context.Context, token string, user User, guard func(context.Context) error) error {
 				if token != session.Credentials.Access || user != session.User {
