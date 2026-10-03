@@ -92,6 +92,17 @@ class PublicationPatchTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(ExecutionFailure):
                 apply(archive({"app.txt": b"before\n"}), addition(path))
 
+    def test_changed_path_limit(self):
+        source = archive({"app.txt": b"before\n"})
+        for count in (100, 101):
+            with self.subTest(count=count):
+                delta = b"".join(addition(f"file-{i}.txt") for i in range(count))
+                if count == 100:
+                    self.assertEqual(len(apply(source, delta)), count)
+                else:
+                    with self.assertRaises(ExecutionFailure):
+                        apply(source, delta)
+
     def test_unsafe_modes_and_stale_patch_are_rejected(self):
         for delta in (
             addition("link", "120000", "../../host"),

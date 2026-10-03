@@ -162,7 +162,7 @@ applied only to a private Git index with explicit environment/config, hooks and
 filters disabled. The adapter rejects protected paths, escapes, malformed/stale
 patches, unsafe modes, symlinks, and submodules. Binary content, executable modes,
 and deletions are supported. Limits remain 32 MiB compressed source, 128 MiB
-expanded source, 8 MiB patch, 16 MiB per file, and at most 1000 changed paths.
+expanded source, 8 MiB patch, 16 MiB per file, and at most 100 changed paths.
 The original full base tree preserves untouched protected/omitted files.
 
 Publication uses `go-github` Git-object APIs to create a deterministic commit and

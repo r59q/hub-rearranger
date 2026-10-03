@@ -77,7 +77,7 @@ def apply(source, patch):
             directory, ["diff", "--cached", "--no-renames", "--name-only", "-z", tree]
         ).split(b"\0")
         paths = [p.decode("utf-8") for p in names if p]
-        if not paths or len(paths) > 1000 or any(not valid_path(p) for p in paths):
+        if not paths or len(paths) > 100 or any(not valid_path(p) for p in paths):
             fail("PROTECTED_CHANGE")
         entries = {}
         for entry in git(directory, ["ls-files", "--stage", "-z"]).split(b"\0"):

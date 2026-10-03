@@ -119,7 +119,7 @@ func (p *Publisher) prepare(ctx context.Context, event Event, input Invocation) 
 	if err != nil {
 		return Proposal{}, "", err
 	}
-	if len(changes) == 0 || len(changes) > 1000 {
+	if len(changes) == 0 || len(changes) > 100 {
 		return Proposal{}, "", ProtectedChange
 	}
 	if err = p.guard(ctx, event, input); err != nil {

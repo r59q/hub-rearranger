@@ -13,6 +13,7 @@ type publicationFake struct {
 	revokeAt                               string
 	branch, draft, comment, check          bool
 	creates                                map[string]int
+	changes                                []FileChange
 }
 
 func (f *publicationFake) revoke(stage string) {
@@ -35,6 +36,9 @@ func (f *publicationFake) VerifyProposal(context.Context, Invocation, Proposal) 
 
 func (f *publicationFake) Apply(context.Context, []byte, []byte) ([]FileChange, error) {
 	f.revoke("patch")
+	if f.changes != nil {
+		return f.changes, f.patchFailure
+	}
 	return []FileChange{{Path: "app.txt", Mode: "100644", Content: []byte("after")}}, f.patchFailure
 }
 
@@ -147,6 +151,22 @@ func TestPublicationRejectsArtifactsProtectedChangesRevocationAndStaleHead(t *te
 				t.Fatalf("wrong stale-head result: %v", err)
 			}
 		})
+	}
+}
+
+func TestPublicationChangedPathLimit(t *testing.T) {
+	for _, count := range []int{100, 101} {
+		publisher, f, _, _, event, input := publisherSetup(t)
+		f.changes = make([]FileChange, count)
+
+		_, err := publisher.Publish(context.Background(), event, input)
+		if count == 100 {
+			if err != nil || f.creates["objects"] != 1 {
+				t.Fatalf("100 paths should publish: %v", err)
+			}
+		} else if !errors.Is(err, ProtectedChange) || f.creates["objects"] != 0 {
+			t.Fatalf("101 paths must be rejected before GitHub writes: %v", err)
+		}
 	}
 }
 
