@@ -549,7 +549,10 @@ The same workflow remains operable after Hub is removed.
   private workspace was removed. This verifies safe refusal, not successful reuse.
   Recovery instructions now specify rerunning the individual `authorize` job and
   its dependent jobs to retain original artifacts. [Fresh assignment run 37117465286](https://github.com/r59q/hub-rearranger/actions/runs/37117465286)
-  is in progress for that recovery test; this task remains unchecked.
+  completed all jobs successfully and published [draft PR #13](https://github.com/r59q/hub-rearranger/pull/13)
+  at `a4edea2a5b9626b105c9bb0bd751f06b7d28e4ed`. Its exact patch, provenance,
+  unique issue update/check, and original artifact identities were independently
+  verified. The job-specific recovery test is pending; this task remains unchecked.
 
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 
