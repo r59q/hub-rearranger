@@ -516,11 +516,27 @@ The same workflow remains operable after Hub is removed.
   before creating a branch or PR. The expected immutable commit was found at
   `eb80dc0bd818556c847485319ef31624f7aa837a`; GitHub returned its exact message
   without the final newline, which the original strict comparison rejected.
-  Private workspaces were removed and execution disabled. The repair uses a
+  Private workspaces were removed and execution disabled. [PR #9](https://github.com/r59q/hub-rearranger/pull/9) merged the repair using a
   canonical message without a final newline, tests GitHub's actual response and
   rejection of altered messages, and preserves specific safe failure codes in
-  status artifacts. Repair review/merge, renewed readiness, and controlled live
-  draft-PR/retry verification remain required; this task remains unchecked.
+  status artifacts. Fresh [diagnostic run 37111803131](https://github.com/r59q/hub-rearranger/actions/runs/37111803131)
+  was independently verified against merged revision
+  `5aad6bdf6afc23c0b4bf2ab0f73d11c5466ef3ee`. The next assignment created its
+  branch, but PR creation required enabling the repository's Actions setting.
+  Its rerun correctly refused execution with `REPLAY_STATE_UNAVAILABLE` when
+  the original producer artifacts were unavailable; their disappearance was
+  observed, but its cause was not established.
+
+  After reconciliation, [fresh assignment run 37113910321](https://github.com/r59q/hub-rearranger/actions/runs/37113910321)
+  created [draft PR #10](https://github.com/r59q/hub-rearranger/pull/10), one issue
+  update, and one neutral validation check. Their provenance, exact document-only
+  diff, and GitHub ownership were independently verified. Final publication
+  verification failed because GitHub replaced the requested check details URL
+  with its own check page. The repair accepts only that exact repository/check-ID
+  URL or the original producer URL, retaining all other evidence checks; tests
+  reproduce the response and reject forged links. Execution is disabled.
+  Repair review/merge, renewed readiness, successful workflow completion, and
+  live retry verification remain required; this task remains unchecked.
 
 - [ ] **AW-014 — Add Hub assignment UI and derived run view**
 

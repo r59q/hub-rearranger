@@ -22,6 +22,13 @@ func checkSummary(input domain.Invocation, proposal domain.Proposal, value domai
 	return fmt.Sprintf("Draft patch proposal: [PR #%d](%s). Repository validation: **%s**.\n\n[Assignment request](%s); [verified proposal attempt](%s). Human review is required.", value.PRNumber, value.PRURL, validationOutcome(proposal), input.RequestURL, proposal.Invocation.RunURL)
 }
 
+func publicationCheckDetailsMatch(input domain.Invocation, proposal domain.Proposal, check *gh.CheckRun) bool {
+	// GitHub replaces details_url on GITHUB_TOKEN-created checks with the
+	// check's own page. Origin remains bound by the exact summary/external ID.
+	canonical := fmt.Sprintf("%s/runs/%d", domain.RepositoryURL(input.Repository), check.GetID())
+	return check.GetDetailsURL() == proposal.Invocation.RunURL || check.GetDetailsURL() == canonical
+}
+
 func (c *Client) findPublicationCheck(ctx context.Context, input domain.Invocation, proposal domain.Proposal, value domain.Publication) (bool, error) {
 	repo := input.Repository
 	app, _, err := c.api.Apps.Get(ctx, "github-actions")
@@ -38,7 +45,7 @@ func (c *Client) findPublicationCheck(ctx context.Context, input domain.Invocati
 			if check.GetExternalID() != "agent-publication:"+input.AssignmentID {
 				continue
 			}
-			if found || check.GetID() <= 0 || check.GetApp().GetID() != app.GetID() || check.GetName() != publicationCheckName || check.GetHeadSHA() != value.HeadSHA || check.GetDetailsURL() != proposal.Invocation.RunURL || check.GetStatus() != "completed" || check.GetConclusion() != checkConclusion(proposal) || check.GetOutput().GetSummary() != checkSummary(input, proposal, value) {
+			if found || check.GetID() <= 0 || check.GetApp().GetID() != app.GetID() || check.GetName() != publicationCheckName || check.GetHeadSHA() != value.HeadSHA || !publicationCheckDetailsMatch(input, proposal, check) || check.GetStatus() != "completed" || check.GetConclusion() != checkConclusion(proposal) || check.GetOutput().GetSummary() != checkSummary(input, proposal, value) {
 				return false, domain.HistoryUnavailable
 			}
 			found = true

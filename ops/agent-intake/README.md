@@ -183,6 +183,12 @@ one concise proposal link. `Agent proposal / repository-check` is successful onl
 when validation passed; failed/unavailable validation publishes a **neutral** check
 and remains explicit on the draft under `draft-with-evidence`.
 
+GitHub replaces the supplied details URL on checks created with `GITHUB_TOKEN`
+with the check's own page ([GitHub's explanation](https://github.com/orgs/community/discussions/26757)).
+Reconciliation accepts only the original producer URL or the exact GitHub check
+page for this repository and check ID. The app, assignment identity, commit,
+conclusion, and full evidence summary must still match.
+
 The concurrency group remains the original repository/comment identity across
 all jobs and attempts. The existing verified intake receipt gains optional,
 closed `publication` intent (artifact ID, attempt, head, comment/check started
@@ -206,7 +212,7 @@ publication. No raw source, patch, subprocess output, or exception is reported.
 For live verification after merging this workflow:
 
 1. Permit GitHub Actions to create pull requests in the approved repository's
-   [Actions settings](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-your-repository).
+   [Actions settings](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
    Keep default workflow permissions minimal; the publisher declares its scopes.
    No extra long-lived write credential or automatic PR approval is needed.
 2. Rebuild/reinstall the reviewed `agent-patch` binary and pin its new digest in
